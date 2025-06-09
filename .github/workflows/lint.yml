@@ -1,0 +1,29 @@
+name: lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@13e7a03dc3ac6c3798f4570bfead2aed4d96abfb # pin@v1.244.0
+        with:
+          bundler-cache: true
+
+      - name: bootstrap
+        run: script/bootstrap
+
+      - name: lint
+        run: script/lint

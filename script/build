@@ -1,0 +1,19 @@
+#! /usr/bin/env bash
+
+set -e
+
+source script/env "$@"
+
+GEMSPEC_NAME="$(basename *.gemspec .gemspec)"
+GEM_NAME=$(ruby -e "spec = Gem::Specification.load('$GEMSPEC_NAME.gemspec'); puts spec.name")
+GEM_VERSION=$(ruby -e "spec = Gem::Specification.load('$GEMSPEC_NAME.gemspec'); puts spec.version")
+
+gem build $GEMSPEC_NAME.gemspec
+
+if [[ "$CI" == "true" ]]; then
+  echo "gem_name=$GEM_NAME" >> $GITHUB_OUTPUT
+  echo "gem_version=$GEM_VERSION" >> $GITHUB_OUTPUT
+  echo "gem_path=$GEM_NAME-$GEM_VERSION.gem" >> $GITHUB_OUTPUT
+fi
+
+echo -e "📦 ${GREEN}successfully${OFF} built ${PURPLE}$GEM_NAME-$GEM_VERSION.gem${OFF}"

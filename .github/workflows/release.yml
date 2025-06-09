@@ -1,0 +1,156 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - lib/hooks/version.rb
+
+permissions: {}
+
+jobs:
+  build:
+    if: github.repository == 'github/hooks'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-id: ${{ steps.upload-artifact.outputs.artifact-id }}
+      gem_name: ${{ steps.build.outputs.gem_name }}
+      gem_version: ${{ steps.build.outputs.gem_version }}
+      gem_path: ${{ steps.build.outputs.gem_path }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@13e7a03dc3ac6c3798f4570bfead2aed4d96abfb # pin@v1.244.0
+        with:
+          bundler-cache: false
+
+      - name: bootstrap
+        run: script/bootstrap
+
+      # IMPORTANT: this step MUST export for the following outputs:
+      # gem_name: the name of the gem - ex: "my-cool-gem"
+      # gem_version: the version of the gem - ex: "1.0.0"
+      # gem_path: the path/filename of the gem - ex: "my-cool-gem-1.0.0.gem"
+      - name: build
+        id: build
+        run: script/build
+
+      - name: upload artifact
+        uses: actions/upload-artifact@4.6.2
+        id: upload-artifact
+        with:
+          path: "${{ steps.build.outputs.gem_path }}"
+
+  release:
+    needs: build
+    environment: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+
+      - name: Publish to GitHub Packages
+        env:
+          OWNER: ${{ github.repository_owner }}
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARTIFACT_PATH: "artifact"
+        run: |
+          GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --key github --host https://rubygems.pkg.github.com/${OWNER} $ARTIFACT_PATH/${GEM_NAME}-${GEM_VERSION}.gem
+
+      - uses: ruby/setup-ruby@13e7a03dc3ac6c3798f4570bfead2aed4d96abfb # pin@v1.244.0
+        with:
+          bundler-cache: false
+
+      - name: bootstrap
+        run: script/bootstrap
+
+      - name: Configure RubyGems Credentials
+        uses: rubygems/configure-rubygems-credentials@e3f5097339179e0d4c7321ab44209e7e02446746 # pin@main
+
+      - name: sign ruby gem
+        env:
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+          ARTIFACT_PATH: "artifact"
+        run: bundle exec sigstore-cli sign ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem --bundle ${GEM_NAME}-${GEM_VERSION}.sigstore.json
+
+      - name: Publish to RubyGems
+        env:
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+          ARTIFACT_PATH: "artifact"
+        run: gem push ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem --attestation ${GEM_NAME}-${GEM_VERSION}.sigstore.json
+
+      - name: await gem
+        env:
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+        run: bundle exec rubygems-await "${GEM_NAME}:${GEM_VERSION}" --timeout 120
+
+      - name: GitHub Release
+        env:
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARTIFACT_PATH: "artifact"
+        run: |
+          gh release create "v${GEM_VERSION}" \
+            "${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem" \
+            "${GEM_NAME}-${GEM_VERSION}.sigstore.json" \
+            --title "v${GEM_VERSION}" \
+            --generate-notes
+
+  sign:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+
+      - name: attest build provenance
+        uses: actions/attest-build-provenance@v2.3.0
+        with:
+          subject-path: "artifact/${{ needs.build.outputs.gem_path }}"
+
+  verify:
+    permissions: {}
+    needs: [build, release, sign]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+
+      - name: verify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          ARTIFACT_PATH: "artifact/${{ needs.build.outputs.gem_path }}"
+        run: gh attestation verify "$ARTIFACT_PATH" --repo ${OWNER}/${REPO} --signer-workflow ${OWNER}/${REPO}/.github/workflows/release.yml
