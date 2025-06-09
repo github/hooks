@@ -80,12 +80,11 @@ require "hooks-ruby"
 
 # Returns a Rack-compatible app
 app = Hooks.build(
-  config:           "/path/to/endpoints/",      # Directory or Array/Hash
-  settings:         "/path/to/settings.yaml",   # YAML, JSON, or Hash
+  config:           "/path/to/config.yaml",      # YAML, JSON, or Hash
   log:               MyCustomLogger.new,          # Optional logger (must respond to #info, #error, etc.)
   request_limit:     1_048_576,                   # Default max body size (bytes)
-  request_timeout:   15,                         # Default timeout (seconds)
-  root_path:        "/webhooks"               # Default mount prefix
+  request_timeout:   15,                          # Default timeout (seconds)
+  root_path:        "/webhooks"                  # Default mount prefix
 )
 ```
 
@@ -101,10 +100,9 @@ Core configuration options can be provided via environment variables:
 
 ```bash
 # Core configuration
-export HOOKS_CONFIG_DIR=./config/endpoints
-export HOOKS_SETTINGS=./config/settings.yaml
+export HOOKS_CONFIG=./config/config.yaml
 
-# Runtime settings (override settings file)
+# Runtime settings (override config file)
 export HOOKS_REQUEST_LIMIT=1048576
 export HOOKS_REQUEST_TIMEOUT=15
 export HOOKS_GRACEFUL_SHUTDOWN_TIMEOUT=30
@@ -124,7 +122,7 @@ ruby -r hooks-ruby -e "run Hooks.build"
 ```
 
 > **Hello-World Mode**
-> If invoked without `config` or `settings`, serves `GET <root_path>/hello`:
+> If invoked without `config`, serves `GET <root_path>/hello`:
 >
 > ```json
 > { "message": "Hooks is working!" }
@@ -144,7 +142,6 @@ lib/hooks/
 ├── core/
 │   ├── builder.rb            # Hooks.build: config loading, validation, signal handling - builds a rack compatible app
 │   ├── config_loader.rb      # Loads + merges per-endpoint configs
-│   ├── settings_loader.rb    # Loads global settings
 │   ├── config_validator.rb   # Dry::Schema-based validation
 │   ├── logger_factory.rb     # Structured JSON logger + context enrichment
 │   ├── metrics_emitter.rb    # Event emitter for request metrics
@@ -186,10 +183,10 @@ opts:                         # Freeform user-defined options
   teams: ["infra","billing"]
 ```
 
-### 5.2 Global Settings Config
+### 5.2 Global Config File
 
 ```yaml
-# config/settings.yaml
+# config/config.yaml
 handler_dir:     ./handlers         # handler class directory
 log_level:       info               # debug | info | warn | error
 
@@ -205,6 +202,7 @@ version_path:    /version           # gem version endpoint
 
 # Runtime behavior
 environment:     production         # development | production
+endpoints_dir:   ./config/endpoints # directory containing endpoint configs
 ```
 
 ---
@@ -213,7 +211,7 @@ environment:     production         # development | production
 
 1. **Builder (`core/builder.rb`)**
 
-   * Load settings (env or file) via `settings_loader`
+   * Load config (env or file) via `config_loader`
    * Load endpoint configs via `config_loader`
    * Validate via `config_validator` (Dry::Schema); halt if invalid at boot
    * Initialize structured JSON logger via `logger_factory`
@@ -344,7 +342,7 @@ Configuration is loaded and merged in the following priority order (highest to l
 
 1. **Programmatic parameters** passed to `Hooks.build(...)`
 2. **Environment variables** (`HOOKS_*`)
-3. **Settings file** (YAML/JSON)
+3. **Config file** (YAML/JSON)
 4. **Built-in defaults**
 
 **Example:**
@@ -352,8 +350,8 @@ Configuration is loaded and merged in the following priority order (highest to l
 ```ruby
 # This programmatic setting will override ENV and file settings
 app = Hooks.build(
-  request_timeout: 30,  # Overrides HOOKS_REQUEST_TIMEOUT and settings.yaml
-  settings: "./config/settings.yaml"
+  request_timeout: 30,  # Overrides HOOKS_REQUEST_TIMEOUT and config.yaml
+  config: "./config/config.yaml"
 )
 ```
 
@@ -407,20 +405,19 @@ hooks serve [options]
 * `-p`, `--port PORT` — Port to listen on (default: 3000)
 * `-b`, `--bind HOST` — Bind address (default: 0.0.0.0)
 * `-e`, `--env ENV` — Environment (default: production)
-* `-c`, `--config PATH` — Path to endpoints config directory
-* `-s`, `--settings PATH` — Path to global settings file
+* `-c`, `--config PATH` — Path to config file (YAML/JSON)
 * `--no-puma` — (Advanced) Use the default Rack handler instead of Puma
 * `-h`, `--help` — Show help message
 
 ### Example
 
 ```bash
-hooks serve -p 8080 -c ./config/endpoints -s ./config/settings.yaml
+hooks serve -p 8080 -c ./config/config.yaml
 ```
 
 ### How it Works
 
-* The CLI loads configuration and settings from CLI args, ENV, or defaults.
+* The CLI loads configuration from CLI args, ENV, or defaults.
 * It builds the Rack app using `Hooks.build(...)`.
 * By default, it starts the server using Puma (via `Rack::Handler::Puma`).
 * If Puma is not available, it falls back to the default Rack handler (e.g., WEBrick), but Puma is strongly recommended and included as a dependency.
@@ -436,8 +433,7 @@ options = {
   port: ENV.fetch("PORT", 3000),
   bind: ENV.fetch("BIND", "0.0.0.0"),
   env: ENV.fetch("RACK_ENV", "production"),
-  config: ENV["HOOKS_CONFIG_DIR"] || "./config/endpoints",
-  settings: ENV["HOOKS_SETTINGS"] || "./config/settings.yaml",
+  config: ENV["HOOKS_CONFIG"] || "./config/config.yaml",
   use_puma: true
 }
 
@@ -446,13 +442,12 @@ OptionParser.new do |opts|
   opts.on("-pPORT", "--port=PORT", Integer, "Port to listen on") { |v| options[:port] = v }
   opts.on("-bHOST", "--bind=HOST", String, "Bind address") { |v| options[:bind] = v }
   opts.on("-eENV", "--env=ENV", String, "Environment") { |v| options[:env] = v }
-  opts.on("-cPATH", "--config=PATH", String, "Endpoints config directory") { |v| options[:config] = v }
-  opts.on("-sPATH", "--settings=PATH", String, "Settings file") { |v| options[:settings] = v }
+  opts.on("-cPATH", "--config=PATH", String, "Config file (YAML/JSON)") { |v| options[:config] = v }
   opts.on("--no-puma", "Use default Rack handler instead of Puma") { options[:use_puma] = false }
   opts.on("-h", "--help", "Show help") { puts opts; exit }
 end.parse!(ARGV)
 
-app = Hooks.build(config: options[:config], settings: options[:settings])
+app = Hooks.build(config: options[:config])
 
 if options[:use_puma]
   require "rack/handler/puma"
