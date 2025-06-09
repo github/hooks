@@ -20,7 +20,8 @@ RSpec.describe "Hooks Integration" do
         health_path: "/health",
         version_path: "/version",
         environment: "development",
-        endpoints_dir: "./spec/fixtures/endpoints"
+        endpoints_dir: "./spec/fixtures/endpoints",
+        use_catchall_route: true  # Enable catch-all route for testing
       }
     )
   end

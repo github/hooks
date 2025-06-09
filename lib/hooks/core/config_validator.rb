@@ -20,6 +20,7 @@ module Hooks
         optional(:version_path).filled(:string)
         optional(:environment).filled(:string, included_in?: %w[development production])
         optional(:endpoints_dir).filled(:string)
+        optional(:use_catchall_route).filled(:bool)
       end
 
       # Endpoint configuration schema

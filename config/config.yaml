@@ -14,3 +14,6 @@ version_path: /version
 # Runtime behavior
 environment: development
 endpoints_dir: ./config/endpoints
+
+# Optional features
+# use_catchall_route: false  # Set to true to enable catch-all route for unknown endpoints

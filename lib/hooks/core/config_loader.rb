@@ -17,7 +17,8 @@ module Hooks
         version_path: "/version",
         environment: "production",
         production: true,
-        endpoints_dir: "./config/endpoints"
+        endpoints_dir: "./config/endpoints",
+        use_catchall_route: false
       }.freeze
 
       # Load and merge configuration from various sources
