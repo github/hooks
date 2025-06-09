@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../lib/hooks/handlers/base"
-
 # Example handler for GitHub webhooks
 class GitHubHandler < Hooks::Handlers::Base
   # Process GitHub webhook

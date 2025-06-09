@@ -1,4 +1,4 @@
-require_relative "../lib/hooks/handlers/base"
+# frozen_string_literal: true
 
 class TestHandler < Hooks::Handlers::Base
   def call(payload:, headers:, config:)

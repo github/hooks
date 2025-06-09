@@ -1,5 +1,5 @@
 # Sample configuration for Hooks webhook server
-handler_dir: ./handlers
+handler_dir: ./spec/acceptance/handlers
 log_level: info
 
 # Request handling
@@ -13,7 +13,10 @@ version_path: /version
 
 # Runtime behavior
 environment: development
-endpoints_dir: ./config/endpoints
+
+# Available endpoints
+# Each endpoint configuration file should be placed in the endpoints directory
+endpoints_dir: ./spec/acceptance/config/endpoints
 
 # Optional features
 # use_catchall_route: false  # Set to true to enable catch-all route for unknown endpoints

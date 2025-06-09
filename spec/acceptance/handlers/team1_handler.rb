@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../lib/hooks/handlers/base"
-
 # Example handler for Team 1 webhooks
 class Team1Handler < Hooks::Handlers::Base
   # Process Team 1 webhook

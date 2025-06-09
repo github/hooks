@@ -13,4 +13,4 @@ if [[ "$1" == "--dev" ]]; then
   shift # remove the --dev flag from the arguments
 fi
 
-bundle exec puma --tag hooks
+bundle exec puma -C spec/acceptance/config/puma.rb --tag hooks

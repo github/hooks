@@ -2,8 +2,5 @@
 
 require_relative "lib/hooks"
 
-# Build the Hooks application with default config
-app = Hooks.build(config: "./config/config.yaml")
-
-# Run the application
+app = Hooks.build(config: "./spec/acceptance/config/hooks.yaml")
 run app
