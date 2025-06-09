@@ -8,6 +8,7 @@ services:
       - "8080:8080"
     environment:
       LOG_LEVEL: DEBUG
+      GITHUB_WEBHOOK_SECRET: "octoawesome-secret"
     command: ["script/server"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:8080/health"]

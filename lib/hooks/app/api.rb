@@ -57,9 +57,9 @@ module Hooks
             end
 
             # Verify the incoming request
-            def request_validator(payload, headers, endpoint_config)
+            def validate_request(payload, headers, endpoint_config)
               request_validator_config = endpoint_config[:request_validator]
-              validator_type = request_validator_config[:type] || "default"
+              validator_type = request_validator_config[:type]
               secret_env_key = request_validator_config[:secret_env_key]
 
               return unless secret_env_key
@@ -115,8 +115,7 @@ module Hooks
                 require file_path
                 Object.const_get(handler_class_name).new
               else
-                # Create a default handler for POC
-                DefaultHandler.new
+                raise LoadError, "Handler #{handler_class_name} not found at #{file_path}"
               end
             rescue => e
               error!("failed to load handler #{handler_class_name}: #{e.message}", 500)
@@ -193,6 +192,9 @@ module Hooks
                   raw_body = request.body.read
 
                   # Verify/validate request if configured
+                  logger.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
+                  logger.debug "raw body: #{raw_body.inspect}"
+                  logger.debug "headers: #{headers.inspect}"
                   validate_request(raw_body, headers, endpoint_config) if endpoint_config[:request_validator]
 
                   # Parse payload

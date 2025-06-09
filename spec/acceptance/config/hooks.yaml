@@ -1,6 +1,6 @@
 # Sample configuration for Hooks webhook server
 handler_dir: ./spec/acceptance/handlers
-log_level: info
+log_level: debug
 
 # Request handling
 request_limit: 1048576    # 1MB max body size

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../spec_helper"
+
 require "rspec"
 require "net/http"
 require "json"
@@ -67,6 +69,37 @@ describe "Hooks" do
         expect(body["handler"]).to eq("Team1Handler")
         expect(body["channels_notified"]).to include("#team1-alerts")
         expect(body).to have_key("timestamp")
+      end
+    end
+
+    describe "github" do
+      it "receives a POST request but contains an invalid HMAC signature" do
+        payload = { action: "push", repository: { name: "test-repo" } }
+        headers = { "Content-Type" => "application/json", "X-Hub-Signature-256" => "sha256=invalidsignature" }
+        response = http.post("/webhooks/github", payload.to_json, headers)
+
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("request validation failed")
+      end
+
+      it "receives a POST request but there is no HMAC related header" do
+        payload = { action: "push", repository: { name: "test-repo" } }
+        headers = { "Content-Type" => "application/json" }
+        response = http.post("/webhooks/github", payload.to_json, headers)
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("request validation failed")
+      end
+
+      it "successfully processes a valid POST request with HMAC signature" do
+        payload = { action: "push", repository: { name: "test-repo" } }
+        headers = {
+          "Content-Type" => "application/json",
+          "X-Hub-Signature-256" => "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_HMAC_SECRET, payload.to_json)
+        }
+        response = http.post("/webhooks/github", payload.to_json, headers)
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["status"]).to eq("success")
       end
     end
   end
