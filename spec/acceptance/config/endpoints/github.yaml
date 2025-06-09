@@ -3,14 +3,12 @@ path: /github
 handler: GitHubHandler
 
 # GitHub uses HMAC SHA256 signature validation
-verify_signature:
-  type: default
+verify_request:
+  type: GitHubWebhooks
   secret_env_key: GITHUB_WEBHOOK_SECRET
-  header: X-Hub-Signature-256
-  algorithm: sha256
+  # header: X-Hub-Signature-256 # Optional, defaults to X-Hub-Signature-256
+  # algorithm: sha256 # Optional, defaults to sha256
 
 # Options for GitHub webhook handling
 opts:
-  repository: "my-org/my-repo"
-  events: ["push", "pull_request", "issues"]
-  branch_filter: ["main", "develop"]
+  slack_channel: "#github-webhooks"

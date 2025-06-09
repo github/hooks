@@ -4,7 +4,6 @@ require "grape"
 require "json"
 require "securerandom"
 require_relative "../handlers/base"
-require_relative "../plugins/signature_validator/hmac_sha256"
 require_relative "../core/logger_factory"
 
 module Hooks
@@ -57,11 +56,11 @@ module Hooks
               # Note: Timeout enforcement would typically be handled at the server level (Puma, etc.)
             end
 
-            # Validate request signature
-            def validate_signature(payload, headers, endpoint_config)
-              signature_config = endpoint_config[:verify_signature]
-              validator_type = signature_config[:type] || "default"
-              secret_env_key = signature_config[:secret_env_key]
+            # Verify the incoming request
+            def verify_request(payload, headers, endpoint_config)
+              verify_request_config = endpoint_config[:verify_request]
+              validator_type = verify_request_config[:type] || "default"
+              secret_env_key = verify_request_config[:secret_env_key]
 
               return unless secret_env_key
 
@@ -70,18 +69,19 @@ module Hooks
                 error!("secret '#{secret_env_key}' not found in environment", 500)
               end
 
-              # Use default validator or load custom
-              validator_class = if validator_type == "default"
-                                  Plugins::SignatureValidator::HmacSha256
+              validator_class = nil
+
+              case validator_type
+              when "GitHubWebhooks"
+                validator_class = Plugins::SignatureValidator::GitHubWebhooks
               else
-                # In a full implementation, we'd dynamically load custom validators
                 error!("Custom validators not implemented in POC", 500)
               end
 
               unless validator_class.valid?(
-                payload: payload,
-                headers: headers,
-                secret: secret,
+                payload:,
+                headers:,
+                secret:,
                 config: endpoint_config
               )
                 error!("Invalid signature", 401)
@@ -192,8 +192,8 @@ module Hooks
                   request.body.rewind
                   raw_body = request.body.read
 
-                  # Validate signature if configured
-                  validate_signature(raw_body, headers, endpoint_config) if endpoint_config[:verify_signature]
+                  # Verify/validate request if configured
+                  verify_request(raw_body, headers, endpoint_config) if endpoint_config[:verify_request]
 
                   # Parse payload
                   payload = parse_payload(raw_body, headers)
@@ -222,7 +222,7 @@ module Hooks
                   error_response = {
                     error: e.message,
                     code: determine_error_code(e),
-                    request_id: request_id
+                    request_id:
                   }
 
                   # Add backtrace in all environments except production
@@ -251,7 +251,7 @@ module Hooks
 
               # Set request context for logging
               request_context = {
-                request_id: request_id,
+                request_id:,
                 path: "/#{params[:path]}",
                 handler: "DefaultHandler"
               }
@@ -292,7 +292,7 @@ module Hooks
                   error_response = {
                     error: e.message,
                     code: determine_error_code(e),
-                    request_id: request_id
+                    request_id:
                   }
 
                   # Add backtrace in all environments except production

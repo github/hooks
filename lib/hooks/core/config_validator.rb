@@ -28,8 +28,8 @@ module Hooks
         required(:path).filled(:string)
         required(:handler).filled(:string)
 
-        optional(:verify_signature).hash do
-          optional(:type).filled(:string)
+        optional(:verify_request).hash do
+          required(:type).filled(:string)
           optional(:secret_env_key).filled(:string)
           optional(:header).filled(:string)
           optional(:algorithm).filled(:string)

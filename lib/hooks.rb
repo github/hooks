@@ -4,8 +4,11 @@ require_relative "hooks/version"
 require_relative "hooks/core/builder"
 require_relative "hooks/handlers/base"
 require_relative "hooks/plugins/lifecycle"
-require_relative "hooks/plugins/signature_validator/base"
-require_relative "hooks/plugins/signature_validator/hmac_sha256"
+
+# Load all signature validators
+Dir[File.join(__dir__, "hooks/plugins/signature_validator/**/*.rb")].sort.each do |file|
+  require file
+end
 
 # Main module for the Hooks webhook server framework
 module Hooks

@@ -7,11 +7,13 @@ require_relative "base"
 module Hooks
   module Plugins
     module SignatureValidator
-      # Default HMAC SHA256 signature validator
+      # GitHub webhook signature validator
       #
       # Validates GitHub-style webhook signatures using HMAC SHA256
-      class HmacSha256 < Base
-        # Validate HMAC SHA256 signature
+      class GitHubWebhooks < Base
+        # Validate HMAC SHA256 signature from GitHub webhooks
+        #
+        # official docs: https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
         #
         # @param payload [String] Raw request body
         # @param headers [Hash<String, String>] HTTP headers
@@ -21,8 +23,8 @@ module Hooks
         def self.valid?(payload:, headers:, secret:, config:)
           return false if secret.nil? || secret.empty?
 
-          signature_header = config.dig(:verify_signature, :header) || "X-Hub-Signature-256"
-          algorithm = config.dig(:verify_signature, :algorithm) || "sha256"
+          signature_header = config.dig(:verify_request, :header) || "X-Hub-Signature-256"
+          algorithm = config.dig(:verify_request, :algorithm) || "sha256"
 
           provided_signature = headers[signature_header]
           return false if provided_signature.nil? || provided_signature.empty?
@@ -36,7 +38,7 @@ module Hooks
 
           # Use secure comparison to prevent timing attacks
           Rack::Utils.secure_compare(computed_signature, provided_signature)
-        rescue => e
+        rescue => _e
           # Log error in production implementation
           false
         end
