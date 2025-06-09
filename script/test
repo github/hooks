@@ -1,0 +1,43 @@
+#! /usr/bin/env bash
+
+set -e
+
+source script/env "$@"
+
+# run tests
+echo -e "\n🧪 ${BLUE}Running tests: $(date "+%H:%M:%S")${OFF}\n"
+
+bundle exec bin/rspec spec && rspec_exit=$? || rspec_exit=$?
+
+total_coverage=$(cat "$DIR/coverage/total-coverage.txt")
+
+if grep -q "100.0" "$DIR/coverage/total-coverage.txt"; then
+  cov_exit=0
+  echo -e "\n✅ Total Coverage: ${GREEN}$total_coverage${OFF}"
+else
+  cov_exit=1
+  echo -e "\n❌ Total Coverage: ${RED}$total_coverage${OFF}"
+fi
+
+echo ""
+echo "---------------------------------------"
+echo "📊 Summary Results"
+echo "---------------------------------------"
+echo ""
+
+if [[ $rspec_exit == 0 ]]; then
+  echo -e "✅ ${GREEN}rspec:    exitcode=${rspec_exit}${OFF}"
+else
+  echo -e "❌ ${RED}rspec:    exitcode=${rspec_exit}${OFF}"
+fi
+
+if [[ $cov_exit == 0 ]]; then
+  echo -e "✅ ${GREEN}coverage: exitcode=${cov_exit}${OFF}"
+else
+  echo -e "❌ ${RED}coverage: exitcode=${cov_exit}${OFF}"
+fi
+
+[ "$rspec_exit" -gt 0 ] && exit 1
+[ $cov_exit -gt 0 ] && exit 1
+
+exit 0

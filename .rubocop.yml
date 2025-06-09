@@ -1,0 +1,16 @@
+inherit_gem:
+  rubocop-github:
+    - config/default.yml
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  DisplayCopNames: true
+  TargetRubyVersion: 3.4
+  Exclude:
+    - "bin/**/*"
+    - "tmp/**/*"
+    - "vendor/**/*"
+
+Style/HashSyntax:
+  Enabled: false

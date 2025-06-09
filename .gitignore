@@ -1,0 +1,16 @@
+bin/
+coverage/
+logs/
+tmp/
+tarballs/
+vendor/gems/
+.idea
+.byebug_history
+.local/
+.DS_Store
+.lesshst
+*.pem
+*.key
+*.crt
+*.csr
+*.secret

@@ -1,0 +1,12 @@
+docs/
+bin/
+README.md
+.gitignore
+tmp/
+.git
+coverage/
+vendor/gems/
+.github/
+.devcontainer/
+.ruby-lsp/
+docker-compose.yml
