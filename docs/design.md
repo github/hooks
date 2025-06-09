@@ -5,24 +5,22 @@
 `hooks` is a **pure-Ruby**, **Grape-based**, **Rack-compatible** webhook server gem that:
 
 * Dynamically mounts endpoints from per-team configs under a configurable `root_path`
-* Loads **team handlers** and **global plugins** at boot, with priority ordering for hooks
+* Loads **team handlers** and **global plugins** at boot
 * Validates configs via **Dry::Schema**, failing fast on invalid YAML/JSON/Hash
 * Supports **signature validation** (default HMAC) and **custom validator** classes
-* Enforces **allowed\_env\_vars** per endpoint—handlers can only read declared ENV keys
-* Offers built-in **authentication modules**: IP whitelisting, API key, OAuth flows
-* Applies **CORS policy** globally and allows **per-endpoint overrides**
 * Enforces **request limits** (body size) and **timeouts**, configurable at runtime
-* Emits **metrics events** (`:request_start`, `:request_end`, `:error`) for downstream integration
+* Emits **basic metrics events** for downstream integration
 * Ships with operational endpoints:
 
   * **GET** `<health_path>`: liveness/readiness payload
   * **GET** `<metrics_path>`: JSON array of recent events
   * **GET** `<version_path>`: current gem version
 
-* Supplies a **scaffold CLI** and **optional test helpers**
 * Boots a demo `<root_path>/hello` route when no config is supplied, to verify setup
 
 > **Server Agnostic:** `hooks` exports a Rack-compatible app. Mount under any Rack server (Puma, Unicorn, Thin, etc.).
+
+Note: The `hooks` gem name is already taken on RubyGems, so this project is named `hooks-ruby` there.
 
 ---
 
@@ -37,15 +35,18 @@
 2. **Plugin Architecture**
 
    * **Team Handlers**: `class MyHandler < Hooks::Handlers::Base`
+     * Must implement `#call(payload:, headers:, config:)` method
+     * `payload`: parsed request body (JSON Hash or raw String)
+     * `headers`: HTTP headers as Hash with string keys
+     * `config`: merged endpoint configuration including `opts` section
    * **Global Plugins**: `class MyPlugin < Hooks::Plugins::Lifecycle`
-   * **Signature Validators**: implement `.valid?(payload:, headers:, secret:, config:)`
-   * **Hook Priority**: specify ordering in global settings
+     * Hook methods: `#on_request`, `#on_response`, `#on_error`
+   * **Signature Validators**: implement class method `.valid?(payload:, headers:, secret:, config:)`
+     * Return `true`/`false` for signature validation
+     * Access to full request context for custom validation logic
 
 3. **Security & Isolation**
 
-   * `allowed_env_vars` restricts ENV access per handler
-   * **Sandbox** prevents `require`/`load` outside `handler_dir` and `plugin_dir`
-   * Auth modules guard endpoints before handler invocation
    * Default JSON error responses, with detailed hooks
 
 4. **Operational Endpoints**
@@ -61,7 +62,6 @@
    * Graceful shutdown on SIGINT/SIGTERM
    * Structured JSON logging with `request_id`, `path`, `handler`, timestamp
    * Scaffold generators for handlers and plugins
-   * Optional `hooks-test` gem for RSpec support
 
 ---
 
@@ -70,13 +70,13 @@
 ### Gemfile
 
 ```ruby
-gem "hooks"
+gem "hooks-ruby"
 ```
 
 ### Programmatic Invocation
 
 ```ruby
-require "hooks"
+require "hooks-ruby"
 
 # Returns a Rack-compatible app
 app = Hooks.build(
@@ -85,11 +85,6 @@ app = Hooks.build(
   log:               MyCustomLogger.new,          # Optional logger (must respond to #info, #error, etc.)
   request_limit:     1_048_576,                   # Default max body size (bytes)
   request_timeout:   15,                         # Default timeout (seconds)
-  cors: {                                   
-    allow_origin:   "*",                      # Default CORS (merged with overrides)
-    allow_methods:  ["GET","POST","OPTIONS"],
-    allow_headers:  ["Content-Type","Authorization"]
-  },
   root_path:        "/webhooks"               # Default mount prefix
 )
 ```
@@ -102,15 +97,30 @@ run app
 
 ### ENV-Based Bootstrap
 
+Core configuration options can be provided via environment variables:
+
 ```bash
+# Core configuration
 export HOOKS_CONFIG_DIR=./config/endpoints
 export HOOKS_SETTINGS=./config/settings.yaml
-export HOOKS_LOGGER_CLASS=MyCustomLogger
+
+# Runtime settings (override settings file)
 export HOOKS_REQUEST_LIMIT=1048576
 export HOOKS_REQUEST_TIMEOUT=15
-export HOOKS_CORS='{"allow_origin":"*"}'
+export HOOKS_GRACEFUL_SHUTDOWN_TIMEOUT=30
 export HOOKS_ROOT_PATH="/webhooks"
-ruby app.rb
+
+# Logging
+export HOOKS_LOG_LEVEL=info
+
+# Paths
+export HOOKS_HANDLER_DIR=./handlers
+export HOOKS_HEALTH_PATH=/health
+export HOOKS_METRICS_PATH=/metrics
+export HOOKS_VERSION_PATH=/version
+
+# Start the application
+ruby -r hooks-ruby -e "run Hooks.build"
 ```
 
 > **Hello-World Mode**
@@ -129,7 +139,7 @@ lib/hooks/
 ├── app/
 │   ├── api.rb                # Grape::API subclass exporting all endpoints
 │   ├── router_builder.rb     # Reads AppConfig to define routes
-│   └── endpoint_builder.rb   # Wraps each route: CORS, auth, signature, hooks, handler
+│   └── endpoint_builder.rb   # Wraps each route: auth, signature, hooks, handler
 │
 ├── core/
 │   ├── builder.rb            # Hooks.build: config loading, validation, signal handling - builds a rack compatible app
@@ -138,7 +148,6 @@ lib/hooks/
 │   ├── config_validator.rb   # Dry::Schema-based validation
 │   ├── logger_factory.rb     # Structured JSON logger + context enrichment
 │   ├── metrics_emitter.rb    # Event emitter for request metrics
-│   ├── sandbox.rb            # Enforce require/load restrictions
 │   └── signal_handler.rb     # Trap SIGINT/SIGTERM for graceful shutdown
 │
 ├── handlers/
@@ -149,11 +158,6 @@ lib/hooks/
 │   └── signature_validator/  # Default & sample validators
 │       ├── base.rb           # Abstract interface
 │       └── hmac_sha256.rb    # Default implementation
-│
-├── auth/
-│   ├── ip_whitelist.rb       # Checks `env['REMOTE_ADDR']`
-│   ├── api_key.rb            # Validates header or param
-│   └── oauth.rb              # Simple OAuth token validation
 │
 ├── version.rb                # Provides `Hooks::VERSION`
 └── hooks.rb                  # `require 'hooks'` entrypoint defining Hooks module
@@ -177,47 +181,29 @@ verify_signature:
   header: X-Hub-Signature
   algorithm: sha256
 
-# Authentication (any mix)
-auth:
-  ip_whitelist:
-    - 192.0.2.0/28
-  api_keys:
-    - KEY1
-    - KEY2
-  oauth:
-    client_id_env: TEAM1_OAUTH_ID
-
-allowed_env_vars:
-  - TEAM1_SECRET
-  - DATADOG_API_KEY
-
 opts:                         # Freeform user-defined options
   env: staging
   teams: ["infra","billing"]
-
-cors:                         # Overrides global CORS
-  allow_origin: "https://github.com"
-  allow_methods: ["POST"]
-  allow_headers: ["Content-Type","X-Github-Event"]
 ```
 
 ### 5.2 Global Settings Config
 
 ```yaml
 # config/settings.yaml
-plugin_dir:      ./plugins          # global plugin directory
 handler_dir:     ./handlers         # handler class directory
 log_level:       info               # debug | info | warn | error
+
+# Request handling
 request_limit:   1048576            # max request body size (bytes)
 request_timeout: 15                 # seconds to allow per request
-cors:                                 # default CORS policy
-  allow_origin:  "*"
-  allow_methods: ["GET","POST","OPTIONS"]
-  allow_headers: ["Content-Type","Authorization"]
-root_path:       /webhooks          # base path for all endpoint routes - can be completely changed in endpoint configs, ex: /foo
+
+# Path configuration
+root_path:       /webhooks          # base path for all endpoint routes
 health_path:     /health            # operational health endpoint
 metrics_path:    /metrics           # operational metrics endpoint
 version_path:    /version           # gem version endpoint
+
+# Runtime behavior
 environment:     production         # development | production
 ```
 
@@ -248,16 +234,14 @@ environment:     production         # development | production
 
    * For each endpoint config:
 
-     * Compose `effective_cors` = deep\_merge(global.cors, endpoint.cors)
      * Define Grape route with:
 
-       * **Before**: enforce `request_limit`, `request_timeout`, CORS headers
-       * **Auth**: apply IP whitelist, API key, OAuth
+       * **Before**: enforce `request_limit`, `request_timeout`
        * **Signature**: call custom or default validator
-       * **Hooks**: run `on_request` plugins in priority order
+       * **Hooks**: run `on_request` plugins
      * **Handler**: invoke `MyHandler.new.call(payload:, headers:, config:)`
      * **After**: run `on_response` plugins
-     * **Rescue**: on exception, emit metrics `:error`, run `on_error`, rethrow or format JSON error
+     * **Rescue**: on exception, run `on_error`, rethrow or format JSON error
 
 4. **Metrics Emitter**
 
@@ -272,47 +256,119 @@ environment:     production         # development | production
 
 ## 🔒 7. Security & Isolation
 
-* **Allowed ENV Vars**: endpoints cannot access undisclosed ENV keys
-* **Sandbox**: plugin & handler `require` limited to configured dirs
-* **Authentication**: built-in modules guard routes
-* **Request Validation**: size, timeout, signature, CORS enforced systematically
+* **Request Validation**: size, timeout, signature enforced systematically
 * **Error Handling**: exceptions bubble to Grape catchall, with JSON schema
 
 ---
 
 ## 🚨 8. Error Handling & Logging
 
-* **Default JSON Error**:
+### Error Response Format
 
-  ```json
-  { "error": "Error message", "code": 500 }
-  ```
+**Default JSON Error Response:**
 
-* **Dev Mode**: include full stack trace
-* **Prod Mode**: hide backtrace, log internally
-* **Structured Logs**: each entry includes:
+```json
+{
+  "error": "Error message",
+  "code": 500,
+  "request_id": "uuid-string"
+}
+```
 
-  * `timestamp` (ISO8601)
-  * `level`, `message`
-  * `request_id`, `path`, `handler`, `status`, `duration_ms`
-* **Lifecycle Hooks**: global plugins get `on_error(exception, env)`
+**Environment-specific behavior:**
+
+* **Development Mode**: includes full stack trace in `backtrace` field
+* **Production Mode**: hides sensitive details, logs full context internally
+
+### Custom Error Handling
+
+Users can customize error responses via global plugins:
+
+```ruby
+class CustomErrorPlugin < Hooks::Plugins::Lifecycle
+  def on_error(exception, env)
+    # Custom error processing, logging, or response formatting
+    {
+      error: "Custom error message",
+      code: determine_error_code(exception),
+      timestamp: Time.now.iso8601
+    }
+  end
+end
+```
+
+### Structured Logging
+
+Each log entry includes standardized fields:
+
+* `timestamp` (ISO8601)
+* `level` (debug, info, warn, error)
+* `message`
+* `request_id` (UUID for request correlation)
+* `path` (endpoint path)
+* `handler` (handler class name)
+* `status` (HTTP status code)
+* `duration_ms` (request processing time)
+* `user_agent`, `remote_ip` (when available)
 
 ---
 
 ## 📈 9. Metrics & Instrumentation
 
-* Hooks for:
+Simple request logging for basic observability:
 
-  * `:request_start` (path, method, request\_id)
-  * `:request_end` (status, duration)
-  * `:error` (exception details)
-* Users subscribe via global plugins to forward to StatsD, Prometheus, etc.
+* Basic request/response logging with timestamps
+* Simple error tracking
+* Basic health check endpoint returning service status
+
+**Example log output:**
+
+```json
+{
+  "timestamp": "2025-06-09T10:30:00Z",
+  "level": "info",
+  "message": "Request processed",
+  "request_id": "uuid-string",
+  "path": "/webhooks/team1",
+  "handler": "Team1Handler",
+  "status": 200,
+  "duration_ms": 45
+}
+```
+
+---
+
+## ⚡ 10. Configuration Loading & Precedence
+
+Configuration is loaded and merged in the following priority order (highest to lowest):
+
+1. **Programmatic parameters** passed to `Hooks.build(...)`
+2. **Environment variables** (`HOOKS_*`)
+3. **Settings file** (YAML/JSON)
+4. **Built-in defaults**
+
+**Example:**
+
+```ruby
+# This programmatic setting will override ENV and file settings
+app = Hooks.build(
+  request_timeout: 30,  # Overrides HOOKS_REQUEST_TIMEOUT and settings.yaml
+  settings: "./config/settings.yaml"
+)
+```
+
+**Handler & Plugin Discovery:**
+
+* Handler classes are auto-discovered from `handler_dir` using file naming convention
+* File `team1_handler.rb` → class `Team1Handler`
+* Plugin classes are loaded from `plugin_dir` and registered based on class inheritance
+* All classes must inherit from appropriate base classes to be recognized
 
 ---
 
 ## 🛠️ 11. CLI & Scaffolding
 
-`bin/hooks`:
+Command-line interface via `bin/hooks`:
 
 ```bash
 # Create a new handler skeleton
@@ -320,36 +376,188 @@ hooks scaffold handler my_endpoint
 
 # Create a new global plugin skeleton
 hooks scaffold plugin my_plugin
+
+# Validate existing configuration
+hooks validate
+
+# Show current configuration summary
+hooks config
 ```
 
-Generates:
+**Generated Files:**
 
-* `handlers/my_endpoint_handler.rb`
-* `config/endpoints/my_endpoint.yaml`
-* `plugins/my_plugin.rb`
-
----
-
-## 🧪 12. Testing Helpers (Optional)
-
-Add to `Gemfile, group :test`:
-
-```ruby
-gem "hooks-test"
-```
-
-Provides modules and RSpec matchers to:
-
-* Stub ENV safely
-* Simulate HTTP requests against Rack app
-* Assert metrics and hook invocations
+* `handlers/my_endpoint_handler.rb` - Handler class skeleton
+* `config/endpoints/my_endpoint.yaml` - Endpoint configuration template
+* `plugins/my_plugin.rb` - Plugin class skeleton with lifecycle hooks
 
 ---
 
 ## 📦 13. Hello-World Default
 
-If no config provided, `/webhooks/hello` responds:
+When no configuration is provided, the framework serves a demo endpoint for verification:
+
+**Endpoint:** `GET <root_path>/hello` (default: `/webhooks/hello`)
+
+**Response:**
 
 ```json
-{ "message": "Hooks is working!" }
+{
+  "message": "Hooks is working!",
+  "version": "1.0.0",
+  "timestamp": "2025-06-09T10:30:00Z"
+}
+```
+
+This allows immediate verification that the framework is properly installed and running.
+
+---
+
+## 🚀 14. Production Deployment
+
+### Docker Support
+
+```dockerfile
+FROM ruby:3.2-alpine
+WORKDIR /app
+COPY Gemfile* ./
+RUN bundle install --deployment --without development test
+COPY . .
+EXPOSE 3000
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
+```
+
+### Health Check Integration
+
+The health endpoint provides comprehensive status information for load balancers and monitoring:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-06-09T10:30:00Z",
+  "version": "1.0.0",
+  "config_checksum": "abc123def456",
+  "endpoints_loaded": 5,
+  "plugins_loaded": 3,
+  "uptime_seconds": 3600
+}
+```
+
+### Performance Considerations
+
+* **Thread Safety**: All core components are thread-safe for multi-threaded servers
+* **Memory Management**: Configurable metrics buffer prevents unbounded memory growth
+* **Graceful Degradation**: Framework continues operating even if individual handlers fail
+
+### Security Best Practices
+
+* Use strong secrets for signature validation
+* Monitor and alert on unusual request patterns via metrics
+* Keep handler code minimal and well-tested
+
+---
+
+## 📚 15. API Reference
+
+### Core Classes
+
+#### `Hooks::Handlers::Base`
+
+Base class for all webhook handlers.
+
+```ruby
+class MyHandler < Hooks::Handlers::Base
+  # @param payload [Hash, String] Parsed request body or raw string
+  # @param headers [Hash<String, String>] HTTP headers
+  # @param config [Hash] Merged endpoint configuration
+  # @return [Hash, String, nil] Response body (auto-converted to JSON)
+  def call(payload:, headers:, config:)
+    # Handler implementation
+    { status: "processed", id: generate_id }
+  end
+end
+```
+
+#### `Hooks::Plugins::Lifecycle`
+
+Base class for global plugins with lifecycle hooks.
+
+```ruby
+class MyPlugin < Hooks::Plugins::Lifecycle
+  # Called before handler execution
+  # @param env [Hash] Rack environment
+  def on_request(env)
+    # Pre-processing logic
+  end
+  
+  # Called after successful handler execution
+  # @param env [Hash] Rack environment
+  # @param response [Hash] Handler response
+  def on_response(env, response)
+    # Post-processing logic
+  end
+  
+  # Called when any error occurs
+  # @param exception [Exception] The raised exception
+  # @param env [Hash] Rack environment
+  def on_error(exception, env)
+    # Error handling logic
+  end
+end
+```
+
+#### `Hooks::Plugins::SignatureValidator::Base`
+
+Abstract base for custom signature validators.
+
+```ruby
+class CustomValidator < Hooks::Plugins::SignatureValidator::Base
+  # @param payload [String] Raw request body
+  # @param headers [Hash<String, String>] HTTP headers
+  # @param secret [String] Secret key for validation
+  # @param config [Hash] Endpoint configuration
+  # @return [Boolean] true if signature is valid
+  def self.valid?(payload:, headers:, secret:, config:)
+    # Custom validation logic
+    computed_signature = generate_signature(payload, secret)
+    provided_signature = headers[config[:header]]
+    secure_compare(computed_signature, provided_signature)
+  end
+end
+```
+
+---
+
+## 🔒 HMAC Signature Validation Example
+
+A typical HMAC validation in a handler or middleware might look like:
+
+> This example shows how to implement HMAC signature validation in a handler or middleware for a sinatra-based app which is kinda close to Grape but not quite. It should be used as a reference as this is from GitHub's official docs on how to validate their webhooks.
+
+```ruby
+def verify_signature(payload_body)
+  signature = 'sha256=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha256'), ENV['SECRET_TOKEN'], payload_body)
+  return halt 500, "Signatures didn't match!" unless Rack::Utils.secure_compare(signature, request.env['HTTP_X_HUB_SIGNATURE_256'])
+end
+```
+
+This ensures the payload is authentic and untampered, using a shared secret and the SHA256 algorithm.
+
+### Configuration Schema
+
+Complete schema for endpoint configurations:
+
+```yaml
+# Required fields
+path: string                    # Endpoint path (mounted under root_path)
+handler: string                 # Handler class name
+
+# Optional signature validation
+verify_signature:
+  type: string                  # 'default' or custom validator class name
+  secret_env_key: string        # ENV key containing secret
+  header: string                # Header containing signature (default: X-Hub-Signature)
+  algorithm: string             # Hash algorithm (default: sha256)
+
+# Optional user-defined data
+opts: hash                      # Arbitrary configuration data
 ```
