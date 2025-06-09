@@ -23,16 +23,16 @@ if ! docker info &> /dev/null; then
 fi
 
 echo -e "${PURPLE}[#]${OFF} ${BLUE}Killing old docker processes${OFF}"
-docker compose -f $COMPOSE_FILE down --remove-orphans -v -t 1
+docker compose -f "$COMPOSE_FILE" down --remove-orphans -v -t 1
 docker network prune --force
-docker compose -f $COMPOSE_FILE up --build -d
+docker compose -f "$COMPOSE_FILE" up --build -d
 
 echo -e "${PURPLE}[#]${OFF} ${BLUE}Running acceptance tests${OFF}"
 bundle exec rspec spec/acceptance/acceptance_tests.rb
 
 if [ "$KEEP_UP" == "false" ]; then
   echo -e "${PURPLE}[#]${OFF} ${BLUE}Stopping docker processes${OFF}"
-  docker compose -f $COMPOSE_FILE down --remove-orphans -v -t 1
+  docker compose -f "$COMPOSE_FILE" down --remove-orphans -v -t 1
   docker network prune --force
 else
   echo -e "${PURPLE}[#]${OFF} ${BLUE}Keeping docker processes up${OFF}"
