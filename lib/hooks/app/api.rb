@@ -11,14 +11,14 @@ module Hooks
     # Factory for creating configured Grape API classes
     class API
       # Create a new configured API class
-      def self.create(config:, endpoints:, logger:, signal_handler:)
+      def self.create(config:, endpoints:, log:, signal_handler:)
         # Store startup time for uptime calculation
         start_time = Time.now
 
         # Capture values in local variables for closure
         captured_config = config
         captured_endpoints = endpoints
-        captured_logger = logger
+        captured_logger = log
         _captured_signal_handler = signal_handler
         captured_start_time = start_time
 
@@ -175,7 +175,7 @@ module Hooks
 
               # Use captured values
               config = captured_config
-              logger = captured_logger
+              log = captured_logger
 
               # Set request context for logging
               request_context = {
@@ -194,9 +194,7 @@ module Hooks
                   raw_body = request.body.read
 
                   # Verify/validate request if configured
-                  logger.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
-                  logger.debug "raw body: #{raw_body.inspect}"
-                  logger.debug "headers: #{headers.inspect}"
+                  log.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
                   validate_request(raw_body, headers, endpoint_config) if endpoint_config[:request_validator]
 
                   # Parse payload
@@ -212,7 +210,7 @@ module Hooks
                     config: endpoint_config
                   )
 
-                  logger.info "request processed successfully (id: #{request_id}, handler: #{handler_class_name})"
+                  log.info "request processed successfully (id: #{request_id}, handler: #{handler_class_name})"
 
                   # Return response as JSON string when using txt format
                   status 200  # Explicitly set status to 200
@@ -220,7 +218,7 @@ module Hooks
                   (response || { status: "ok" }).to_json
 
                 rescue => e
-                  logger.error "request failed: #{e.message} (id: #{request_id}, handler: #{handler_class_name})"
+                  log.error "request failed: #{e.message} (id: #{request_id}, handler: #{handler_class_name})"
 
                   # Return error response
                   error_response = {
@@ -251,7 +249,7 @@ module Hooks
 
               # Use captured values
               config = captured_config
-              logger = captured_logger
+              log = captured_logger
 
               # Set request context for logging
               request_context = {
@@ -282,7 +280,7 @@ module Hooks
                     config: {}
                   )
 
-                  logger.info "request processed successfully with default handler (id: #{request_id})"
+                  log.info "request processed successfully with default handler (id: #{request_id})"
 
                   # Return response as JSON string when using txt format
                   status 200
@@ -290,7 +288,7 @@ module Hooks
                   (response || { status: "ok" }).to_json
 
                 rescue StandardError => e
-                  logger.error "request failed: #{e.message} (id: #{request_id})"
+                  log.error "request failed: #{e.message} (id: #{request_id})"
 
                   # Return error response
                   error_response = {

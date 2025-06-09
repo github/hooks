@@ -15,8 +15,8 @@ module Hooks
       # @param config [String, Hash] Path to config file or config hash
       # @param log [Logger] Custom logger instance
       def initialize(config: nil, log: nil)
+        @log = log
         @config_input = config
-        @custom_logger = log
       end
 
       # Build and return Rack-compatible application
@@ -26,29 +26,31 @@ module Hooks
         # Load and validate configuration
         config = load_and_validate_config
 
-        # Create logger
-        logger = LoggerFactory.create(
-          log_level: config[:log_level],
-          custom_logger: @custom_logger
-        )
+        # Create logger unless a custom logger is provided
+        if @log.nil?
+          @log = LoggerFactory.create(
+            log_level: config[:log_level],
+            custom_logger: @custom_logger
+          )
+        end
 
         # Setup signal handler for graceful shutdown
-        signal_handler = SignalHandler.new(logger)
+        signal_handler = SignalHandler.new(@log)
 
         # Load endpoints
         endpoints = load_endpoints(config)
 
         # Log startup
-        logger.info "starting hooks server v#{Hooks::VERSION}"
-        logger.info "config: #{endpoints.size} endpoints loaded"
-        logger.info "environment: #{config[:environment]}"
-        logger.info "available endpoints: #{endpoints.map { |e| e[:path] }.join(', ')}"
+        @log.info "starting hooks server v#{Hooks::VERSION}"
+        @log.info "config: #{endpoints.size} endpoints loaded"
+        @log.info "environment: #{config[:environment]}"
+        @log.info "available endpoints: #{endpoints.map { |e| e[:path] }.join(', ')}"
 
         # Build and return Grape API class
         Hooks::App::API.create(
           config: config,
           endpoints: endpoints,
-          logger: logger,
+          log: @log,
           signal_handler: signal_handler
         )
       end
