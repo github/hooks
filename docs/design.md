@@ -9,11 +9,9 @@
 * Validates configs via **Dry::Schema**, failing fast on invalid YAML/JSON/Hash
 * Supports **signature validation** (default HMAC) and **custom validator** classes
 * Enforces **request limits** (body size) and **timeouts**, configurable at runtime
-* Emits **basic metrics events** for downstream integration
 * Ships with operational endpoints:
 
   * **GET** `<health_path>`: liveness/readiness payload
-  * **GET** `<metrics_path>`: JSON array of recent events
   * **GET** `<version_path>`: current gem version
 
 * Boots a demo `<root_path>/hello` route when no config is supplied, to verify setup
@@ -52,7 +50,6 @@ Note: The `hooks` gem name is already taken on RubyGems, so this project is name
 4. **Operational Endpoints**
 
    * **Health**: liveness/readiness, config checksums
-   * **Metrics**: JSON events log (last N entries)
    * **Version**: gem version report
 
 5. **Developer & Operator Experience**
@@ -114,7 +111,6 @@ export HOOKS_LOG_LEVEL=info
 # Paths
 export HOOKS_HANDLER_DIR=./handlers
 export HOOKS_HEALTH_PATH=/health
-export HOOKS_METRICS_PATH=/metrics
 export HOOKS_VERSION_PATH=/version
 
 # Start the application
@@ -144,7 +140,6 @@ lib/hooks/
 │   ├── config_loader.rb      # Loads + merges per-endpoint configs
 │   ├── config_validator.rb   # Dry::Schema-based validation
 │   ├── logger_factory.rb     # Structured JSON logger + context enrichment
-│   ├── metrics_emitter.rb    # Event emitter for request metrics
 │   └── signal_handler.rb     # Trap SIGINT/SIGTERM for graceful shutdown
 │
 ├── handlers/
@@ -197,7 +192,6 @@ request_timeout: 15                 # seconds to allow per request
 # Path configuration
 root_path:       /webhooks          # base path for all endpoint routes
 health_path:     /health            # operational health endpoint
-metrics_path:    /metrics           # operational metrics endpoint
 version_path:    /version           # gem version endpoint
 
 # Runtime behavior
@@ -215,7 +209,7 @@ endpoints_dir:   ./config/endpoints # directory containing endpoint configs
    * Load endpoint configs via `config_loader`
    * Validate via `config_validator` (Dry::Schema); halt if invalid at boot
    * Initialize structured JSON logger via `logger_factory`
-   * Emit startup `:request_start` for `/health`, `/metrics`, `/version`
+   * Emit startup `:request_start` for `/health` and `/version`
    * Trap SIGINT/SIGTERM for graceful shutdown
    * Build and return Rack app from `app/api.rb`
 
@@ -225,7 +219,7 @@ endpoints_dir:   ./config/endpoints # directory containing endpoint configs
    * Mounts:
 
      * `<root_path>/hello` (demo)
-     * `<health_path>`, `<metrics_path>`, `<version_path>`
+     * `<health_path>` and `<version_path>`
      * Each team endpoint under `<root_path>/<path>`
 
 3. **Router & Endpoint Builder**
@@ -241,12 +235,7 @@ endpoints_dir:   ./config/endpoints # directory containing endpoint configs
      * **After**: run `on_response` plugins
      * **Rescue**: on exception, run `on_error`, rethrow or format JSON error
 
-4. **Metrics Emitter**
-
-   * Listen to lifecycle events, build in-memory ring buffer of last N events
-   * `/metrics` returns the JSON array of these events (configurable size)
-
-5. **Graceful Shutdown**
+4. **Graceful Shutdown**
 
    * On SIGINT/SIGTERM: allow in-flight requests to finish, exit
 
@@ -311,7 +300,7 @@ Each log entry includes standardized fields:
 
 ---
 
-## 📈 9. Metrics & Instrumentation
+## 📈 9. Instrumentation
 
 Simple request logging for basic observability:
 
@@ -519,13 +508,11 @@ The health endpoint provides comprehensive status information for load balancers
 ### Performance Considerations
 
 * **Thread Safety**: All core components are thread-safe for multi-threaded servers
-* **Memory Management**: Configurable metrics buffer prevents unbounded memory growth
 * **Graceful Degradation**: Framework continues operating even if individual handlers fail
 
 ### Security Best Practices
 
 * Use strong secrets for signature validation
-* Monitor and alert on unusual request patterns via metrics
 * Keep handler code minimal and well-tested
 
 ---
