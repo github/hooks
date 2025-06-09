@@ -8,7 +8,7 @@ group :development do
   gem "irb", "~> 1"
   gem "rspec", "~> 3"
   gem "rubocop", "~> 1"
-  gem "rubocop-github", "~> 0.23"
+  gem "rubocop-github", "~> 0.26"
   gem "rubocop-performance", "~> 1"
   gem "rubocop-rspec", "~> 3"
   gem "simplecov", "~> 0.22"
