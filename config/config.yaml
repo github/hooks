@@ -1,0 +1,17 @@
+# Sample configuration for Hooks webhook server
+handler_dir: ./handlers
+log_level: info
+
+# Request handling
+request_limit: 1048576    # 1MB max body size
+request_timeout: 15       # 15 seconds timeout
+
+# Path configuration
+root_path: /webhooks
+health_path: /health
+metrics_path: /metrics
+version_path: /version
+
+# Runtime behavior
+environment: development
+endpoints_dir: ./config/endpoints

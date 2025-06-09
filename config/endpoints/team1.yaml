@@ -1,0 +1,16 @@
+# Sample endpoint configuration for Team 1
+path: /team1
+handler: Team1Handler
+
+# Signature validation (optional)
+# verify_signature:
+#   type: default
+#   secret_env_key: TEAM1_SECRET
+#   header: X-Hub-Signature-256
+#   algorithm: sha256
+
+# Custom options passed to handler
+opts:
+  env: staging
+  teams: ["infra", "billing"]
+  notify_channels: ["#team1-alerts"]

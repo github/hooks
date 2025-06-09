@@ -1,7 +1,16 @@
 #! /usr/bin/env bash
 
+# usage: script/server [--dev]
+
 set -e
 
-source script/env "$@"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+cd "$DIR"
 
-bundle exec ruby lib/cli.rb "$@"
+# check for --dev flag
+if [[ "$1" == "--dev" ]]; then
+  source script/dev
+  shift # remove the --dev flag from the arguments
+fi
+
+bundle exec puma --tag hooks

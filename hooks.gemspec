@@ -27,7 +27,10 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = Gem::Requirement.new(">= 3.0.0")
 
-  spec.files = %w[LICENSE README.md hooks.gemspec]
+  spec.files = %w[LICENSE README.md hooks.gemspec config.ru]
   spec.files += Dir.glob("lib/**/*.rb")
+  spec.files += Dir.glob("bin/*")
+  spec.bindir = "bin"
+  spec.executables = ["hooks"]
   spec.require_paths = ["lib"]
 end
