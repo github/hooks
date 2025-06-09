@@ -392,6 +392,85 @@ hooks config
 
 ---
 
+## 🖥️ 16. CLI Utility: `hooks serve`
+
+The project provides a `hooks serve` command-line utility for running the webhook server directly, similar to `rails server`.
+
+### Usage
+
+```bash
+hooks serve [options]
+```
+
+#### Common Options
+
+* `-p`, `--port PORT` — Port to listen on (default: 3000)
+* `-b`, `--bind HOST` — Bind address (default: 0.0.0.0)
+* `-e`, `--env ENV` — Environment (default: production)
+* `-c`, `--config PATH` — Path to endpoints config directory
+* `-s`, `--settings PATH` — Path to global settings file
+* `--no-puma` — (Advanced) Use the default Rack handler instead of Puma
+* `-h`, `--help` — Show help message
+
+### Example
+
+```bash
+hooks serve -p 8080 -c ./config/endpoints -s ./config/settings.yaml
+```
+
+### How it Works
+
+* The CLI loads configuration and settings from CLI args, ENV, or defaults.
+* It builds the Rack app using `Hooks.build(...)`.
+* By default, it starts the server using Puma (via `Rack::Handler::Puma`).
+* If Puma is not available, it falls back to the default Rack handler (e.g., WEBrick), but Puma is strongly recommended and included as a dependency.
+
+### Implementation Sketch
+
+```ruby
+# bin/hooks (excerpt)
+require "hooks-ruby"
+require "optparse"
+
+options = {
+  port: ENV.fetch("PORT", 3000),
+  bind: ENV.fetch("BIND", "0.0.0.0"),
+  env: ENV.fetch("RACK_ENV", "production"),
+  config: ENV["HOOKS_CONFIG_DIR"] || "./config/endpoints",
+  settings: ENV["HOOKS_SETTINGS"] || "./config/settings.yaml",
+  use_puma: true
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: hooks serve [options]"
+  opts.on("-pPORT", "--port=PORT", Integer, "Port to listen on") { |v| options[:port] = v }
+  opts.on("-bHOST", "--bind=HOST", String, "Bind address") { |v| options[:bind] = v }
+  opts.on("-eENV", "--env=ENV", String, "Environment") { |v| options[:env] = v }
+  opts.on("-cPATH", "--config=PATH", String, "Endpoints config directory") { |v| options[:config] = v }
+  opts.on("-sPATH", "--settings=PATH", String, "Settings file") { |v| options[:settings] = v }
+  opts.on("--no-puma", "Use default Rack handler instead of Puma") { options[:use_puma] = false }
+  opts.on("-h", "--help", "Show help") { puts opts; exit }
+end.parse!(ARGV)
+
+app = Hooks.build(config: options[:config], settings: options[:settings])
+
+if options[:use_puma]
+  require "rack/handler/puma"
+  Rack::Handler::Puma.run(app, Host: options[:bind], Port: options[:port], environment: options[:env])
+else
+  Rack::Handler.default.run(app, Host: options[:bind], Port: options[:port])
+end
+```
+
+### Notes
+
+* Puma is included as a runtime dependency and is the default server for all environments.
+* The CLI is suitable for both development and production use.
+* All configuration options can be set via CLI flags, ENV variables, or config files.
+* The CLI prints a startup banner with the version, port, and loaded endpoints.
+
+---
+
 ## 📦 13. Hello-World Default
 
 When no configuration is provided, the framework serves a demo endpoint for verification:
