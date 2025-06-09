@@ -15,8 +15,6 @@ Gem::Specification.new do |spec|
 
   spec.homepage = "https://github.com/github/hooks"
   spec.metadata = {
-    "source_code_uri" => "https://github.com/github/hooks",
-    "documentation_uri" => "https://github.com/github/hooks",
     "bug_tracker_uri" => "https://github.com/github/hooks/issues"
   }
 

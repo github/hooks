@@ -14,3 +14,4 @@ vendor/gems/
 *.crt
 *.csr
 *.secret
+hooks-ruby-*.gem
