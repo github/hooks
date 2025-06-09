@@ -108,6 +108,8 @@ module Hooks
             # Load handler class
             def load_handler(handler_class_name, handler_dir)
               # Convert class name to file name (e.g., Team1Handler -> team1_handler.rb)
+              # E.g.2: GithubHandler -> github_handler.rb
+              # E.g.3: GitHubHandler -> git_hub_handler.rb
               file_name = handler_class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, "") + ".rb"
               file_path = File.join(handler_dir, file_name)
 
