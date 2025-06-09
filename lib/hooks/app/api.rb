@@ -10,7 +10,7 @@ require_relative "../core/logger_factory"
 module Hooks
   module App
     # Factory for creating configured Grape API classes
-    class APIFactory
+    class API
       # Create a new configured API class
       def self.create(config:, endpoints:, logger:, signal_handler:)
         # Store startup time for uptime calculation

@@ -4,7 +4,7 @@ require_relative "config_loader"
 require_relative "config_validator"
 require_relative "logger_factory"
 require_relative "signal_handler"
-require_relative "../app/api_factory"
+require_relative "../app/api"
 
 module Hooks
   module Core
@@ -51,7 +51,7 @@ module Hooks
         logger.info "Config: #{endpoints.size} endpoints loaded"
 
         # Build and return Grape API class
-        Hooks::App::APIFactory.create(
+        Hooks::App::API.create(
           config: config,
           endpoints: endpoints,
           logger: logger,
