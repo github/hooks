@@ -3,7 +3,7 @@ path: /team1
 handler: Team1Handler
 
 # Signature validation (optional)
-# verify_request:
+# request_validator:
 #   type: default
 #   secret_env_key: TEAM1_SECRET
 #   header: X-Hub-Signature-256

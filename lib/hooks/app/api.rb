@@ -57,10 +57,10 @@ module Hooks
             end
 
             # Verify the incoming request
-            def verify_request(payload, headers, endpoint_config)
-              verify_request_config = endpoint_config[:verify_request]
-              validator_type = verify_request_config[:type] || "default"
-              secret_env_key = verify_request_config[:secret_env_key]
+            def request_validator(payload, headers, endpoint_config)
+              request_validator_config = endpoint_config[:request_validator]
+              validator_type = request_validator_config[:type] || "default"
+              secret_env_key = request_validator_config[:secret_env_key]
 
               return unless secret_env_key
 
@@ -73,7 +73,7 @@ module Hooks
 
               case validator_type
               when "GitHubWebhooks"
-                validator_class = Plugins::SignatureValidator::GitHubWebhooks
+                validator_class = Plugins::RequestValidator::GitHubWebhooks
               else
                 error!("Custom validators not implemented in POC", 500)
               end
@@ -84,7 +84,7 @@ module Hooks
                 secret:,
                 config: endpoint_config
               )
-                error!("Invalid signature", 401)
+                error!("request validation failed", 401)
               end
             end
 
@@ -193,7 +193,7 @@ module Hooks
                   raw_body = request.body.read
 
                   # Verify/validate request if configured
-                  verify_request(raw_body, headers, endpoint_config) if endpoint_config[:verify_request]
+                  validate_request(raw_body, headers, endpoint_config) if endpoint_config[:request_validator]
 
                   # Parse payload
                   payload = parse_payload(raw_body, headers)

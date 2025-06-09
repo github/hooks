@@ -28,7 +28,7 @@ module Hooks
         required(:path).filled(:string)
         required(:handler).filled(:string)
 
-        optional(:verify_request).hash do
+        optional(:request_validator).hash do
           required(:type).filled(:string)
           optional(:secret_env_key).filled(:string)
           optional(:header).filled(:string)

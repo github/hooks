@@ -6,8 +6,8 @@ require_relative "base"
 
 module Hooks
   module Plugins
-    module SignatureValidator
-      # GitHub webhook signature validator
+    module RequestValidator
+      # GitHub webhook request validator
       #
       # Validates GitHub-style webhook signatures using HMAC SHA256
       class GitHubWebhooks < Base
@@ -23,8 +23,8 @@ module Hooks
         def self.valid?(payload:, headers:, secret:, config:)
           return false if secret.nil? || secret.empty?
 
-          signature_header = config.dig(:verify_request, :header) || "X-Hub-Signature-256"
-          algorithm = config.dig(:verify_request, :algorithm) || "sha256"
+          signature_header = config.dig(:request_validator, :header) || "X-Hub-Signature-256"
+          algorithm = config.dig(:request_validator, :algorithm) || "sha256"
 
           provided_signature = headers[signature_header]
           return false if provided_signature.nil? || provided_signature.empty?
