@@ -5,6 +5,7 @@ PATH
       dry-schema (~> 1.14, >= 1.14.1)
       grape (~> 2.3)
       grape-swagger (~> 2.1, >= 2.1.2)
+      puma (~> 6.6)
       redacting-logger (~> 1.5)
       retryable (~> 3.0, >= 3.0.5)
 
@@ -95,6 +96,7 @@ GEM
       ruby2_keywords (~> 0.0.1)
     mustermann-grape (1.1.0)
       mustermann (>= 1.0.0)
+    nio4r (2.7.4)
     parallel (1.27.0)
     parser (3.3.8.0)
       ast (~> 2.4.1)
@@ -107,6 +109,8 @@ GEM
       date
       stringio
     public_suffix (6.0.2)
+    puma (6.6.0)
+      nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.1.16)
     rack-test (2.2.0)
