@@ -9,7 +9,8 @@ WORKDIR /app
 # install system dependencies
 RUN apt-get -qq update && apt-get --no-install-recommends install -y \
   build-essential \
-  git
+  git && \
+  rm -rf /var/lib/apt/lists/*
 
 # set the BUNDLE_APP_CONFIG environment variable
 ENV BUNDLE_APP_CONFIG=/app/.bundle
