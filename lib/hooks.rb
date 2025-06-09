@@ -13,17 +13,11 @@ module Hooks
   #
   # @param config [String, Hash] Path to config file or config hash
   # @param log [Logger] Custom logger instance (optional)
-  # @param request_limit [Integer] Maximum request body size in bytes
-  # @param request_timeout [Integer] Request timeout in seconds
-  # @param root_path [String] Base path for webhook endpoints
   # @return [Object] Rack-compatible application
-  def self.build(config: nil, log: nil, request_limit: nil, request_timeout: nil, root_path: nil)
+  def self.build(config: nil, log: nil)
     Core::Builder.new(
       config: config,
       log: log,
-      request_limit: request_limit,
-      request_timeout: request_timeout,
-      root_path: root_path
     ).build
   end
 end

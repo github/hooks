@@ -6,6 +6,9 @@ module Hooks
   module Core
     # Validates configuration using Dry::Schema
     class ConfigValidator
+      # Custom validation error
+      class ValidationError < StandardError; end
+
       # Global configuration schema
       GLOBAL_CONFIG_SCHEMA = Dry::Schema.Params do
         optional(:handler_dir).filled(:string)
@@ -14,7 +17,6 @@ module Hooks
         optional(:request_timeout).filled(:integer, gt?: 0)
         optional(:root_path).filled(:string)
         optional(:health_path).filled(:string)
-        optional(:metrics_path).filled(:string)
         optional(:version_path).filled(:string)
         optional(:environment).filled(:string, included_in?: %w[development production])
         optional(:endpoints_dir).filled(:string)
@@ -84,8 +86,5 @@ module Hooks
         validated_endpoints
       end
     end
-
-    # Custom validation error
-    class ValidationError < StandardError; end
   end
 end

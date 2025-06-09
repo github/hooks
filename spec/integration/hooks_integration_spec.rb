@@ -18,7 +18,6 @@ RSpec.describe "Hooks Integration" do
         request_timeout: 15,
         root_path: "/webhooks",
         health_path: "/health",
-        metrics_path: "/metrics",
         version_path: "/version",
         environment: "development",
         endpoints_dir: "./spec/fixtures/endpoints"
@@ -86,7 +85,7 @@ RSpec.describe "Hooks Integration" do
       expect(last_response.status).to eq(200)
 
       body = JSON.parse(last_response.body)
-      expect(body["message"]).to eq("Hooks is working!")
+      expect(body["message"]).to eq("hooks is working!")
       expect(body["version"]).to eq(Hooks::VERSION)
       expect(body).to have_key("timestamp")
     end
@@ -132,7 +131,7 @@ RSpec.describe "Hooks Integration" do
       expect(last_response.status).to eq(200)
 
       body = JSON.parse(last_response.body)
-      expect(body["message"]).to eq("Webhook received")
+      expect(body["message"]).to eq("webhook received")
       expect(body["handler"]).to eq("DefaultHandler")
     end
   end

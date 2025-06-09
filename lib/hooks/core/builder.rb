@@ -14,17 +14,9 @@ module Hooks
       #
       # @param config [String, Hash] Path to config file or config hash
       # @param log [Logger] Custom logger instance
-      # @param request_limit [Integer] Maximum request body size in bytes
-      # @param request_timeout [Integer] Request timeout in seconds
-      # @param root_path [String] Base path for webhook endpoints
-      def initialize(config: nil, log: nil, request_limit: nil, request_timeout: nil, root_path: nil)
+      def initialize(config: nil, log: nil)
         @config_input = config
         @custom_logger = log
-        @programmatic_overrides = {
-          request_limit: request_limit,
-          request_timeout: request_timeout,
-          root_path: root_path
-        }.compact
       end
 
       # Build and return Rack-compatible application
@@ -47,8 +39,10 @@ module Hooks
         endpoints = load_endpoints(config)
 
         # Log startup
-        logger.info "Starting Hooks webhook server v#{Hooks::VERSION}"
-        logger.info "Config: #{endpoints.size} endpoints loaded"
+        logger.info "starting hooks server v#{Hooks::VERSION}"
+        logger.info "config: #{endpoints.size} endpoints loaded"
+        logger.info "environment: #{config[:environment]}"
+        logger.info "available endpoints: #{endpoints.map { |e| e[:path] }.join(', ')}"
 
         # Build and return Grape API class
         Hooks::App::API.create(
@@ -67,9 +61,6 @@ module Hooks
       def load_and_validate_config
         # Load base config from file/hash and environment
         config = ConfigLoader.load(config_path: @config_input)
-
-        # Apply programmatic overrides (highest priority)
-        config.merge!(@programmatic_overrides)
 
         # Validate global configuration
         ConfigValidator.validate_global_config(config)

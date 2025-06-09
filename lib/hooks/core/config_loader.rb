@@ -11,12 +11,12 @@ module Hooks
         handler_dir: "./handlers",
         log_level: "info",
         request_limit: 1_048_576,
-        request_timeout: 15,
+        request_timeout: 30,
         root_path: "/webhooks",
         health_path: "/health",
-        metrics_path: "/metrics",
         version_path: "/version",
         environment: "production",
+        production: true,
         endpoints_dir: "./config/endpoints"
       }.freeze
 
@@ -39,7 +39,15 @@ module Hooks
         config.merge!(load_env_config)
 
         # Convert string keys to symbols for consistency
-        symbolize_keys(config)
+        config = symbolize_keys(config)
+
+        if config[:environment] == "production"
+          config[:production] = true
+        else
+          config[:production] = false
+        end
+
+        return config
       end
 
       # Load endpoint configurations from directory
@@ -81,7 +89,7 @@ module Hooks
         end
 
         result
-      rescue => e
+      rescue => _e
         # In production, we'd log this error
         nil
       end
@@ -99,7 +107,6 @@ module Hooks
           "HOOKS_REQUEST_TIMEOUT" => :request_timeout,
           "HOOKS_ROOT_PATH" => :root_path,
           "HOOKS_HEALTH_PATH" => :health_path,
-          "HOOKS_METRICS_PATH" => :metrics_path,
           "HOOKS_VERSION_PATH" => :version_path,
           "HOOKS_ENVIRONMENT" => :environment,
           "HOOKS_ENDPOINTS_DIR" => :endpoints_dir

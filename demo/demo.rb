@@ -19,7 +19,6 @@ test_config = {
   request_timeout: 15,
   root_path: "/webhooks",
   health_path: "/health",
-  metrics_path: "/metrics",
   version_path: "/version",
   environment: "development",
   endpoints_dir: "./config/endpoints"
@@ -118,4 +117,3 @@ puts "\n📚 Example webhook endpoints:"
 puts "   POST http://localhost:3000/webhooks/team1"
 puts "   POST http://localhost:3000/webhooks/github"
 puts "   GET  http://localhost:3000/health"
-puts "   GET  http://localhost:3000/metrics"

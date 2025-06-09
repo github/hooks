@@ -9,7 +9,6 @@ request_timeout: 15       # 15 seconds timeout
 # Path configuration
 root_path: /webhooks
 health_path: /health
-metrics_path: /metrics
 version_path: /version
 
 # Runtime behavior

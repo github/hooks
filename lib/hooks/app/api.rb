@@ -51,7 +51,7 @@ module Hooks
               content_length = content_length&.to_i
 
               if content_length && content_length > config[:request_limit]
-                error!("Request body too large", 413)
+                error!("request body too large", 413)
               end
 
               # Note: Timeout enforcement would typically be handled at the server level (Puma, etc.)
@@ -67,7 +67,7 @@ module Hooks
 
               secret = ENV[secret_env_key]
               unless secret
-                error!("Secret not found in environment", 500)
+                error!("secret '#{secret_env_key}' not found in environment", 500)
               end
 
               # Use default validator or load custom
@@ -119,7 +119,7 @@ module Hooks
                 DefaultHandler.new
               end
             rescue => e
-              error!("Failed to load handler #{handler_class_name}: #{e.message}", 500)
+              error!("failed to load handler #{handler_class_name}: #{e.message}", 500)
             end
 
             # Determine HTTP error code from exception
@@ -144,11 +144,6 @@ module Hooks
             }.to_json
           end
 
-          get captured_config[:metrics_path] do
-            content_type "application/json"
-            { message: "Metrics functionality removed for simplification" }.to_json
-          end
-
           get captured_config[:version_path] do
             content_type "application/json"
             {
@@ -161,7 +156,7 @@ module Hooks
           get "#{captured_config[:root_path]}/hello" do
             content_type "application/json"
             {
-              message: "Hooks is working!",
+              message: "hooks is working!",
               version: Hooks::VERSION,
               timestamp: Time.now.iso8601
             }.to_json
@@ -183,7 +178,7 @@ module Hooks
 
               # Set request context for logging
               request_context = {
-                request_id: request_id,
+                request_id:,
                 path: full_path,
                 handler: handler_class_name
               }
@@ -208,12 +203,12 @@ module Hooks
 
                   # Call handler
                   response = handler.call(
-                    payload: payload,
-                    headers: headers,
+                    payload:,
+                    headers:,
                     config: endpoint_config
                   )
 
-                  logger.info "Request processed successfully"
+                  logger.info "request processed successfully (id: #{request_id}, handler: #{handler_class_name})"
 
                   # Return response as JSON string when using txt format
                   status 200  # Explicitly set status to 200
@@ -221,7 +216,7 @@ module Hooks
                   (response || { status: "ok" }).to_json
 
                 rescue => e
-                  logger.error "Request failed: #{e.message}"
+                  logger.error "request failed: #{e.message} (id: #{request_id}, handler: #{handler_class_name})"
 
                   # Return error response
                   error_response = {
@@ -230,8 +225,8 @@ module Hooks
                     request_id: request_id
                   }
 
-                  # Add backtrace in development
-                  if config[:environment] == "development"
+                  # Add backtrace in all environments except production
+                  unless config[:production] == true
                     error_response[:backtrace] = e.backtrace
                   end
 
@@ -281,15 +276,15 @@ module Hooks
                   config: {}
                 )
 
-                logger.info "Request processed successfully with default handler"
+                logger.info "request processed successfully with default handler (id: #{request_id})"
 
                 # Return response as JSON string when using txt format
                 status 200
                 content_type "application/json"
                 (response || { status: "ok" }).to_json
 
-              rescue => e
-                logger.error "Request failed: #{e.message}"
+              rescue StandardError => e
+                logger.error "request failed: #{e.message} (id: #{request_id})"
 
                 # Return error response
                 error_response = {
@@ -298,8 +293,8 @@ module Hooks
                   request_id: request_id
                 }
 
-                # Add backtrace in development
-                if config[:environment] == "development"
+                # Add backtrace in all environments except production
+                unless config[:production] == true
                   error_response[:backtrace] = e.backtrace
                 end
 
@@ -315,11 +310,11 @@ module Hooks
         api_class
       end
 
-      # Default handler for POC when no custom handler is found
+      # Default handler when no custom handler is found
       class DefaultHandler < Handlers::Base
         def call(payload:, headers:, config:)
           {
-            message: "Webhook received",
+            message: "webhook received",
             handler: "DefaultHandler",
             payload_size: payload.is_a?(String) ? payload.length : payload.to_s.length,
             timestamp: Time.now.iso8601
