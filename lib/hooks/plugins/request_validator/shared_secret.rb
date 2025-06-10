@@ -78,14 +78,17 @@ module Hooks
 
           return false if raw_secret.nil? || raw_secret.empty?
 
+          # Cache the stripped value of raw_secret
+          stripped_secret = raw_secret.strip
+
           # Security: Reject secrets with leading/trailing whitespace
-          return false if raw_secret != raw_secret.strip
+          return false if raw_secret != stripped_secret
 
           # Security: Reject secrets containing null bytes or other control characters
           return false if raw_secret.match?(/[\u0000-\u001f\u007f-\u009f]/)
 
           # Use secure comparison to prevent timing attacks
-          Rack::Utils.secure_compare(secret, raw_secret.strip)
+          Rack::Utils.secure_compare(secret, stripped_secret)
         rescue StandardError => _e
           # Log error in production - for now just return false
           false
