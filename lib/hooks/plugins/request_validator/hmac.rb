@@ -90,12 +90,32 @@ module Hooks
           return false if secret.nil? || secret.empty?
 
           validator_config = build_config(config)
-          normalized_headers = normalize_headers(headers)
 
-          # Get signature from headers
+          # Security: Check raw headers BEFORE normalization to detect tampering
+          return false unless headers.respond_to?(:each)
+
           signature_header = validator_config[:header]
+
+          # Find the signature header with case-insensitive matching but preserve original value
+          raw_signature = nil
+          headers.each do |key, value|
+            if key.to_s.downcase == signature_header.downcase
+              raw_signature = value.to_s
+              break
+            end
+          end
+
+          return false if raw_signature.nil? || raw_signature.empty?
+
+          # Security: Reject signatures with leading/trailing whitespace
+          return false if raw_signature != raw_signature.strip
+
+          # Security: Reject signatures containing null bytes or other control characters
+          return false if raw_signature.match?(/[\u0000-\u001f\u007f-\u009f]/)
+
+          # Now we can safely normalize headers for the rest of the validation
+          normalized_headers = normalize_headers(headers)
           provided_signature = normalized_headers[signature_header.downcase]
-          return false if provided_signature.nil? || provided_signature.empty?
 
           # Validate timestamp if required (for services that include timestamp validation)
           if validator_config[:timestamp_header]
@@ -178,10 +198,13 @@ module Hooks
 
           return false unless timestamp_value
 
+          # Security: Strict timestamp validation - must be only digits with no leading zeros
+          return false unless timestamp_value.match?(/\A[1-9]\d*\z/) || timestamp_value == "0"
+
           timestamp = timestamp_value.to_i
 
-          # Ensure timestamp is a valid integer
-          return false unless timestamp.is_a?(Integer) && timestamp > 0
+          # Ensure timestamp is a positive integer (reject zero and negative)
+          return false unless timestamp > 0
 
           current_time = Time.now.to_i
           tolerance = config[:timestamp_tolerance]
