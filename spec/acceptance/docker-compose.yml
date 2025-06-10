@@ -1,0 +1,18 @@
+services:
+  hooks:
+    container_name: hooks
+    build:
+      context: ../../
+      dockerfile: ./spec/acceptance/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      LOG_LEVEL: DEBUG
+      GITHUB_WEBHOOK_SECRET: "octoawesome-secret"
+      ALT_WEBHOOK_SECRET: "octoawesome-too-secret"
+    command: ["script/server"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

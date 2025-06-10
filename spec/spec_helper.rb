@@ -6,6 +6,11 @@ require "rspec"
 require "time"
 
 TIME_MOCK = "2025-01-01T00:00:00Z"
+FAKE_HMAC_SECRET = "octoawesome-secret"
+FAKE_ALT_HMAC_SECRET = "octoawesome-2-secret"
+
+ENV["GITHUB_WEBHOOK_SECRET"] = FAKE_HMAC_SECRET
+ENV["ALT_WEBHOOK_SECRET"] = FAKE_ALT_HMAC_SECRET
 
 COV_DIR = File.expand_path("../coverage", File.dirname(__FILE__))
 

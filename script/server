@@ -1,7 +1,10 @@
 #! /usr/bin/env bash
 
+# usage: script/server
+
 set -e
 
-source script/env "$@"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+cd "$DIR"
 
-bundle exec ruby lib/cli.rb "$@"
+bundle exec puma -C spec/acceptance/config/puma.rb --tag hooks
