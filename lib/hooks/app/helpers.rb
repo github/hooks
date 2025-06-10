@@ -97,7 +97,6 @@ module Hooks
       def determine_error_code(exception)
         case exception
         when ArgumentError then 400
-        when SecurityError then 401
         when NotImplementedError then 501
         else 500
         end
