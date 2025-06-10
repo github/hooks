@@ -18,8 +18,8 @@ module Hooks
   # @return [Object] Rack-compatible application
   def self.build(config: nil, log: nil)
     Core::Builder.new(
-      config: config,
-      log: log,
+      config:,
+      log:,
     ).build
   end
 end
