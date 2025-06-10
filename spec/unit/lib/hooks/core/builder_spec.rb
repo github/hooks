@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 describe Hooks::Core::Builder do
+  let(:log) { instance_double(Logger).as_null_object }
   let(:temp_dir) { "/tmp/hooks_builder_test" }
 
   before do
@@ -13,39 +14,36 @@ describe Hooks::Core::Builder do
 
   describe "#initialize" do
     it "initializes with no parameters" do
-      builder = described_class.new
+      builder = described_class.new(log:)
 
-      expect(builder.instance_variable_get(:@log)).to be_nil
+      expect(builder.instance_variable_get(:@log)).to eq(log)
       expect(builder.instance_variable_get(:@config_input)).to be_nil
     end
 
     it "initializes with config parameter" do
       config = { log_level: "debug" }
-      builder = described_class.new(config: config)
+      builder = described_class.new(config:, log:)
 
       expect(builder.instance_variable_get(:@config_input)).to eq(config)
     end
 
     it "initializes with custom logger" do
-      logger = double("Logger")
-      builder = described_class.new(log: logger)
-
-      expect(builder.instance_variable_get(:@log)).to eq(logger)
+      builder = described_class.new(log:)
+      expect(builder.instance_variable_get(:@log)).to eq(log)
     end
 
     it "initializes with both config and logger" do
       config = { environment: "test" }
-      logger = double("Logger")
-      builder = described_class.new(config: config, log: logger)
+      builder = described_class.new(config: config, log:)
 
       expect(builder.instance_variable_get(:@config_input)).to eq(config)
-      expect(builder.instance_variable_get(:@log)).to eq(logger)
+      expect(builder.instance_variable_get(:@log)).to eq(log)
     end
   end
 
   describe "#build" do
     context "with minimal configuration" do
-      let(:builder) { described_class.new }
+      let(:builder) { described_class.new(log:) }
 
       before do
         # Mock dependencies to prevent actual file system operations
@@ -109,7 +107,7 @@ describe Hooks::Core::Builder do
 
     context "with custom configuration" do
       let(:config) { { log_level: "debug", environment: "development" } }
-      let(:builder) { described_class.new(config: config) }
+      let(:builder) { described_class.new(config:, log:) }
 
       before do
         allow(Hooks::Core::ConfigLoader).to receive(:load).and_return(config)
@@ -161,7 +159,7 @@ describe Hooks::Core::Builder do
           { path: "/webhook/test2", handler: "Handler2" }
         ]
       end
-      let(:builder) { described_class.new }
+      let(:builder) { described_class.new(log:) }
 
       before do
         allow(Hooks::Core::ConfigLoader).to receive(:load).and_return({
@@ -250,7 +248,7 @@ describe Hooks::Core::Builder do
     end
 
     context "error handling" do
-      let(:builder) { described_class.new }
+      let(:builder) { described_class.new(log:) }
 
       it "raises ConfigurationError when global config validation fails" do
         allow(Hooks::Core::ConfigLoader).to receive(:load).and_return({})
@@ -279,7 +277,7 @@ describe Hooks::Core::Builder do
   end
 
   describe "#load_and_validate_config" do
-    let(:builder) { described_class.new }
+    let(:builder) { described_class.new(log:) }
 
     it "is a private method" do
       expect(described_class.private_instance_methods).to include(:load_and_validate_config)
@@ -287,10 +285,20 @@ describe Hooks::Core::Builder do
   end
 
   describe "#load_endpoints" do
-    let(:builder) { described_class.new }
+    let(:builder) { described_class.new(log:) }
 
     it "is a private method" do
       expect(described_class.private_instance_methods).to include(:load_endpoints)
+    end
+  end
+
+  describe "#load_endpoints" do
+    describe "with its own log" do
+      let(:builder) { described_class.new }
+
+      it "is a private method" do
+        expect(described_class.private_instance_methods).to include(:load_endpoints)
+      end
     end
   end
 
