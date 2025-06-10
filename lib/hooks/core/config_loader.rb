@@ -18,7 +18,9 @@ module Hooks
         environment: "production",
         production: true,
         endpoints_dir: "./config/endpoints",
-        use_catchall_route: false
+        use_catchall_route: false,
+        symbolize_payload: true,
+        normalize_headers: true
       }.freeze
 
       # Load and merge configuration from various sources

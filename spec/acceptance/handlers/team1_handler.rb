@@ -14,7 +14,7 @@ class Team1Handler < Hooks::Handlers::Base
 
     # Process the payload based on type
     if payload.is_a?(Hash)
-      event_type = payload["event_type"] || "unknown"
+      event_type = payload[:event_type] || "unknown"
 
       case event_type
       when "deployment"

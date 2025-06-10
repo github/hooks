@@ -89,13 +89,15 @@ module Hooks
             end
 
             # Parse request payload
-            def parse_payload(raw_body, headers)
-              content_type = headers["Content-Type"] || headers["CONTENT_TYPE"]
+            def parse_payload(raw_body, headers, symbolize: true)
+              content_type = headers["Content-Type"] || headers["CONTENT_TYPE"] || headers["content-type"] || headers["HTTP_CONTENT_TYPE"]
 
               # Try to parse as JSON if content type suggests it or if it looks like JSON
               if content_type&.include?("application/json") || (raw_body.strip.start_with?("{", "[") rescue false)
                 begin
-                  return JSON.parse(raw_body)
+                  parsed_payload = JSON.parse(raw_body)
+                  parsed_payload = parsed_payload.transform_keys(&:to_sym) if symbolize && parsed_payload.is_a?(Hash)
+                  return parsed_payload
                 rescue JSON::ParserError
                   # If JSON parsing fails, return raw body
                 end
@@ -197,11 +199,14 @@ module Hooks
                   log.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
                   validate_request(raw_body, headers, endpoint_config) if endpoint_config[:request_validator]
 
-                  # Parse payload
-                  payload = parse_payload(raw_body, headers)
+                  # Parse payload (symbolize_payload is true by default)
+                  payload = parse_payload(raw_body, headers, symbolize: config[:symbolize_payload])
 
                   # Load and instantiate handler
                   handler = load_handler(handler_class_name, config[:handler_dir])
+
+                  # Normalize the headers based on the endpoint configuration (normalization is the default)
+                  headers = Hooks::Plugins::Utils::Normalize.headers(headers) if config[:normalize_headers]
 
                   # Call handler
                   response = handler.call(
