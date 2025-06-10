@@ -7,10 +7,14 @@ class DefaultHandler < Hooks::Handlers::Base
 
     log.info("🔔 Default handler invoked for webhook 🔔")
 
+    # do some basic processing
+    if payload
+      log.debug("received payload: #{payload.inspect}")
+    end
+
     {
-      message: "webhook received",
+      message: "webhook processed successfully",
       handler: "DefaultHandler",
-      payload_size: payload.is_a?(String) ? payload.length : payload.to_s.length,
       timestamp: Time.now.iso8601
     }
   end

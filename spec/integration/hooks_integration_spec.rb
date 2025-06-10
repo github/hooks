@@ -132,7 +132,7 @@ RSpec.describe "Hooks Integration" do
       expect(last_response.status).to eq(200)
 
       body = JSON.parse(last_response.body)
-      expect(body["message"]).to eq("webhook received")
+      expect(body["message"]).to eq("webhook processed successfully")
       expect(body["handler"]).to eq("DefaultHandler")
     end
   end
