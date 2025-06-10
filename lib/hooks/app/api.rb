@@ -4,6 +4,7 @@ require "grape"
 require "json"
 require "securerandom"
 require_relative "helpers"
+require_relative "auth/auth"
 require_relative "../handlers/base"
 require_relative "../handlers/default"
 require_relative "../core/logger_factory"
@@ -19,6 +20,7 @@ module Hooks
     # Factory for creating configured Grape API classes
     class API
       include Hooks::App::Helpers
+      include Hooks::App::Auth
 
       # Expose start_time for endpoint modules
       def self.start_time
@@ -52,7 +54,7 @@ module Hooks
         # Use class_eval to dynamically define routes
         api_class.class_eval do
           # Define helper methods first, before routes
-          helpers Helpers
+          helpers Helpers, Auth
 
           # Mount core operational endpoints
           mount Hooks::App::HealthEndpoint => config[:health_path]
