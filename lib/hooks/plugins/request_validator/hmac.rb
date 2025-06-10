@@ -131,11 +131,14 @@ module Hooks
         def self.build_config(config)
           validator_config = config.dig(:request_validator) || {}
 
+          algorithm = validator_config[:algorithm] || DEFAULT_CONFIG[:algorithm]
+          tolerance = validator_config[:timestamp_tolerance] || DEFAULT_CONFIG[:timestamp_tolerance]
+
           DEFAULT_CONFIG.merge({
             header: validator_config[:header] || "X-Signature",
             timestamp_header: validator_config[:timestamp_header],
-            timestamp_tolerance: validator_config[:timestamp_tolerance] || DEFAULT_CONFIG[:timestamp_tolerance],
-            algorithm: validator_config[:algorithm] || DEFAULT_CONFIG[:algorithm],
+            timestamp_tolerance: tolerance,
+            algorithm: algorithm,
             format: validator_config[:format] || DEFAULT_CONFIG[:format],
             version_prefix: validator_config[:version_prefix] || DEFAULT_CONFIG[:version_prefix],
             payload_template: validator_config[:payload_template]
@@ -167,12 +170,19 @@ module Hooks
         # @note Tolerance is applied as absolute difference (past or future)
         # @api private
         def self.valid_timestamp?(headers, config)
-          timestamp_header = config[:timestamp_header].downcase
+          timestamp_header = config[:timestamp_header]
+          return false unless timestamp_header
+
+          timestamp_header = timestamp_header.downcase
           timestamp_value = headers[timestamp_header]
 
           return false unless timestamp_value
 
           timestamp = timestamp_value.to_i
+
+          # Ensure timestamp is a valid integer
+          return false unless timestamp.is_a?(Integer) && timestamp > 0
+
           current_time = Time.now.to_i
           tolerance = config[:timestamp_tolerance]
 
