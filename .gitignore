@@ -1,7 +1,4 @@
-# Ignore binstubs but do commit the one specific for this code.
 bin/*
-!bin/hooks
-
 coverage/
 logs/
 tmp/
