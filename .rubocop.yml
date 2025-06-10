@@ -12,5 +12,9 @@ AllCops:
     - "tmp/**/*"
     - "vendor/**/*"
 
+GitHub/InsecureHashAlgorithm:
+  Exclude:
+    - "spec/unit/lib/hooks/plugins/request_validator/hmac_spec.rb"
+
 Style/HashSyntax:
   Enabled: false
