@@ -206,7 +206,7 @@ module Hooks
                   handler = load_handler(handler_class_name, config[:handler_dir])
 
                   # Normalize the headers based on the endpoint configuration (normalization is the default)
-                  headers = Hooks::Plugins::Utils::Normalize.headers(headers) if config[:normalize_headers]
+                  headers = Hooks::Utils::Normalize.headers(headers) if config[:normalize_headers]
 
                   # Call handler
                   response = handler.call(

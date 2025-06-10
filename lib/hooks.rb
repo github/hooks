@@ -9,6 +9,11 @@ Dir[File.join(__dir__, "hooks/plugins/**/*.rb")].sort.each do |file|
   require file
 end
 
+# Load all utils
+Dir[File.join(__dir__, "hooks/utils/**/*.rb")].sort.each do |file|
+  require file
+end
+
 # Main module for the Hooks webhook server framework
 module Hooks
   # Build a Rack-compatible webhook server application

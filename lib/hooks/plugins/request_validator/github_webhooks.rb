@@ -26,8 +26,8 @@ module Hooks
           signature_header = config.dig(:request_validator, :header) || "X-Hub-Signature-256"
           algorithm = config.dig(:request_validator, :algorithm) || "sha256"
 
-          signature_header = Utils::Normalize.header(signature_header)
-          headers = Utils::Normalize.headers(headers)
+          signature_header = Hooks::Utils::Normalize.header(signature_header)
+          headers = Hooks::Utils::Normalize.headers(headers)
 
           provided_signature = headers[signature_header]
           return false if provided_signature.nil? || provided_signature.empty?

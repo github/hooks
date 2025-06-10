@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Hooks::Plugins::Utils::Normalize do
+describe Hooks::Utils::Normalize do
   describe ".header" do
     context "when input is a single string" do
       it "normalizes header name to lowercase and trims whitespace" do
