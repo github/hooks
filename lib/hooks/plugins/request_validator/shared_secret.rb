@@ -15,12 +15,12 @@ module Hooks
       #
       # @example Basic configuration
       #   request_validator:
-      #     type: SharedSecret
+      #     type: shared_secret
       #     header: Authorization
       #
       # @example Custom header configuration
       #   request_validator:
-      #     type: SharedSecret
+      #     type: shared_secret
       #     header: X-API-Key
       #
       # @note This validator performs direct string comparison of the shared secret.
