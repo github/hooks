@@ -4,6 +4,7 @@ require "grape"
 require "json"
 require "securerandom"
 require_relative "../handlers/base"
+require_relative "../handlers/default"
 require_relative "../core/logger_factory"
 require_relative "../core/log"
 
@@ -326,18 +327,6 @@ module Hooks
 
         # Return the configured API class
         api_class
-      end
-
-      # Default handler when no custom handler is found
-      class DefaultHandler < Handlers::Base
-        def call(payload:, headers:, config:)
-          {
-            message: "webhook received",
-            handler: "DefaultHandler",
-            payload_size: payload.is_a?(String) ? payload.length : payload.to_s.length,
-            timestamp: Time.now.iso8601
-          }
-        end
       end
     end
   end
