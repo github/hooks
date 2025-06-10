@@ -16,5 +16,9 @@ GitHub/InsecureHashAlgorithm:
   Exclude:
     - "spec/unit/lib/hooks/plugins/request_validator/hmac_spec.rb"
 
+GitHub/AvoidObjectSendWithDynamicMethod:
+  Exclude:
+    - "spec/unit/lib/hooks/core/logger_factory_spec.rb"
+
 Style/HashSyntax:
   Enabled: false
