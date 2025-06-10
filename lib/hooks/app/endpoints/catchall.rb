@@ -2,17 +2,20 @@
 
 require "grape"
 require_relative "../../handlers/default"
+require_relative "../helpers"
 
 module Hooks
   module App
     class CatchallEndpoint < Grape::API
+      include Hooks::App::Helpers
+
       def self.mount_path(config)
         "#{config[:root_path]}/*path"
       end
 
       def self.route_block(captured_config, captured_logger)
         proc do
-          request_id = SecureRandom.uuid
+          request_id = uuid
 
           # Use captured values
           config = captured_config

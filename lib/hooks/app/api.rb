@@ -65,7 +65,7 @@ module Hooks
 
             # Use send to dynamically create POST route
             send(:post, full_path) do
-              request_id = SecureRandom.uuid
+              request_id = uuid
 
               # Use captured values
               config = captured_config

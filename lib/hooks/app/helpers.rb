@@ -1,8 +1,15 @@
 # frozen_string_literal: true
 
+require "securerandom"
+
 module Hooks
   module App
     module Helpers
+      # Generate a unique identifier (UUID)
+      def uuid
+        SecureRandom.uuid
+      end
+
       # Enforce request size and timeout limits
       def enforce_request_limits(config)
         # Check content length (handle different header formats and sources)
