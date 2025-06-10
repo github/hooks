@@ -73,6 +73,7 @@ The linter is powered by `rubocop` with its config file located at `.rubocop.yml
    - The use of whitespace (newlines) over compactness of files.
    - Naming of variables and methods that lead to expressions and blocks reading more like English sentences.
    - Less lines of code over more. Keep changes minimal and focused.
+- The `docs/design.md` file is the main design document for the project. It might be out-of-date but it should still contain a general high-level overview of the project.
 
 ## Pull Request Requirements
 
