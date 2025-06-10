@@ -14,6 +14,12 @@ export PURPLE='\033[0;35m'
 
 export RUBY_ENV
 
+# Check for --production flag in arguments
+if [[ " $* " =~ " --production " ]]; then
+  export RUBY_ENV=production
+  export BUNDLE_WITHOUT="development"
+fi
+
 # set the working directory to the root of the project
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 export DIR

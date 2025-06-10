@@ -1,11 +1,11 @@
-FROM ruby:3.4.2-slim@sha256:342bfeb04d3660045ceba063197d22baafec6b163f019714ddf8fc83c59aabee
+FROM ruby:3.4.4-slim@sha256:93664239ae7e485147c2fa83397fdc24bf7b7f1e15c3ad9d48591828a50a50e7
+
+WORKDIR /app
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential libyaml-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 
 # create nonroot user
 RUN useradd -m nonroot
