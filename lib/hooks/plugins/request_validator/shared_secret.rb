@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "rack/utils"
 require_relative "base"
 
 module Hooks
@@ -16,11 +15,13 @@ module Hooks
       # @example Basic configuration
       #   request_validator:
       #     type: shared_secret
+      #     secret_env_key: WEBHOOK_SECRET
       #     header: Authorization
       #
       # @example Custom header configuration
       #   request_validator:
       #     type: shared_secret
+      #     secret_env_key: SOME_OTHER_WEBHOOK_SECRET
       #     header: X-API-Key
       #
       # @note This validator performs direct string comparison of the shared secret.
@@ -78,7 +79,6 @@ module Hooks
 
           return false if raw_secret.nil? || raw_secret.empty?
 
-          # Cache the stripped value of raw_secret
           stripped_secret = raw_secret.strip
 
           # Security: Reject secrets with leading/trailing whitespace
