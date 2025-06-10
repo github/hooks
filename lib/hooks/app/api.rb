@@ -9,22 +9,31 @@ require_relative "../handlers/default"
 require_relative "../core/logger_factory"
 require_relative "../core/log"
 
+# import all core endpoint classes dynamically
+Dir[File.join(__dir__, "endpoints/**/*.rb")].sort.each do |file|
+  require file
+end
+
 module Hooks
   module App
     # Factory for creating configured Grape API classes
     class API
       include Hooks::App::Helpers
 
+      # Expose start_time for endpoint modules
+      def self.start_time
+        @start_time
+      end
+
       # Create a new configured API class
       def self.create(config:, endpoints:, log:)
         # Store startup time for uptime calculation
-        start_time = Time.now
+        @start_time = Time.now
 
         # Capture values in local variables for closure
         captured_config = config
         captured_endpoints = endpoints
         captured_logger = log
-        captured_start_time = start_time
 
         # Set global logger instance for plugins/validators
         Hooks::Log.instance = log
@@ -45,34 +54,9 @@ module Hooks
           # Define helper methods first, before routes
           helpers Helpers
 
-          # Define operational endpoints
-          get captured_config[:health_path] do
-            content_type "application/json"
-            {
-              status: "healthy",
-              timestamp: Time.now.iso8601,
-              version: Hooks::VERSION,
-              uptime_seconds: (Time.now - captured_start_time).to_i
-            }.to_json
-          end
-
-          get captured_config[:version_path] do
-            content_type "application/json"
-            {
-              version: Hooks::VERSION,
-              timestamp: Time.now.iso8601
-            }.to_json
-          end
-
-          # Hello world demo endpoint
-          get "#{captured_config[:root_path]}/hello" do
-            content_type "application/json"
-            {
-              message: "hooks is working!",
-              version: Hooks::VERSION,
-              timestamp: Time.now.iso8601
-            }.to_json
-          end
+          # Mount split-out endpoints
+          mount Hooks::App::HealthEndpoint => config[:health_path]
+          mount Hooks::App::VersionEndpoint => config[:version_path]
 
           # Define webhook endpoints dynamically
           captured_endpoints.each do |endpoint_config|
@@ -82,7 +66,6 @@ module Hooks
             # Use send to dynamically create POST route
             send(:post, full_path) do
               request_id = SecureRandom.uuid
-              start_time = Time.now
 
               # Use captured values
               config = captured_config
@@ -161,7 +144,6 @@ module Hooks
           if captured_config[:use_catchall_route]
             post "#{captured_config[:root_path]}/*path" do
               request_id = SecureRandom.uuid
-              start_time = Time.now
 
               # Use captured values
               config = captured_config

@@ -80,18 +80,6 @@ RSpec.describe "Hooks Integration" do
     end
   end
 
-  describe "hello world endpoint" do
-    it "responds to hello endpoint" do
-      get "/webhooks/hello"
-      expect(last_response.status).to eq(200)
-
-      body = JSON.parse(last_response.body)
-      expect(body["message"]).to eq("hooks is working!")
-      expect(body["version"]).to eq(Hooks::VERSION)
-      expect(body).to have_key("timestamp")
-    end
-  end
-
   describe "webhook endpoints" do
     it "processes JSON webhook with custom handler" do
       payload = { event: "test_event", data: "test_data" }
