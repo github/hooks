@@ -6,3 +6,5 @@
 [![integration](https://github.com/github/hooks/actions/workflows/integration.yml/badge.svg)](https://github.com/github/hooks/actions/workflows/integration.yml)
 
 A Pluggable Webhook Server Framework written in Ruby
+
+![hooks](docs/assets/hooks.png)
