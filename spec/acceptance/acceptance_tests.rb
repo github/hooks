@@ -10,13 +10,13 @@ require "json"
 MAX_WAIT_TIME = 30 # how long to wait for the server to start
 
 describe "Hooks" do
-  let(:http) { Net::HTTP.new("127.0.0.1", 8080) }
+  let(:http) { Net::HTTP.new("0.0.0.0", 8080) }
 
   before(:all) do
     start_time = Time.now
     loop do
       begin
-        response = Net::HTTP.new("127.0.0.1", 8080).get("/health")
+        response = Net::HTTP.new("0.0.0.0", 8080).get("/health")
         break if response.is_a?(Net::HTTPSuccess)
       rescue Errno::ECONNREFUSED, SocketError
         # Server not ready yet, continue waiting
