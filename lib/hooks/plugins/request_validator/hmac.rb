@@ -10,13 +10,10 @@ module Hooks
     module RequestValidator
       # Generic HMAC signature validator for webhooks
       #
-      # This validator supports multiple webhook providers with different signature formats:
-      # - GitHub: X-Hub-Signature-256: sha256=abc123...
-      # - Shopify: X-Shopify-Hmac-Sha256: abc123... (hash only)
-      # - Slack: X-Slack-Signature: v0=abc123... (with timestamp validation)
-      # - And any other HMAC-based webhook provider
+      # This validator supports multiple webhook providers with different signature formats.
+      # It provides flexible configuration options to handle various HMAC-based authentication schemes.
       #
-      # @example Basic GitHub-style configuration
+      # @example Basic configuration with algorithm prefix
       #   request_validator:
       #     type: HMAC
       #     secret_env_key: WEBHOOK_SECRET
@@ -24,40 +21,71 @@ module Hooks
       #     algorithm: sha256
       #     format: "algorithm=signature"
       #
-      # @example Slack-style with timestamp validation
+      # @example Configuration with timestamp validation
       #   request_validator:
       #     type: HMAC
-      #     secret_env_key: SLACK_SIGNING_SECRET
-      #     header: X-Slack-Signature
-      #     timestamp_header: X-Slack-Request-Timestamp
+      #     secret_env_key: WEBHOOK_SECRET
+      #     header: X-Signature
+      #     timestamp_header: X-Request-Timestamp
       #     timestamp_tolerance: 300  # 5 minutes
       #     algorithm: sha256
       #     format: "version=signature"
       #     version_prefix: "v0"
       #     payload_template: "{version}:{timestamp}:{body}"
       class HMAC < Base
-        # Default configuration values
+        # Default configuration values for HMAC validation
+        #
+        # @return [Hash<Symbol, String|Integer>] Default configuration settings
+        # @note These values provide sensible defaults for most webhook implementations
         DEFAULT_CONFIG = {
           algorithm: "sha256",
-          format: "algorithm=signature",  # GitHub default
-          timestamp_tolerance: 300,       # 5 minutes for Slack
-          version_prefix: "v0"           # Slack default
+          format: "algorithm=signature",  # Format: algorithm=hash
+          timestamp_tolerance: 300,       # 5 minutes tolerance for timestamp validation
+          version_prefix: "v0"           # Default version prefix for versioned signatures
         }.freeze
 
-        # Supported signature formats
+        # Mapping of signature format strings to internal format symbols
+        #
+        # @return [Hash<String, Symbol>] Format string to symbol mapping
+        # @note Supports three common webhook signature formats:
+        #   - algorithm=signature: "sha256=abc123..." (GitHub, GitLab style)
+        #   - signature_only: "abc123..." (Shopify style)
+        #   - version=signature: "v0=abc123..." (Slack style)
         FORMATS = {
-          "algorithm=signature" => :github_style,    # "sha256=abc123..."
-          "signature_only" => :shopify_style,        # "abc123..."
-          "version=signature" => :slack_style        # "v0=abc123..."
+          "algorithm=signature" => :algorithm_prefixed,  # "sha256=abc123..."
+          "signature_only" => :hash_only,                # "abc123..."
+          "version=signature" => :version_prefixed       # "v0=abc123..."
         }.freeze
 
         # Validate HMAC signature from webhook requests
         #
-        # @param payload [String] Raw request body
-        # @param headers [Hash<String, String>] HTTP headers
-        # @param secret [String] Secret key for HMAC validation
-        # @param config [Hash] Endpoint configuration with signature settings
-        # @return [Boolean] true if signature is valid
+        # Performs comprehensive HMAC signature validation with support for multiple
+        # signature formats and optional timestamp validation. Uses secure comparison
+        # to prevent timing attacks.
+        #
+        # @param payload [String] Raw request body to validate
+        # @param headers [Hash<String, String>] HTTP headers from the request
+        # @param secret [String] Secret key for HMAC computation
+        # @param config [Hash] Endpoint configuration containing validator settings
+        # @option config [Hash] :request_validator Validator-specific configuration
+        # @option config [String] :header ('X-Signature') Header containing the signature
+        # @option config [String] :timestamp_header Header containing timestamp (optional)
+        # @option config [Integer] :timestamp_tolerance (300) Timestamp tolerance in seconds
+        # @option config [String] :algorithm ('sha256') HMAC algorithm to use
+        # @option config [String] :format ('algorithm=signature') Signature format
+        # @option config [String] :version_prefix ('v0') Version prefix for versioned signatures
+        # @option config [String] :payload_template Template for payload construction
+        # @return [Boolean] true if signature is valid, false otherwise
+        # @raise [StandardError] Rescued internally, returns false on any error
+        # @note This method is designed to be safe and will never raise exceptions
+        # @note Uses Rack::Utils.secure_compare to prevent timing attacks
+        # @example Basic validation
+        #   HMAC.valid?(
+        #     payload: request_body,
+        #     headers: request.headers,
+        #     secret: ENV['WEBHOOK_SECRET'],
+        #     config: { request_validator: { header: 'X-Signature' } }
+        #   )
         def self.valid?(payload:, headers:, secret:, config:)
           return false if secret.nil? || secret.empty?
 
@@ -69,16 +97,16 @@ module Hooks
           provided_signature = normalized_headers[signature_header.downcase]
           return false if provided_signature.nil? || provided_signature.empty?
 
-          # Validate timestamp if required (for Slack and others)
+          # Validate timestamp if required (for services that include timestamp validation)
           if validator_config[:timestamp_header]
             return false unless valid_timestamp?(normalized_headers, validator_config)
           end
 
           # Compute expected signature
           computed_signature = compute_signature(
-            payload: payload,
+            payload:,
             headers: normalized_headers,
-            secret: secret,
+            secret:,
             config: validator_config
           )
 
@@ -92,6 +120,14 @@ module Hooks
         private
 
         # Build final configuration by merging defaults with provided config
+        #
+        # Combines default configuration values with user-provided settings,
+        # ensuring all required configuration keys are present with sensible defaults.
+        #
+        # @param config [Hash] Raw endpoint configuration
+        # @return [Hash<Symbol, Object>] Merged configuration with defaults applied
+        # @note Missing configuration values are filled with DEFAULT_CONFIG values
+        # @api private
         def self.build_config(config)
           validator_config = config.dig(:request_validator) || {}
 
@@ -107,11 +143,29 @@ module Hooks
         end
 
         # Normalize headers using the Utils::Normalize class
+        #
+        # Converts header hash to normalized format with lowercase keys for
+        # case-insensitive header matching.
+        #
+        # @param headers [Hash<String, String>] Raw HTTP headers
+        # @return [Hash<String, String>] Normalized headers with lowercase keys
+        # @note Returns empty hash if headers is nil
+        # @api private
         def self.normalize_headers(headers)
           Utils::Normalize.headers(headers) || {}
         end
 
         # Validate timestamp if timestamp validation is configured
+        #
+        # Checks if the provided timestamp is within the configured tolerance
+        # of the current time. This prevents replay attacks using old requests.
+        #
+        # @param headers [Hash<String, String>] Normalized HTTP headers
+        # @param config [Hash<Symbol, Object>] Validator configuration
+        # @return [Boolean] true if timestamp is valid or not required, false otherwise
+        # @note Returns false if timestamp header is missing when required
+        # @note Tolerance is applied as absolute difference (past or future)
+        # @api private
         def self.valid_timestamp?(headers, config)
           timestamp_header = config[:timestamp_header].downcase
           timestamp_value = headers[timestamp_header]
@@ -125,13 +179,24 @@ module Hooks
           (current_time - timestamp).abs <= tolerance
         end
 
-        # Compute HMAC signature based on provider requirements
+        # Compute HMAC signature based on configuration requirements
+        #
+        # Generates the expected HMAC signature for the given payload using the
+        # specified algorithm and formatting rules.
+        #
+        # @param payload [String] Raw request body
+        # @param headers [Hash<String, String>] Normalized HTTP headers
+        # @param secret [String] Secret key for HMAC computation
+        # @param config [Hash<Symbol, Object>] Validator configuration
+        # @return [String] Formatted HMAC signature
+        # @note The returned signature format depends on the configured format style
+        # @api private
         def self.compute_signature(payload:, headers:, secret:, config:)
           # Determine what to sign based on payload template
           signing_payload = build_signing_payload(
-            payload: payload,
-            headers: headers,
-            config: config
+            payload:,
+            headers:,
+            config:
           )
 
           # Compute HMAC hash
@@ -146,12 +211,28 @@ module Hooks
           format_signature(computed_hash, config)
         end
 
-        # Build the payload string to sign (handles Slack's special requirements)
+        # Build the payload string to sign (handles templated payload requirements)
+        #
+        # Constructs the signing payload based on configuration. Some webhook services
+        # require specific payload formats that include metadata like timestamps.
+        #
+        # @param payload [String] Raw request body
+        # @param headers [Hash<String, String>] Normalized HTTP headers
+        # @param config [Hash<Symbol, Object>] Validator configuration
+        # @return [String] Payload string ready for HMAC computation
+        # @note When payload_template is provided, it supports variable substitution:
+        #   - {version}: Replaced with version_prefix
+        #   - {timestamp}: Replaced with timestamp from headers
+        #   - {body}: Replaced with the raw payload
+        # @example Template usage
+        #   template: "{version}:{timestamp}:{body}"
+        #   result: "v0:1609459200:{"event":"push"}"
+        # @api private
         def self.build_signing_payload(payload:, headers:, config:)
           template = config[:payload_template]
 
           if template
-            # Slack-style: "v0:timestamp:body"
+            # Templated payload format (e.g., "v0:timestamp:body" for timestamp-based validation)
             timestamp = headers[config[:timestamp_header].downcase]
             template
               .gsub("{version}", config[:version_prefix])
@@ -163,22 +244,35 @@ module Hooks
           end
         end
 
-        # Format the computed signature based on provider requirements
+        # Format the computed signature based on configuration requirements
+        #
+        # Applies the appropriate formatting to the computed HMAC hash based on
+        # the configured signature format style.
+        #
+        # @param hash [String] Raw HMAC hash (hexadecimal string)
+        # @param config [Hash<Symbol, Object>] Validator configuration
+        # @return [String] Formatted signature string
+        # @note Supported formats:
+        #   - :algorithm_prefixed: "sha256=abc123..." (GitHub style)
+        #   - :hash_only: "abc123..." (Shopify style)
+        #   - :version_prefixed: "v0=abc123..." (Slack style)
+        # @note Defaults to algorithm_prefixed format for unknown format styles
+        # @api private
         def self.format_signature(hash, config)
           format_style = FORMATS[config[:format]]
 
           case format_style
-          when :github_style
-            # GitHub: "sha256=abc123..."
+          when :algorithm_prefixed
+            # Algorithm-prefixed format: "sha256=abc123..." (used by GitHub, GitLab, etc.)
             "#{config[:algorithm]}=#{hash}"
-          when :shopify_style
-            # Shopify: just the hash
+          when :hash_only
+            # Hash-only format: "abc123..." (used by Shopify, etc.)
             hash
-          when :slack_style
-            # Slack: "v0=abc123..."
+          when :version_prefixed
+            # Version-prefixed format: "v0=abc123..." (used by Slack, etc.)
             "#{config[:version_prefix]}=#{hash}"
           else
-            # Default to GitHub style
+            # Default to algorithm-prefixed format
             "#{config[:algorithm]}=#{hash}"
           end
         end
