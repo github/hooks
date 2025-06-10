@@ -60,10 +60,10 @@ module Hooks
               # Note: Timeout enforcement would typically be handled at the server level (Puma, etc.)
             end
 
-            # Verify the incoming request
-            def validate_request(payload, headers, endpoint_config)
+            # Verify the incoming request using the configured authentication method
+            def validate_auth!(payload, headers, endpoint_config)
               auth_config = endpoint_config[:auth]
-              validator_type = auth_config[:type].downcase
+              auth_plugin_type = auth_config[:type].downcase
               secret_env_key = auth_config[:secret_env_key]
 
               return unless secret_env_key
@@ -73,24 +73,24 @@ module Hooks
                 error!("secret '#{secret_env_key}' not found in environment", 500)
               end
 
-              validator_class = nil
+              auth_class = nil
 
-              case validator_type
+              case auth_plugin_type
               when "hmac"
-                validator_class = Plugins::Auth::HMAC
+                auth_class = Plugins::Auth::HMAC
               when "shared_secret"
-                validator_class = Plugins::Auth::SharedSecret
+                auth_class = Plugins::Auth::SharedSecret
               else
                 error!("Custom validators not implemented in POC", 500)
               end
 
-              unless validator_class.valid?(
+              unless auth_class.valid?(
                 payload:,
                 headers:,
                 secret:,
                 config: endpoint_config
               )
-                error!("request validation failed", 401)
+                error!("authentication failed", 401)
               end
             end
 
@@ -202,8 +202,10 @@ module Hooks
                   raw_body = request.body.read
 
                   # Verify/validate request if configured
-                  log.info "validating request (id: #{request_id}, handler: #{handler_class_name})" if endpoint_config[:auth]
-                  validate_request(raw_body, headers, endpoint_config) if endpoint_config[:auth]
+                  if endpoint_config[:auth]
+                    log.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
+                    validate_auth!(raw_body, headers, endpoint_config) if endpoint_config[:auth]
+                  end
 
                   # Parse payload (symbolize_payload is true by default)
                   payload = parse_payload(raw_body, headers, symbolize: config[:symbolize_payload])

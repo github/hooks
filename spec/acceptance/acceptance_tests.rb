@@ -81,7 +81,7 @@ describe "Hooks" do
         response = http.post("/webhooks/github", payload.to_json, headers)
 
         expect(response).to be_a(Net::HTTPUnauthorized)
-        expect(response.body).to include("request validation failed")
+        expect(response.body).to include("authentication failed")
       end
 
       it "receives a POST request but there is no HMAC related header" do
@@ -89,7 +89,7 @@ describe "Hooks" do
         headers = { "Content-Type" => "application/json" }
         response = http.post("/webhooks/github", payload.to_json, headers)
         expect(response).to be_a(Net::HTTPUnauthorized)
-        expect(response.body).to include("request validation failed")
+        expect(response.body).to include("authentication failed")
       end
 
       it "receives a POST request but it uses the wrong algo" do
@@ -100,7 +100,7 @@ describe "Hooks" do
         }
         response = http.post("/webhooks/github", payload.to_json, headers)
         expect(response).to be_a(Net::HTTPUnauthorized)
-        expect(response.body).to include("request validation failed")
+        expect(response.body).to include("authentication failed")
       end
 
       it "successfully processes a valid POST request with HMAC signature" do
@@ -124,7 +124,7 @@ describe "Hooks" do
         response = http.post("/webhooks/slack", payload.to_json, headers)
 
         expect(response).to be_a(Net::HTTPUnauthorized)
-        expect(response.body).to include("request validation failed")
+        expect(response.body).to include("authentication failed")
       end
     end
 
@@ -135,7 +135,7 @@ describe "Hooks" do
         response = http.post("/webhooks/okta", payload.to_json, headers)
 
         expect(response).to be_a(Net::HTTPUnauthorized)
-        expect(response.body).to include("request validation failed")
+        expect(response.body).to include("authentication failed")
       end
 
       it "successfully processes a valid POST request with shared secret" do
