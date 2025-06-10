@@ -18,7 +18,7 @@ describe "Hooks" do
       begin
         response = Net::HTTP.new("0.0.0.0", 8080).get("/health")
         break if response.is_a?(Net::HTTPSuccess)
-      rescue Errno::ECONNREFUSED, SocketError
+      rescue Errno::ECONNREFUSED, SocketError, StandardError
         # Server not ready yet, continue waiting
       end
 
