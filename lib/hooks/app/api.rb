@@ -13,7 +13,7 @@ module Hooks
     # Factory for creating configured Grape API classes
     class API
       # Create a new configured API class
-      def self.create(config:, endpoints:, log:, signal_handler:)
+      def self.create(config:, endpoints:, log:)
         # Store startup time for uptime calculation
         start_time = Time.now
 
@@ -21,7 +21,6 @@ module Hooks
         captured_config = config
         captured_endpoints = endpoints
         captured_logger = log
-        _captured_signal_handler = signal_handler
         captured_start_time = start_time
 
         # Set global logger instance for plugins/validators

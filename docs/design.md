@@ -140,7 +140,6 @@ lib/hooks/
 │   ├── config_loader.rb      # Loads + merges per-endpoint configs
 │   ├── config_validator.rb   # Dry::Schema-based validation
 │   ├── logger_factory.rb     # Structured JSON logger + context enrichment
-│   └── signal_handler.rb     # Trap SIGINT/SIGTERM for graceful shutdown
 │
 ├── handlers/
 │   └── base.rb               # `Hooks::Handlers::Base` interface: defines #call

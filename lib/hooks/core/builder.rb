@@ -3,7 +3,6 @@
 require_relative "config_loader"
 require_relative "config_validator"
 require_relative "logger_factory"
-require_relative "signal_handler"
 require_relative "../app/api"
 
 module Hooks
@@ -34,9 +33,6 @@ module Hooks
           )
         end
 
-        # Setup signal handler for graceful shutdown
-        signal_handler = SignalHandler.new(@log)
-
         # Load endpoints
         endpoints = load_endpoints(config)
 
@@ -50,8 +46,7 @@ module Hooks
         Hooks::App::API.create(
           config: config,
           endpoints: endpoints,
-          log: @log,
-          signal_handler: signal_handler
+          log: @log
         )
       end
 

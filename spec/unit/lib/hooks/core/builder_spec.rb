@@ -97,7 +97,6 @@ describe Hooks::Core::Builder do
           expect(args[:config]).to be_a(Hash)
           expect(args[:endpoints]).to eq([])
           expect(args[:log]).to respond_to(:info)
-          expect(args[:signal_handler]).to be_a(Hooks::Core::SignalHandler)
           "mock_api"
         end
 
