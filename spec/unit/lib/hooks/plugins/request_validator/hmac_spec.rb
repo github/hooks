@@ -1,18 +1,23 @@
 # frozen_string_literal: true
 
-describe Hooks::Plugins::RequestValidator::HMAC do
+describe Hooks::Plugins::Auth::HMAC do
+  let(:log) { instance_double(Logger).as_null_object }
   let(:secret) { "supersecret" }
   let(:payload) { '{"foo":"bar"}' }
   let(:default_header) { "X-Hub-Signature-256" }
   let(:default_algorithm) { "sha256" }
   let(:default_config) do
     {
-      request_validator: {
+      auth: {
         header: default_header,
         algorithm: default_algorithm,
         format: "algorithm=signature"
       }
     }
+  end
+
+  before(:each) do
+    Hooks::Log.instance = log
   end
 
   def valid_with(args = {})
@@ -53,7 +58,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       let(:header) { "X-Signature-Hash" }
       let(:config) do
         {
-          request_validator: {
+          auth: {
             header: header,
             algorithm: "sha256",
             format: "signature_only"
@@ -83,7 +88,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       let(:headers) { { header => signature, timestamp_header => timestamp } }
       let(:config) do
         {
-          request_validator: {
+          auth: {
             header: header,
             timestamp_header: timestamp_header,
             algorithm: "sha256",
@@ -122,8 +127,8 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       let(:header) { "X-Unsupported-Alg" }
       let(:config) do
         {
-          request_validator: {
-            header: header,
+          auth: {
+            header:,
             algorithm: "md5",
             format: "algorithm=signature"
           }
@@ -257,7 +262,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       it "fails when server expects algorithm-prefixed but receives hash-only" do
         # Server configured for algorithm-prefixed format
         server_config = {
-          request_validator: {
+          auth: {
             header: "X-Signature",
             algorithm: "sha256",
             format: "algorithm=signature"
@@ -274,7 +279,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       it "fails when server expects hash-only but receives algorithm-prefixed" do
         # Server configured for hash-only format
         server_config = {
-          request_validator: {
+          auth: {
             header: "X-Signature",
             algorithm: "sha256",
             format: "signature_only"
@@ -292,7 +297,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
         # Server configured for version-prefixed format with timestamp
         timestamp = Time.now.to_i.to_s
         server_config = {
-          request_validator: {
+          auth: {
             header: "X-Signature",
             timestamp_header: "X-Timestamp",
             algorithm: "sha256",
@@ -316,7 +321,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       it "fails when server expects algorithm-prefixed but receives version-prefixed" do
         # Server configured for algorithm-prefixed format
         server_config = {
-          request_validator: {
+          auth: {
             header: "X-Signature",
             algorithm: "sha256",
             format: "algorithm=signature"
@@ -335,7 +340,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       it "fails when algorithm in config differs from signature prefix" do
         # Server configured for sha512
         server_config = {
-          request_validator: {
+          auth: {
             header: "X-Signature",
             algorithm: "sha512",
             format: "algorithm=signature"
@@ -355,7 +360,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
 
         # Server configured for v0 prefix
         server_config = {
-          request_validator: {
+          auth: {
             header: "X-Signature",
             timestamp_header: "X-Timestamp",
             algorithm: "sha256",
@@ -382,9 +387,9 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       let(:timestamp_header) { "X-Timestamp" }
       let(:base_config) do
         {
-          request_validator: {
-            header: header,
-            timestamp_header: timestamp_header,
+          auth: {
+            header:,
+            timestamp_header:,
             algorithm: "sha256",
             format: "version=signature",
             version_prefix: "v0",
@@ -481,7 +486,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
 
       it "returns false when Time.now raises an error" do
         config = {
-          request_validator: {
+          auth: {
             header: "X-Signature",
             timestamp_header: "X-Timestamp",
             algorithm: "sha256",
@@ -553,7 +558,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
       expect(described_class.send(:build_config, {})).to include(:algorithm, :format, :timestamp_tolerance, :version_prefix)
     end
     it "overrides defaults with provided config" do
-      config = { request_validator: { algorithm: "sha512", format: "signature_only", header: "X-My-Sig" } }
+      config = { auth: { algorithm: "sha512", format: "signature_only", header: "X-My-Sig" } }
       result = described_class.send(:build_config, config)
       expect(result[:algorithm]).to eq("sha512")
       expect(result[:format]).to eq("signature_only")

@@ -1,7 +1,7 @@
 path: /slack
 handler: SlackHandler
 
-request_validator:
+auth:
   type: hmac
   secret_env_key: ALT_WEBHOOK_SECRET
   header: Signature-256

@@ -167,7 +167,7 @@ path: /team1                  # Mounted at <root_path>/team1
 handler: Team1Handler         # Class in handler_dir
 
 # Signature validation
-request_validator:
+auth:
   type: default               # 'default' uses HMACSHA256, or a custom class name
   secret_env_key: TEAM1_SECRET
   header: X-Hub-Signature
@@ -613,7 +613,7 @@ path: string                    # Endpoint path (mounted under root_path)
 handler: string                 # Handler class name
 
 # Optional signature validation
-request_validator:
+auth:
   type: string                  # 'default' or custom validator class name
   secret_env_key: string        # ENV key containing secret
   header: string                # Header containing signature (default: X-Hub-Signature)

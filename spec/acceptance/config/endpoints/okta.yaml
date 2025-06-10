@@ -1,7 +1,7 @@
 path: /okta
 handler: OktaHandler
 
-request_validator:
+auth:
   type: shared_secret
   secret_env_key: SHARED_SECRET # the name of the environment variable containing the shared secret
   header: Authorization

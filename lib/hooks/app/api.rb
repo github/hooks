@@ -5,6 +5,7 @@ require "json"
 require "securerandom"
 require_relative "../handlers/base"
 require_relative "../core/logger_factory"
+require_relative "../core/log"
 
 module Hooks
   module App
@@ -21,6 +22,9 @@ module Hooks
         captured_logger = log
         _captured_signal_handler = signal_handler
         captured_start_time = start_time
+
+        # Set global logger instance for plugins/validators
+        Hooks::Log.instance = log
 
         # Create the API class with dynamic routes
         api_class = Class.new(Grape::API) do
@@ -58,9 +62,9 @@ module Hooks
 
             # Verify the incoming request
             def validate_request(payload, headers, endpoint_config)
-              request_validator_config = endpoint_config[:request_validator]
-              validator_type = request_validator_config[:type].downcase
-              secret_env_key = request_validator_config[:secret_env_key]
+              auth_config = endpoint_config[:auth]
+              validator_type = auth_config[:type].downcase
+              secret_env_key = auth_config[:secret_env_key]
 
               return unless secret_env_key
 
@@ -73,9 +77,9 @@ module Hooks
 
               case validator_type
               when "hmac"
-                validator_class = Plugins::RequestValidator::HMAC
+                validator_class = Plugins::Auth::HMAC
               when "shared_secret"
-                validator_class = Plugins::RequestValidator::SharedSecret
+                validator_class = Plugins::Auth::SharedSecret
               else
                 error!("Custom validators not implemented in POC", 500)
               end
@@ -198,8 +202,8 @@ module Hooks
                   raw_body = request.body.read
 
                   # Verify/validate request if configured
-                  log.info "validating request (id: #{request_id}, handler: #{handler_class_name})" if endpoint_config[:request_validator]
-                  validate_request(raw_body, headers, endpoint_config) if endpoint_config[:request_validator]
+                  log.info "validating request (id: #{request_id}, handler: #{handler_class_name})" if endpoint_config[:auth]
+                  validate_request(raw_body, headers, endpoint_config) if endpoint_config[:auth]
 
                   # Parse payload (symbolize_payload is true by default)
                   payload = parse_payload(raw_body, headers, symbolize: config[:symbolize_payload])

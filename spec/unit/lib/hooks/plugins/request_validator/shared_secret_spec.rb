@@ -2,21 +2,26 @@
 
 require_relative "../../../../spec_helper"
 
-describe Hooks::Plugins::RequestValidator::SharedSecret do
+describe Hooks::Plugins::Auth::SharedSecret do
   let(:secret) { "my-super-secret-key-12345" }
   let(:payload) { '{"foo":"bar"}' }
   let(:default_header) { "Authorization" }
   let(:default_config) do
     {
-      request_validator: {
+      auth: {
         header: default_header
       }
     }
   end
+  let(:log) { instance_double(Logger).as_null_object }
 
   def valid_with(args = {})
     args = { config: default_config }.merge(args)
     described_class.valid?(payload:, secret:, **args)
+  end
+
+  before(:each) do
+    Hooks::Log.instance = log
   end
 
   describe ".valid?" do
@@ -90,7 +95,7 @@ describe Hooks::Plugins::RequestValidator::SharedSecret do
       let(:custom_header) { "X-API-Key" }
       let(:custom_config) do
         {
-          request_validator: {
+          auth: {
             header: custom_header
           }
         }
@@ -135,7 +140,7 @@ describe Hooks::Plugins::RequestValidator::SharedSecret do
         expect(valid_with(headers:, config: nil)).to be false
       end
 
-      it "handles config without request_validator section" do
+      it "handles config without auth section" do
         headers = { "Authorization" => secret }
         config = { other_setting: "value" }
         expect(valid_with(headers:, config:)).to be true
@@ -251,7 +256,7 @@ describe Hooks::Plugins::RequestValidator::SharedSecret do
 
   describe "inheritance" do
     it "extends Base class" do
-      expect(described_class.ancestors).to include(Hooks::Plugins::RequestValidator::Base)
+      expect(described_class.ancestors).to include(Hooks::Plugins::Auth::Base)
     end
 
     it "implements required valid? method" do
@@ -272,7 +277,7 @@ describe Hooks::Plugins::RequestValidator::SharedSecret do
       let(:okta_secret) { "my-okta-webhook-secret-key" }
       let(:okta_config) do
         {
-          request_validator: {
+          auth: {
             header: "Authorization"
           }
         }
@@ -305,7 +310,7 @@ describe Hooks::Plugins::RequestValidator::SharedSecret do
       let(:api_key) { "sk_live_12345abcdef" }
       let(:api_config) do
         {
-          request_validator: {
+          auth: {
             header: "X-API-Key"
           }
         }

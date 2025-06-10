@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
 require "rack/utils"
+require_relative "../../core/log"
 
 module Hooks
   module Plugins
-    module RequestValidator
-      # Abstract base class for request validators
+    module Auth
+      # Abstract base class for request validators via authentication
       #
-      # All custom request validators must inherit from this class
+      # All custom Auth plugins must inherit from this class
       class Base
         # Validate request
         #
@@ -19,6 +20,18 @@ module Hooks
         # @raise [NotImplementedError] if not implemented by subclass
         def self.valid?(payload:, headers:, secret:, config:)
           raise NotImplementedError, "Validator must implement .valid? class method"
+        end
+
+        # Short logger accessor for all subclasses
+        # @return [Hooks::Log] Logger instance for request validation
+        #
+        # Provides a convenient way for validators to log messages without needing
+        # to reference the full Hooks::Log namespace.
+        #
+        # @example Logging an error in an inherited class
+        #   log.error("oh no an error occured")
+        def self.log
+          Hooks::Log.instance
         end
       end
     end

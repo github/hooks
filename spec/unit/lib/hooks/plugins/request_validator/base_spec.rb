@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Hooks::Plugins::RequestValidator::Base do
+describe Hooks::Plugins::Auth::Base do
   describe ".valid?" do
     let(:payload) { '{"test": "data"}' }
     let(:headers) { { "Content-Type" => "application/json" } }

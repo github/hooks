@@ -14,7 +14,7 @@ AllCops:
 
 GitHub/InsecureHashAlgorithm:
   Exclude:
-    - "spec/unit/lib/hooks/plugins/request_validator/hmac_spec.rb"
+    - "spec/unit/lib/hooks/plugins/auth/hmac_spec.rb"
 
 GitHub/AvoidObjectSendWithDynamicMethod:
   Exclude:

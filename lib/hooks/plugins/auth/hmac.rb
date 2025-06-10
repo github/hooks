@@ -6,14 +6,14 @@ require_relative "base"
 
 module Hooks
   module Plugins
-    module RequestValidator
+    module Auth
       # Generic HMAC signature validator for webhooks
       #
       # This validator supports multiple webhook providers with different signature formats.
       # It provides flexible configuration options to handle various HMAC-based authentication schemes.
       #
       # @example Basic configuration with algorithm prefix
-      #   request_validator:
+      #   auth:
       #     type: HMAC
       #     secret_env_key: WEBHOOK_SECRET
       #     header: X-Hub-Signature-256
@@ -21,7 +21,7 @@ module Hooks
       #     format: "algorithm=signature"
       #
       # @example Configuration with timestamp validation
-      #   request_validator:
+      #   auth:
       #     type: HMAC
       #     secret_env_key: WEBHOOK_SECRET
       #     header: X-Signature
@@ -66,7 +66,7 @@ module Hooks
         # @param headers [Hash<String, String>] HTTP headers from the request
         # @param secret [String] Secret key for HMAC computation
         # @param config [Hash] Endpoint configuration containing validator settings
-        # @option config [Hash] :request_validator Validator-specific configuration
+        # @option config [Hash] :auth Validator-specific configuration
         # @option config [String] :header ('X-Signature') Header containing the signature
         # @option config [String] :timestamp_header Header containing timestamp (optional)
         # @option config [Integer] :timestamp_tolerance (300) Timestamp tolerance in seconds
@@ -83,7 +83,7 @@ module Hooks
         #     payload: request_body,
         #     headers: request.headers,
         #     secret: ENV['WEBHOOK_SECRET'],
-        #     config: { request_validator: { header: 'X-Signature' } }
+        #     config: { auth: { header: 'X-Signature' } }
         #   )
         def self.valid?(payload:, headers:, secret:, config:)
           return false if secret.nil? || secret.empty?
@@ -131,8 +131,8 @@ module Hooks
 
           # Use secure comparison to prevent timing attacks
           Rack::Utils.secure_compare(computed_signature, provided_signature)
-        rescue StandardError => _e
-          # Log error in production - for now just return false
+        rescue StandardError => e
+          log.error("Auth::HMAC validation failed: #{e.message}")
           false
         end
 
@@ -148,7 +148,7 @@ module Hooks
         # @note Missing configuration values are filled with DEFAULT_CONFIG values
         # @api private
         def self.build_config(config)
-          validator_config = config.dig(:request_validator) || {}
+          validator_config = config.dig(:auth) || {}
 
           algorithm = validator_config[:algorithm] || DEFAULT_CONFIG[:algorithm]
           tolerance = validator_config[:timestamp_tolerance] || DEFAULT_CONFIG[:timestamp_tolerance]

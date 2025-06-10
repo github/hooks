@@ -193,7 +193,7 @@ describe Hooks::Core::ConfigValidator do
         config = {
           path: "/webhook/secure",
           handler: "SecureHandler",
-          request_validator: {
+          auth: {
             type: "hmac",
             secret_env_key: "WEBHOOK_SECRET",
             header: "X-Hub-Signature-256",
@@ -230,7 +230,7 @@ describe Hooks::Core::ConfigValidator do
         config = {
           path: "/webhook/full",
           handler: "FullHandler",
-          request_validator: {
+          auth: {
             type: "custom_validator",
             secret_env_key: "SECRET",
             header: "X-Signature"
@@ -307,11 +307,11 @@ describe Hooks::Core::ConfigValidator do
         }.to raise_error(described_class::ValidationError, /Invalid endpoint configuration/)
       end
 
-      it "raises ValidationError for request_validator missing required type" do
+      it "raises ValidationError for auth missing required type" do
         config = {
           path: "/webhook/test",
           handler: "TestHandler",
-          request_validator: {
+          auth: {
             header: "X-Signature"
           }
         }
@@ -321,11 +321,11 @@ describe Hooks::Core::ConfigValidator do
         }.to raise_error(described_class::ValidationError, /Invalid endpoint configuration/)
       end
 
-      it "raises ValidationError for request_validator with empty type" do
+      it "raises ValidationError for auth with empty type" do
         config = {
           path: "/webhook/test",
           handler: "TestHandler",
-          request_validator: {
+          auth: {
             type: ""
           }
         }
@@ -335,11 +335,11 @@ describe Hooks::Core::ConfigValidator do
         }.to raise_error(described_class::ValidationError, /Invalid endpoint configuration/)
       end
 
-      it "raises ValidationError for non-hash request_validator" do
+      it "raises ValidationError for non-hash auth" do
         config = {
           path: "/webhook/test",
           handler: "TestHandler",
-          request_validator: "hmac"
+          auth: "hmac"
         }
 
         expect {
@@ -363,7 +363,7 @@ describe Hooks::Core::ConfigValidator do
         config = {
           path: "/webhook/test",
           handler: "TestHandler",
-          request_validator: {
+          auth: {
             type: "hmac",
             timestamp_tolerance: 0
           }
@@ -378,7 +378,7 @@ describe Hooks::Core::ConfigValidator do
         config = {
           path: "/webhook/test",
           handler: "TestHandler",
-          request_validator: {
+          auth: {
             type: "hmac",
             timestamp_tolerance: -100
           }
@@ -389,11 +389,11 @@ describe Hooks::Core::ConfigValidator do
         }.to raise_error(described_class::ValidationError, /Invalid endpoint configuration/)
       end
 
-      it "raises ValidationError for empty string fields in request_validator" do
+      it "raises ValidationError for empty string fields in auth" do
         config = {
           path: "/webhook/test",
           handler: "TestHandler",
-          request_validator: {
+          auth: {
             type: "hmac",
             secret_env_key: "",
             header: "",
@@ -440,7 +440,7 @@ describe Hooks::Core::ConfigValidator do
           {
             path: "/webhook/test2",
             handler: "TestHandler2",
-            request_validator: {
+            auth: {
               type: "hmac",
               header: "X-Hub-Signature"
             }
@@ -496,12 +496,12 @@ describe Hooks::Core::ConfigValidator do
         }.to raise_error(described_class::ValidationError, /Endpoint 2:.*Invalid endpoint configuration/)
       end
 
-      it "raises ValidationError for endpoint with invalid request_validator" do
+      it "raises ValidationError for endpoint with invalid auth" do
         endpoints = [
           {
             path: "/webhook/test",
             handler: "TestHandler",
-            request_validator: {
+            auth: {
               # missing required type
               header: "X-Signature"
             }

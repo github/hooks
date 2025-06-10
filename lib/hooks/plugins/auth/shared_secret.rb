@@ -4,7 +4,7 @@ require_relative "base"
 
 module Hooks
   module Plugins
-    module RequestValidator
+    module Auth
       # Generic shared secret validator for webhooks
       #
       # This validator provides simple shared secret authentication for webhook requests.
@@ -13,13 +13,13 @@ module Hooks
       # used by various webhook providers.
       #
       # @example Basic configuration
-      #   request_validator:
+      #   auth:
       #     type: shared_secret
       #     secret_env_key: WEBHOOK_SECRET
       #     header: Authorization
       #
       # @example Custom header configuration
-      #   request_validator:
+      #   auth:
       #     type: shared_secret
       #     secret_env_key: SOME_OTHER_WEBHOOK_SECRET
       #     header: X-API-Key
@@ -45,7 +45,7 @@ module Hooks
         # @param headers [Hash<String, String>] HTTP headers from the request
         # @param secret [String] Expected secret value for comparison
         # @param config [Hash] Endpoint configuration containing validator settings
-        # @option config [Hash] :request_validator Validator-specific configuration
+        # @option config [Hash] :auth Validator-specific configuration
         # @option config [String] :header ('Authorization') Header containing the secret
         # @return [Boolean] true if secret is valid, false otherwise
         # @raise [StandardError] Rescued internally, returns false on any error
@@ -56,7 +56,7 @@ module Hooks
         #     payload: request_body,
         #     headers: request.headers,
         #     secret: ENV['WEBHOOK_SECRET'],
-        #     config: { request_validator: { header: 'Authorization' } }
+        #     config: { auth: { header: 'Authorization' } }
         #   )
         def self.valid?(payload:, headers:, secret:, config:)
           return false if secret.nil? || secret.empty?
@@ -90,7 +90,6 @@ module Hooks
           # Use secure comparison to prevent timing attacks
           Rack::Utils.secure_compare(secret, stripped_secret)
         rescue StandardError => _e
-          # Log error in production - for now just return false
           false
         end
 
@@ -106,7 +105,7 @@ module Hooks
         # @note Missing configuration values are filled with DEFAULT_CONFIG values
         # @api private
         def self.build_config(config)
-          validator_config = config.dig(:request_validator) || {}
+          validator_config = config.dig(:auth) || {}
 
           DEFAULT_CONFIG.merge({
             header: validator_config[:header] || DEFAULT_CONFIG[:header]

@@ -3,7 +3,7 @@ path: /github
 handler: GithubHandler
 
 # GitHub uses HMAC SHA256 signature validation
-request_validator:
+auth:
   type: hmac
   secret_env_key: GITHUB_WEBHOOK_SECRET
   header: X-Hub-Signature-256
