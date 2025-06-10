@@ -33,6 +33,7 @@ module Hooks
 
       # Setup signal traps for graceful shutdown
       # NOTE: Disabled for now to let Puma handle signals properly
+      # :nocov:
       def setup_signal_traps
         %w[SIGINT SIGTERM].each do |signal|
           Signal.trap(signal) do
@@ -48,6 +49,7 @@ module Hooks
           end
         end
       end
+      # :nocov:
     end
   end
 end
