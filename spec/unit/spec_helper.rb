@@ -4,6 +4,7 @@ require "simplecov"
 require "simplecov-erb"
 require "rspec"
 require "time"
+require_relative "required_coverage_percentage"
 
 TIME_MOCK = "2025-01-01T00:00:00Z"
 FAKE_HMAC_SECRET = "octoawesome-secret"
@@ -12,12 +13,12 @@ FAKE_ALT_HMAC_SECRET = "octoawesome-2-secret"
 ENV["GITHUB_WEBHOOK_SECRET"] = FAKE_HMAC_SECRET
 ENV["ALT_WEBHOOK_SECRET"] = FAKE_ALT_HMAC_SECRET
 
-COV_DIR = File.expand_path("../coverage", File.dirname(__FILE__))
+COV_DIR = File.expand_path("../../coverage", File.dirname(__FILE__))
 
-SimpleCov.root File.expand_path("..", File.dirname(__FILE__))
+SimpleCov.root File.expand_path("../..", File.dirname(__FILE__))
 SimpleCov.coverage_dir COV_DIR
 
-SimpleCov.minimum_coverage 100
+SimpleCov.minimum_coverage REQUIRED_COVERAGE_PERCENTAGE
 
 SimpleCov.at_exit do
   File.write("#{COV_DIR}/total-coverage.txt", SimpleCov.result.covered_percent)
@@ -31,7 +32,7 @@ SimpleCov.start do
 end
 
 # Require all Ruby files in the lib directory
-Dir.glob(File.expand_path("../lib/**/*.rb", __dir__)).each do |file|
+Dir.glob(File.expand_path("../../lib/**/*.rb", __dir__)).each do |file|
   require file
 end
 

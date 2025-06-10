@@ -17,17 +17,21 @@ script/bootstrap
 Ensure all unit tests pass by running the following:
 
 ```bash
-script/test
+script/test # needs to pass and meet the coverage requirements
+script/integration # just needs to pass
+script/acceptance # just needs to pass
 ```
 
-This project **requires 100% test coverage** of code, not including:
+This project **requires X% test coverage** of code, not including:
 
 - dependencies or their bin scripts
 - tests
 - scripts in `script/`
 - contents of directories that begin with a dot (`.`)
 
-Tests are powered by Ruby's `rspec`. By running `script/test`, the tool `simplecov` will be automatically used and will exit with a non-zero code if the coverage is below 100%.
+Tests are powered by Ruby's `rspec`. By running `script/test`, the tool `simplecov` will be automatically used and will exit with a non-zero code if the coverage is below X%.
+
+> The percent coverage required is defined in the `spec/unit/spec_helper.rb` file.
 
 ## Linting
 
@@ -95,5 +99,8 @@ The linter is powered by `rubocop` with its config file located at `.rubocop.yml
 - `config/` - Configuration files for the project.
 - `lib/` - Main code for the project. This is where the main application/service code lives.
 - `spec/` - Tests for the project. This is where the unit tests and acceptance tests live.
+  - `spec/acceptance/` - Acceptance tests for the project.
+  - `spec/unit/` - Unit tests for the project.
+  - `spec/integration/` - Integration tests for the project.
 - `vendor/cache` - Vendored dependencies (Ruby Gems).
 - `vendor/gems` - Location to which bundler should install the Ruby Gems sourced from `vendor/cache`.

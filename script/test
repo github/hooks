@@ -7,16 +7,23 @@ source script/env "$@"
 # run tests
 echo -e "\n🧪 ${BLUE}Running tests: $(date "+%H:%M:%S")${OFF}\n"
 
-bundle exec bin/rspec spec && rspec_exit=$? || rspec_exit=$?
+bundle exec bin/rspec spec/unit && rspec_exit=$? || rspec_exit=$?
 
 total_coverage=$(cat "$DIR/coverage/total-coverage.txt")
 
-if grep -q "100.0" "$DIR/coverage/total-coverage.txt"; then
+# Extract required coverage percentage from the Ruby file
+required_coverage=$(grep "REQUIRED_COVERAGE_PERCENTAGE" "$DIR/spec/unit/required_coverage_percentage.rb" | grep -o '[0-9]\+')
+
+# Extract current coverage percentage (remove % sign if present)
+current_coverage=$(echo "$total_coverage" | grep -o '[0-9]\+\(\.[0-9]\+\)\?')
+
+# Compare coverage percentages
+if (( $(echo "$current_coverage >= $required_coverage" | bc -l) )); then
   cov_exit=0
-  echo -e "\n✅ Total Coverage: ${GREEN}$total_coverage${OFF}"
+  echo -e "\n✅ Total Coverage: ${GREEN}$total_coverage${OFF} (required: ${required_coverage}%)"
 else
   cov_exit=1
-  echo -e "\n❌ Total Coverage: ${RED}$total_coverage${OFF}"
+  echo -e "\n❌ Total Coverage: ${RED}$total_coverage${OFF} (required: ${required_coverage}%)"
 fi
 
 echo ""

@@ -1,0 +1,23 @@
+#! /usr/bin/env bash
+
+set -e # prevent any kind of script failures
+
+source script/env "$@"
+
+echo -e "${PURPLE}[#]${OFF} ${BLUE}Running acceptance tests${OFF}"
+bundle exec bin/rspec spec/integration && rspec_exit=$? || rspec_exit=$?
+echo ""
+echo "---------------------------------------"
+echo "📊 Summary Results"
+echo "---------------------------------------"
+echo ""
+
+if [[ $rspec_exit == 0 ]]; then
+  echo -e "✅ ${GREEN}rspec:    exitcode=${rspec_exit}${OFF}"
+else
+  echo -e "❌ ${RED}rspec:    exitcode=${rspec_exit}${OFF}"
+fi
+
+[ "$rspec_exit" -gt 0 ] && exit 1
+
+exit 0
