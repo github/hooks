@@ -9,9 +9,6 @@ class Team1Handler < Hooks::Handlers::Base
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
   def call(payload:, headers:, config:)
-    # Log the webhook receipt
-    puts "Team1Handler: Received webhook for #{config.dig(:opts, :teams)&.join(', ')}"
-
     # Process the payload based on type
     if payload.is_a?(Hash)
       event_type = payload[:event_type] || "unknown"

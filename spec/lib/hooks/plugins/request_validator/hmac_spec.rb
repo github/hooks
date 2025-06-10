@@ -313,6 +313,25 @@ describe Hooks::Plugins::RequestValidator::HMAC do
         expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
       end
 
+      it "fails when server expects algorithm-prefixed but receives version-prefixed" do
+        # Server configured for algorithm-prefixed format
+        server_config = {
+          request_validator: {
+            header: "X-Signature",
+            algorithm: "sha256",
+            format: "algorithm=signature"
+          }
+        }
+        # Attacker sends version-prefixed format
+        timestamp = Time.now.to_i.to_s
+        versioned_sig = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, "v0:#{timestamp}:#{base_payload}")
+        attacker_headers = {
+          "X-Signature" => versioned_sig,
+          "X-Timestamp" => timestamp
+        }
+        expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
+      end
+
       it "fails when algorithm in config differs from signature prefix" do
         # Server configured for sha512
         server_config = {
@@ -429,7 +448,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
         expect(valid_with(headers:, config: base_config)).to be false
       end
 
-      it "returns false when timestamp header name case differs" do
+      it "returns true when timestamp header name case differs due to normalization" do
         timestamp = Time.now.to_i.to_s
         signing_payload = "v0:#{timestamp}:#{payload}"
         signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)

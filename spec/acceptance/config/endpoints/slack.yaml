@@ -1,0 +1,13 @@
+path: /slack
+handler: SlackHandler
+
+request_validator:
+  type: hmac
+  secret_env_key: ALT_WEBHOOK_SECRET
+  header: Signature-256
+  algorithm: sha256
+  format: "version=signature"  # produces "v0=abc123..."
+  timestamp_header: "X-Timestamp"
+  version_prefix: "v0"
+  payload_template: "v0:{timestamp}:{body}"
+  timestamp_tolerance: 300

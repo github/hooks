@@ -35,6 +35,11 @@ module Hooks
           optional(:secret_env_key).filled(:string)
           optional(:header).filled(:string)
           optional(:algorithm).filled(:string)
+          optional(:timestamp_header).filled(:string)
+          optional(:timestamp_tolerance).filled(:integer, gt?: 0)
+          optional(:format).filled(:string)
+          optional(:version_prefix).filled(:string)
+          optional(:payload_template).filled(:string)
         end
 
         optional(:opts).hash

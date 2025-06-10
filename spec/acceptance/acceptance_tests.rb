@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require_relative "../spec_helper"
+FAKE_HMAC_SECRET = "octoawesome-secret"
+FAKE_ALT_HMAC_SECRET = "octoawesome-2-secret"
 
 require "rspec"
 require "net/http"
@@ -90,6 +91,17 @@ describe "Hooks" do
         expect(response.body).to include("request validation failed")
       end
 
+      it "receives a POST request but it uses the wrong algo" do
+        payload = { action: "push", repository: { name: "test-repo" } }
+        headers = {
+          "Content-Type" => "application/json",
+          "X-Hub-Signature-256" => "sha512=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha512"), FAKE_HMAC_SECRET, payload.to_json)
+        }
+        response = http.post("/webhooks/github", payload.to_json, headers)
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("request validation failed")
+      end
+
       it "successfully processes a valid POST request with HMAC signature" do
         payload = { action: "push", repository: { name: "test-repo" } }
         headers = {
@@ -100,6 +112,18 @@ describe "Hooks" do
         expect(response).to be_a(Net::HTTPSuccess)
         body = JSON.parse(response.body)
         expect(body["status"]).to eq("success")
+      end
+    end
+
+    describe "slack" do
+      it "receives a POST request but contains an invalid HMAC signature" do
+        payload = { text: "Hello, Slack!" }
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, payload.to_json)
+        headers = { "Content-Type" => "application/json", "Signature-256" => "sha256=#{digest}" }
+        response = http.post("/webhooks/slack", payload.to_json, headers)
+
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("request validation failed")
       end
     end
   end
