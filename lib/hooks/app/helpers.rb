@@ -6,11 +6,18 @@ module Hooks
   module App
     module Helpers
       # Generate a unique identifier (UUID)
+      #
+      # @return [String] a new UUID string
       def uuid
         SecureRandom.uuid
       end
 
       # Enforce request size and timeout limits
+      #
+      # @param config [Hash] The configuration hash, must include :request_limit
+      # @raise [StandardError] Halts with error if request body is too large
+      # @return [void]
+      # @note Timeout enforcement should be handled at the server level (e.g., Puma)
       def enforce_request_limits(config)
         # Check content length (handle different header formats and sources)
         content_length = headers["Content-Length"] || headers["CONTENT_LENGTH"] ||
@@ -30,6 +37,11 @@ module Hooks
       end
 
       # Parse request payload
+      #
+      # @param raw_body [String] The raw request body
+      # @param headers [Hash] The request headers
+      # @param symbolize [Boolean] Whether to symbolize keys in parsed JSON (default: true)
+      # @return [Hash, String] Parsed JSON as Hash (optionally symbolized), or raw body if not JSON
       def parse_payload(raw_body, headers, symbolize: true)
         content_type = headers["Content-Type"] || headers["CONTENT_TYPE"] || headers["content-type"] || headers["HTTP_CONTENT_TYPE"]
 
@@ -49,6 +61,12 @@ module Hooks
       end
 
       # Load handler class
+      #
+      # @param handler_class_name [String] The name of the handler class to load
+      # @param handler_dir [String] The directory containing handler files
+      # @return [Object] An instance of the loaded handler class
+      # @raise [LoadError] If the handler file or class cannot be found
+      # @raise [StandardError] Halts with error if handler cannot be loaded
       def load_handler(handler_class_name, handler_dir)
         # Convert class name to file name (e.g., Team1Handler -> team1_handler.rb)
         # E.g.2: GithubHandler -> github_handler.rb
@@ -67,6 +85,9 @@ module Hooks
       end
 
       # Determine HTTP error code from exception
+      #
+      # @param exception [Exception] The exception to map to an HTTP status code
+      # @return [Integer] The HTTP status code (400, 501, or 500)
       def determine_error_code(exception)
         case exception
         when ArgumentError then 400
