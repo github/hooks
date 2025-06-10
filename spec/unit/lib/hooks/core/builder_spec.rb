@@ -264,7 +264,7 @@ describe Hooks::Core::Builder do
 
         expect {
           builder.build
-        }.to raise_error(Hooks::Core::ConfigurationError, 
+        }.to raise_error(Hooks::Core::ConfigurationError,
                          "Configuration validation failed: Invalid config")
       end
 

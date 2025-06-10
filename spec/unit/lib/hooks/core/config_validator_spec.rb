@@ -14,7 +14,7 @@ describe Hooks::Core::ConfigValidator do
           root_path: "/custom/webhooks",
           health_path: "/custom/health",
           version_path: "/custom/version",
-          environment: "development", 
+          environment: "development",
           endpoints_dir: "./custom/endpoints",
           use_catchall_route: true,
           symbolize_payload: false,
