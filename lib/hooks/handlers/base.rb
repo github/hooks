@@ -16,6 +16,18 @@ module Hooks
       def call(payload:, headers:, config:)
         raise NotImplementedError, "Handler must implement #call method"
       end
+
+      # Short logger accessor for all subclasses
+      # @return [Hooks::Log] Logger instance
+      #
+      # Provides a convenient way for handlers to log messages without needing
+      # to reference the full Hooks::Log namespace.
+      #
+      # @example Logging an error in an inherited class
+      #   log.error("oh no an error occured")
+      def log
+        Hooks::Log.instance
+      end
     end
   end
 end
