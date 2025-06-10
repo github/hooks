@@ -2,8 +2,20 @@
 
 module Hooks
   module App
+    # Provides authentication helpers for verifying incoming requests.
+    #
+    # @example Usage
+    #   include Hooks::App::Auth
+    #   validate_auth!(payload, headers, endpoint_config)
     module Auth
-      # Verify the incoming request using the configured authentication method
+      # Verifies the incoming request using the configured authentication method.
+      #
+      # @param payload [String, Hash] The request payload to authenticate.
+      # @param headers [Hash] The request headers.
+      # @param endpoint_config [Hash] The endpoint configuration, must include :auth key.
+      # @raise [StandardError] Raises error if authentication fails or is misconfigured.
+      # @return [void]
+      # @note This method will halt execution with an error if authentication fails.
       def validate_auth!(payload, headers, endpoint_config)
         auth_config = endpoint_config[:auth]
         auth_plugin_type = auth_config[:type].downcase
