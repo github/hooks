@@ -5,6 +5,7 @@ bin/*
 coverage/
 logs/
 tmp/
+spec/integration/tmp/
 tarballs/
 vendor/gems/
 .idea

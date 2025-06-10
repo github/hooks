@@ -4,10 +4,11 @@ handler: GithubHandler
 
 # GitHub uses HMAC SHA256 signature validation
 request_validator:
-  type: GitHubWebhooks
+  type: hmac
   secret_env_key: GITHUB_WEBHOOK_SECRET
-  # header: X-Hub-Signature-256 # Optional, defaults to X-Hub-Signature-256
-  # algorithm: sha256 # Optional, defaults to sha256
+  header: X-Hub-Signature-256
+  algorithm: sha256
+  format: "algorithm=signature"  # produces "sha256=abc123..."
 
 # Options for GitHub webhook handling
 opts:

@@ -12,7 +12,7 @@ RSpec.describe "Hooks Integration" do
   def app
     @app ||= Hooks.build(
       config: {
-        handler_dir: "./handlers",
+        handler_dir: "./spec/integration/tmp/handlers",
         log_level: "error", # Reduce noise in tests
         request_limit: 1048576,
         request_timeout: 15,
@@ -20,7 +20,7 @@ RSpec.describe "Hooks Integration" do
         health_path: "/health",
         version_path: "/version",
         environment: "development",
-        endpoints_dir: "./spec/fixtures/endpoints",
+        endpoints_dir: "./spec/integration/tmp/endpoints",
         use_catchall_route: true  # Enable catch-all route for testing
       }
     )
@@ -28,17 +28,17 @@ RSpec.describe "Hooks Integration" do
 
   before(:all) do
     # Create test endpoint config
-    FileUtils.mkdir_p("./spec/fixtures/endpoints")
-    File.write("./spec/fixtures/endpoints/test.yaml", {
+    FileUtils.mkdir_p("./spec/integration/tmp/endpoints")
+    File.write("./spec/integration/tmp/endpoints/test.yaml", {
       path: "/test",
       handler: "TestHandler",
       opts: { test_mode: true }
     }.to_yaml)
 
     # Create test handler
-    FileUtils.mkdir_p("./handlers")
-    File.write("./handlers/test_handler.rb", <<~RUBY)
-      require_relative "../lib/hooks/handlers/base"
+    FileUtils.mkdir_p("./spec/integration/tmp/handlers")
+    File.write("./spec/integration/tmp/handlers/test_handler.rb", <<~RUBY)
+      require_relative "../../../../lib/hooks/handlers/base"
 
       class TestHandler < Hooks::Handlers::Base
         def call(payload:, headers:, config:)
@@ -55,7 +55,7 @@ RSpec.describe "Hooks Integration" do
 
   after(:all) do
     # Clean up test files
-    FileUtils.rm_rf("./spec/fixtures")
+    FileUtils.rm_rf("./spec/integration/tmp")
   end
 
   describe "operational endpoints" do

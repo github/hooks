@@ -59,7 +59,7 @@ module Hooks
             # Verify the incoming request
             def validate_request(payload, headers, endpoint_config)
               request_validator_config = endpoint_config[:request_validator]
-              validator_type = request_validator_config[:type]
+              validator_type = request_validator_config[:type].downcase
               secret_env_key = request_validator_config[:secret_env_key]
 
               return unless secret_env_key
@@ -72,8 +72,8 @@ module Hooks
               validator_class = nil
 
               case validator_type
-              when "GitHubWebhooks"
-                validator_class = Plugins::RequestValidator::GitHubWebhooks
+              when "hmac"
+                validator_class = Plugins::RequestValidator::HMAC
               else
                 error!("Custom validators not implemented in POC", 500)
               end
@@ -196,7 +196,7 @@ module Hooks
                   raw_body = request.body.read
 
                   # Verify/validate request if configured
-                  log.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
+                  log.info "validating request (id: #{request_id}, handler: #{handler_class_name})" if endpoint_config[:request_validator]
                   validate_request(raw_body, headers, endpoint_config) if endpoint_config[:request_validator]
 
                   # Parse payload (symbolize_payload is true by default)
