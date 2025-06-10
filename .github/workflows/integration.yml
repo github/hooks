@@ -1,4 +1,4 @@
-name: test
+name: integration
 
 on:
   push:
@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: test
+  integration:
+    name: integration
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,5 +29,5 @@ jobs:
       - name: bootstrap
         run: script/bootstrap
 
-      - name: test
-        run: script/test
+      - name: integration
+        run: script/integration
