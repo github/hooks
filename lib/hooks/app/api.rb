@@ -74,6 +74,8 @@ module Hooks
               case validator_type
               when "hmac"
                 validator_class = Plugins::RequestValidator::HMAC
+              when "shared_secret"
+                validator_class = Plugins::RequestValidator::SharedSecret
               else
                 error!("Custom validators not implemented in POC", 500)
               end

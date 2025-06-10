@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "openssl"
-require "rack/utils"
 require "time"
 require_relative "base"
 

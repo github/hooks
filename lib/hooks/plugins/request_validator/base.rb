@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "rack/utils"
+
 module Hooks
   module Plugins
     module RequestValidator

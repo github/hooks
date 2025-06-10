@@ -2,6 +2,7 @@
 
 FAKE_HMAC_SECRET = "octoawesome-secret"
 FAKE_ALT_HMAC_SECRET = "octoawesome-2-secret"
+FAKE_SHARED_SECRET = "octoawesome-shared-secret"
 
 require "rspec"
 require "net/http"
@@ -124,6 +125,27 @@ describe "Hooks" do
 
         expect(response).to be_a(Net::HTTPUnauthorized)
         expect(response.body).to include("request validation failed")
+      end
+    end
+
+    describe "okta" do
+      it "receives a POST request but contains an invalid shared secret" do
+        payload = { event: "user.login", user: { id: "12345" } }
+        headers = { "Content-Type" => "application/json", "Authorization" => "badvalue" }
+        response = http.post("/webhooks/okta", payload.to_json, headers)
+
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("request validation failed")
+      end
+
+      it "successfully processes a valid POST request with shared secret" do
+        payload = { event: "user.login", user: { id: "12345" } }
+        headers = { "Content-Type" => "application/json", "Authorization" => FAKE_SHARED_SECRET }
+        response = http.post("/webhooks/okta", payload.to_json, headers)
+
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["status"]).to eq("success")
       end
     end
   end
