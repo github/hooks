@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../../../spec_helper"
-
 describe Hooks::Core::SignalHandler do
   let(:logger) { double("Logger", info: nil) }
 

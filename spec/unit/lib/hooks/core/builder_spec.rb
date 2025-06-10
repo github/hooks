@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../../../spec_helper"
-require "fileutils"
-
 describe Hooks::Core::Builder do
   let(:temp_dir) { "/tmp/hooks_builder_test" }
 
@@ -87,9 +84,7 @@ describe Hooks::Core::Builder do
       end
 
       it "loads endpoints from the endpoints directory" do
-        config = { log_level: "info", environment: "test", endpoints_dir: "/nonexistent" }
         expect(Hooks::Core::ConfigLoader).to receive(:load_endpoints).with("/nonexistent")
-
         builder.build
       end
 

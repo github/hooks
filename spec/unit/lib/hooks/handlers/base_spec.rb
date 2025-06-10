@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../../../spec_helper"
-
 describe Hooks::Handlers::Base do
   describe "#call" do
     let(:handler) { described_class.new }

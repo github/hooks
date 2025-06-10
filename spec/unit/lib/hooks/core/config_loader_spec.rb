@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../../../spec_helper"
-require "fileutils"
-
 describe Hooks::Core::ConfigLoader do
   describe ".load" do
     context "with no config_path provided" do

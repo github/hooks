@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../../../spec_helper"
-
 describe Hooks::Core::ConfigValidator do
   describe ".validate_global_config" do
     context "with valid configuration" do

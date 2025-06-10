@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../../../spec_helper"
-require "stringio"
-
 describe Hooks::Core::LoggerFactory do
   describe ".create" do
     context "with default parameters" do

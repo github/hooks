@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "../../../../spec_helper"
-
 describe Hooks::Plugins::RequestValidator::Base do
   describe ".valid?" do
     let(:payload) { '{"test": "data"}' }
