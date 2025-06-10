@@ -54,7 +54,7 @@ module Hooks
           # Define helper methods first, before routes
           helpers Helpers
 
-          # Mount split-out endpoints
+          # Mount core operational endpoints
           mount Hooks::App::HealthEndpoint => config[:health_path]
           mount Hooks::App::VersionEndpoint => config[:version_path]
 
