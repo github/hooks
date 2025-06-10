@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "grape-swagger", "~> 2.1", ">= 2.1.2"
   spec.add_dependency "puma", "~> 6.6"
 
-  spec.required_ruby_version = Gem::Requirement.new(">= 3.0.0")
+  spec.required_ruby_version = Gem::Requirement.new(">= 3.2.2")
 
   spec.files = %w[LICENSE README.md hooks.gemspec config.ru]
   spec.files += Dir.glob("lib/**/*.rb")
