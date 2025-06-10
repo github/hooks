@@ -223,7 +223,7 @@ describe Hooks::Plugins::RequestValidator::HMAC do
 
       it "returns false for unicode normalization attacks" do
         # Using similar-looking unicode characters
-        unicode_headers = { default_header => signature.gsub('a', 'а') } # Cyrillic 'a'
+        unicode_headers = { default_header => signature.gsub("a", "а") } # Cyrillic 'a'
         expect(valid_with(headers: unicode_headers)).to be false
       end
 
