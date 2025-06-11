@@ -21,29 +21,44 @@ source "https://rubygems.org"
 gem "hooks-ruby", "~> X.X.X" # Replace X.X.X with the latest version
 ```
 
+Once added to your Gemfile, run:
+
+```bash
+bundle install
+```
+
 ## Usage 💻
 
 ### Basic
+
+Here is a simple example of how to set up a Hooks server.
+
+First, create a `config.ru` file:
 
 ```ruby
 # file: config.ru
 require "hooks-ruby"
 
+# See the config documentation below for the full list of available options
+# For this example, we will just set use_catchall_route to true
 config = {
   use_catchall_route: true # will use the DefaultHandler for /webhooks/* - just an example/demo
 }
 
+# Builds the Hooks application with the provided configuration
 app = Hooks.build(config: config)
+
+# Run the Hooks application when the server starts
 run app
 ```
 
-Run the hooks server:
+Run the hooks server via puma which is the recommended server for Hooks:
 
 ```bash
 bundle exec puma --tag hooks
 ```
 
-Send a webhook request to the server:
+Send a webhook request to the server in a separate terminal:
 
 ```bash
 curl --request POST \
