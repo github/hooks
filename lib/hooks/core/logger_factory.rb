@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "redacting_logger"
 require "logger"
 require "json"
 require "securerandom"
@@ -16,8 +17,17 @@ module Hooks
       def self.create(log_level: "info", custom_logger: nil)
         return custom_logger if custom_logger
 
-        logger = Logger.new($stdout)
-        logger.level = parse_log_level(log_level)
+        $stdout.sync = true # don't buffer - flush immediately
+
+        # Create a new logger
+        logger = RedactingLogger.new(
+          $stdout, # The device to log to (defaults to $stdout if not provided)
+          redact_patterns: [], # An array of Regexp patterns to redact from the logs
+          level: parse_log_level(log_level), # The log level to use
+          redacted_msg: "[REDACTED]", # The message to replace the redacted patterns with
+          use_default_patterns: true # Whether to use the default built-in patterns or not
+        )
+
         logger.formatter = json_formatter
         logger
       end
