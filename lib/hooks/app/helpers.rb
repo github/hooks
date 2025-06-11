@@ -77,19 +77,6 @@ module Hooks
         end
       end
 
-      public
-
-      # Load auth plugin class (DEPRECATED - plugins are now loaded at boot time)
-      #
-      # @deprecated This method is kept for compatibility but auth plugins are now loaded at boot time
-      # @param auth_plugin_class_name [String] The name of the auth plugin class to load
-      # @param auth_plugin_dir [String] The directory containing auth plugin files
-      # @return [Class] The loaded auth plugin class
-      # @raise [StandardError] Always raises error as dynamic loading is no longer supported
-      def load_auth_plugin(auth_plugin_class_name, auth_plugin_dir)
-        error!("Dynamic auth plugin loading is deprecated. Auth plugins are now loaded at boot time.", 500)
-      end
-
       private
 
       # Determine HTTP error code from exception
