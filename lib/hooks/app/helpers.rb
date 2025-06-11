@@ -80,9 +80,9 @@ module Hooks
         file_path = File.join(handler_dir, file_name)
 
         # Security: Ensure the file path doesn't escape the handler directory
-        normalized_handler_dir = File.expand_path(handler_dir)
-        normalized_file_path = File.expand_path(file_path)
-        unless normalized_file_path.start_with?(normalized_handler_dir)
+        normalized_handler_dir = Pathname.new(File.expand_path(handler_dir))
+        normalized_file_path = Pathname.new(File.expand_path(file_path))
+        unless normalized_file_path.descend.any? { |path| path == normalized_handler_dir }
           error!("handler path outside of handler directory", 400)
         end
 
