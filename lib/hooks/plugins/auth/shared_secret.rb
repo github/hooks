@@ -43,7 +43,6 @@ module Hooks
         #
         # @param payload [String] Raw request body (unused but required by interface)
         # @param headers [Hash<String, String>] HTTP headers from the request
-        # @param secret [String] Expected secret value for comparison
         # @param config [Hash] Endpoint configuration containing validator settings
         # @option config [Hash] :auth Validator-specific configuration
         # @option config [String] :header ('Authorization') Header containing the secret
@@ -55,11 +54,10 @@ module Hooks
         #   SharedSecret.valid?(
         #     payload: request_body,
         #     headers: request.headers,
-        #     secret: ENV['WEBHOOK_SECRET'],
         #     config: { auth: { header: 'Authorization' } }
         #   )
-        def self.valid?(payload:, headers:, secret:, config:)
-          return false if secret.nil? || secret.empty?
+        def self.valid?(payload:, headers:, config:)
+          secret = fetch_secret(config)
 
           validator_config = build_config(config)
 

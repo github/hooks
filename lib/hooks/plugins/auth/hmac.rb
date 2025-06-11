@@ -64,7 +64,6 @@ module Hooks
         #
         # @param payload [String] Raw request body to validate
         # @param headers [Hash<String, String>] HTTP headers from the request
-        # @param secret [String] Secret key for HMAC computation
         # @param config [Hash] Endpoint configuration containing validator settings
         # @option config [Hash] :auth Validator-specific configuration
         # @option config [String] :header ('X-Signature') Header containing the signature
@@ -82,11 +81,11 @@ module Hooks
         #   HMAC.valid?(
         #     payload: request_body,
         #     headers: request.headers,
-        #     secret: ENV['WEBHOOK_SECRET'],
         #     config: { auth: { header: 'X-Signature' } }
         #   )
-        def self.valid?(payload:, headers:, secret:, config:)
-          return false if secret.nil? || secret.empty?
+        def self.valid?(payload:, headers:, config:)
+          # fetch the required secret from environment variable as specified in the config
+          secret = fetch_secret(config)
 
           validator_config = build_config(config)
 

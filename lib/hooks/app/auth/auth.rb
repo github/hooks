@@ -25,17 +25,6 @@ module Hooks
         end
 
         auth_plugin_type = auth_config[:type].downcase
-        secret_env_key = auth_config[:secret_env_key]
-
-        # Security: Require secret_env_key when auth is configured
-        unless secret_env_key&.is_a?(String) && !secret_env_key.strip.empty?
-          error!("authentication configuration incomplete", 500)
-        end
-
-        secret = ENV[secret_env_key]
-        unless secret
-          error!("authentication secret not configured", 500)
-        end
 
         auth_class = nil
 
@@ -51,7 +40,6 @@ module Hooks
         unless auth_class.valid?(
           payload:,
           headers:,
-          secret:,
           config: endpoint_config
         )
           error!("authentication failed", 401)
