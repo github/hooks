@@ -131,7 +131,6 @@ describe Hooks::App::Auth do
               header: "Authorization"
             }
           }
-          invalid_headers = headers.merge("Authorization" => "wrong-secret")
 
           expect do
             instance.validate_auth!(payload, headers, endpoint_config)
