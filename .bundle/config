@@ -1,6 +1,6 @@
 ---
 BUNDLE_BIN: "bin"
-BUNDLE_PATH: "/home/runner/work/hooks/hooks/vendor/bundle"
+BUNDLE_PATH: "vendor/gems"
 BUNDLE_CACHE_PATH: "vendor/cache"
 BUNDLE_CACHE_ALL: "true"
 BUNDLE_SPECIFIC_PLATFORM: "true"
