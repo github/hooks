@@ -288,3 +288,7 @@ To see a live working version of this example, check out the [spec/acceptance/](
 ### Authentication
 
 See the [Auth Plugins](docs/auth_plugins.md) documentation for even more information on how to create your own custom authentication plugins.
+
+## Contributing 🤝
+
+See the [Contributing](CONTRIBUTING.md) document for information on how to contribute to the Hooks project, including setting up your development environment, running tests, and releasing new versions.
