@@ -7,7 +7,7 @@
 module Hooks
   module Plugins
     module Auth
-      class ExampleAuthPlugin < Base
+      class Example < Base
         def self.valid?(payload:, headers:, config:)
           # Get the secret from environment variable as configured with secret_env_key
           secret = fetch_secret(config, secret_env_key_name: :secret_env_key)
