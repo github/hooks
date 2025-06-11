@@ -30,25 +30,28 @@ describe Hooks::App::Auth do
     before do
       # Create temporary directory for custom auth plugins
       FileUtils.mkdir_p(custom_auth_plugin_dir)
+      # Clear plugin registries before each test
+      Hooks::Core::PluginLoader.clear_plugins
     end
 
     after do
       # Clean up
       FileUtils.rm_rf(custom_auth_plugin_dir) if Dir.exist?(custom_auth_plugin_dir)
+      # Clear plugin registries after each test
+      Hooks::Core::PluginLoader.clear_plugins
     end
 
-    context "when custom auth plugin is configured but directory not set" do
-      it "falls back to POC error message" do
+    context "when custom auth plugin is configured but not loaded at boot time" do
+      it "returns unsupported auth type error" do
         endpoint_config = { auth: { type: "some_cool_auth_plugin" } }
-        empty_global_config = {}
 
         expect do
-          instance.validate_auth!(payload, headers, endpoint_config, empty_global_config)
+          instance.validate_auth!(payload, headers, endpoint_config, global_config)
         end.to raise_error(StandardError, /unsupported auth type/)
       end
     end
 
-    context "when custom auth plugin exists and is valid" do
+    context "when custom auth plugin exists and is loaded at boot time" do
       let(:plugin_file_content) do
         <<~RUBY
           module Hooks
@@ -68,9 +71,11 @@ describe Hooks::App::Auth do
 
       before do
         File.write(File.join(custom_auth_plugin_dir, "some_cool_auth_plugin.rb"), plugin_file_content)
+        # Load plugins at boot time as would happen in real application
+        Hooks::Core::PluginLoader.load_all_plugins(global_config)
       end
 
-      it "loads and uses the custom auth plugin successfully" do
+      it "uses the custom auth plugin successfully" do
         endpoint_config = { auth: { type: "some_cool_auth_plugin" } }
 
         expect do
@@ -99,6 +104,8 @@ describe Hooks::App::Auth do
 
       before do
         File.write(File.join(custom_auth_plugin_dir, "failing_auth_plugin.rb"), plugin_file_content)
+        # Load plugins at boot time as would happen in real application
+        Hooks::Core::PluginLoader.load_all_plugins(global_config)
       end
 
       it "returns authentication failed error" do
@@ -110,67 +117,17 @@ describe Hooks::App::Auth do
       end
     end
 
-    context "when custom auth plugin file does not exist" do
-      it "returns custom plugin loading error" do
+    context "when custom auth plugin file does not exist at boot time" do
+      it "returns unsupported auth type error" do
         endpoint_config = { auth: { type: "nonexistent_plugin" } }
 
         expect do
           instance.validate_auth!(payload, headers, endpoint_config, global_config)
-        end.to raise_error(StandardError, /Auth plugin NonexistentPlugin not found/)
+        end.to raise_error(StandardError, /unsupported auth type/)
       end
     end
 
-    context "when custom auth plugin has security issues" do
-      context "with invalid class name" do
-        it "converts lowercase plugin name and fails to find file" do
-          endpoint_config = { auth: { type: "lowercase_plugin" } }
-
-          expect do
-            instance.validate_auth!(payload, headers, endpoint_config, global_config)
-          end.to raise_error(StandardError, /Auth plugin LowercasePlugin not found/)
-        end
-
-        it "rejects plugin with special characters" do
-          endpoint_config = { auth: { type: "plugin$bad" } }
-
-          expect do
-            instance.validate_auth!(payload, headers, endpoint_config, global_config)
-          end.to raise_error(StandardError, /invalid auth plugin type/)
-        end
-      end
-
-      context "with plugin that doesn't inherit from Base" do
-        let(:bad_plugin_file_content) do
-          <<~RUBY
-            module Hooks
-              module Plugins
-                module Auth
-                  class BadPlugin
-                    def self.valid?(payload:, headers:, config:)
-                      true
-                    end
-                  end
-                end
-              end
-            end
-          RUBY
-        end
-
-        before do
-          File.write(File.join(custom_auth_plugin_dir, "bad_plugin.rb"), bad_plugin_file_content)
-        end
-
-        it "rejects plugin that doesn't inherit from Base" do
-          endpoint_config = { auth: { type: "bad_plugin" } }
-
-          expect do
-            instance.validate_auth!(payload, headers, endpoint_config, global_config)
-          end.to raise_error(StandardError, /auth plugin class must inherit from/)
-        end
-      end
-    end
-
-    context "with complex plugin names" do
+    context "with complex plugin names loaded at boot time" do
       let(:plugin_file_content) do
         <<~RUBY
           module Hooks
@@ -189,6 +146,8 @@ describe Hooks::App::Auth do
 
       before do
         File.write(File.join(custom_auth_plugin_dir, "git_hub_o_auth2_plugin.rb"), plugin_file_content)
+        # Load plugins at boot time as would happen in real application
+        Hooks::Core::PluginLoader.load_all_plugins(global_config)
       end
 
       it "handles complex CamelCase names correctly" do

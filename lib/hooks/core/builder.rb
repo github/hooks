@@ -3,6 +3,7 @@
 require_relative "config_loader"
 require_relative "config_validator"
 require_relative "logger_factory"
+require_relative "plugin_loader"
 require_relative "../app/api"
 
 module Hooks
@@ -32,6 +33,9 @@ module Hooks
             custom_logger: @custom_logger
           )
         end
+
+        # Load all plugins at boot time
+        load_plugins(config)
 
         # Load endpoints
         endpoints = load_endpoints(config)
@@ -74,6 +78,16 @@ module Hooks
         ConfigValidator.validate_endpoints(endpoints)
       rescue ConfigValidator::ValidationError => e
         raise ConfigurationError, "Endpoint validation failed: #{e.message}"
+      end
+
+      # Load all plugins at boot time
+      #
+      # @param config [Hash] Global configuration
+      # @return [void]
+      def load_plugins(config)
+        PluginLoader.load_all_plugins(config)
+      rescue => e
+        raise ConfigurationError, "Plugin loading failed: #{e.message}"
       end
     end
 
