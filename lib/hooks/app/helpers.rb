@@ -92,8 +92,8 @@ module Hooks
           handler_class = Object.const_get(handler_class_name)
 
           # Security: Ensure the loaded class inherits from the expected base class
-          unless handler_class < Hooks::Handlers::Base
-            error!("handler class must inherit from Hooks::Handlers::Base", 400)
+          unless handler_class < Hooks::Plugins::Handlers::Base
+            error!("handler class must inherit from Hooks::Plugins::Handlers::Base", 400)
           end
 
           handler_class.new

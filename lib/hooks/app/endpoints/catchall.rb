@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "grape"
-require_relative "../../handlers/default"
+require_relative "../../plugins/handlers/default"
 require_relative "../helpers"
 
 module Hooks

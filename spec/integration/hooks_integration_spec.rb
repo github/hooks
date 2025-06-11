@@ -38,9 +38,9 @@ RSpec.describe "Hooks Integration" do
     # Create test handler
     FileUtils.mkdir_p("./spec/integration/tmp/handlers")
     File.write("./spec/integration/tmp/handlers/test_handler.rb", <<~RUBY)
-      require_relative "../../../../lib/hooks/handlers/base"
+      require_relative "../../../../lib/hooks/plugins/handlers/base"
 
-      class TestHandler < Hooks::Handlers::Base
+      class TestHandler < Hooks::Plugins::Handlers::Base
         def call(payload:, headers:, config:)
           {
             status: "test_success",
