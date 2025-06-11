@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 describe Hooks::Log do
+  after do
+    # Clean up any mock loggers to avoid interference with other tests
+    described_class.instance = nil
+  end
+
   describe ".instance" do
     it "has an accessor for the logger instance" do
       expect(described_class).to respond_to(:instance)

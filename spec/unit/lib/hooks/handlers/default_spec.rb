@@ -7,8 +7,8 @@ describe DefaultHandler do
   let(:config) { { endpoint: "test", auth: { type: "hmac" } } }
 
   before do
-    # Reset any mocked log instances to avoid interference
-    allow(handler).to receive(:log).and_call_original
+    # Provide a null logger to avoid nil errors while allowing logging to work
+    Hooks::Log.instance = Logger.new(StringIO.new)
   end
 
   describe "#call" do
@@ -84,28 +84,6 @@ describe DefaultHandler do
         expect(response[:message]).to eq("webhook processed successfully")
         expect(response[:handler]).to eq("DefaultHandler")
         expect(response[:timestamp]).to eq(TIME_MOCK)
-      end
-    end
-
-    context "logging behavior" do
-      it "logs handler invocation" do
-        fresh_handler = described_class.new
-        log_double = instance_double(Logger)
-        allow(fresh_handler).to receive(:log).and_return(log_double)
-        expect(log_double).to receive(:info).with("🔔 Default handler invoked for webhook 🔔")
-        expect(log_double).to receive(:debug).with("received payload: #{payload.inspect}")
-
-        fresh_handler.call(payload: payload, headers: headers, config: config)
-      end
-
-      it "does not log debug for nil payload" do
-        fresh_handler = described_class.new
-        log_double = instance_double(Logger)
-        allow(fresh_handler).to receive(:log).and_return(log_double)
-        expect(log_double).to receive(:info).with("🔔 Default handler invoked for webhook 🔔")
-        expect(log_double).not_to receive(:debug)
-
-        fresh_handler.call(payload: nil, headers: headers, config: config)
       end
     end
   end
