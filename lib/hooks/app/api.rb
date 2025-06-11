@@ -65,11 +65,11 @@ module Hooks
 
                   if endpoint_config[:auth]
                     log.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
-                    validate_auth!(raw_body, headers, endpoint_config)
+                    validate_auth!(raw_body, headers, endpoint_config, config)
                   end
 
                   payload = parse_payload(raw_body, headers, symbolize: config[:symbolize_payload])
-                  handler = load_handler(handler_class_name, config[:handler_dir])
+                  handler = load_handler(handler_class_name, config[:handler_plugin_dir])
                   normalized_headers = config[:normalize_headers] ? Hooks::Utils::Normalize.headers(headers) : headers
 
                   response = handler.call(

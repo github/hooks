@@ -12,7 +12,9 @@ module Hooks
 
       # Global configuration schema
       GLOBAL_CONFIG_SCHEMA = Dry::Schema.Params do
-        optional(:handler_dir).filled(:string)
+        optional(:handler_dir).filled(:string)  # For backward compatibility
+        optional(:handler_plugin_dir).filled(:string)
+        optional(:auth_plugin_dir).maybe(:string)
         optional(:log_level).filled(:string, included_in?: %w[debug info warn error])
         optional(:request_limit).filled(:integer, gt?: 0)
         optional(:request_timeout).filled(:integer, gt?: 0)

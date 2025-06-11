@@ -8,7 +8,9 @@ module Hooks
     # Loads and merges configuration from files and environment variables
     class ConfigLoader
       DEFAULT_CONFIG = {
-        handler_dir: "./handlers",
+        handler_dir: "./handlers",  # For backward compatibility
+        handler_plugin_dir: "./handlers",
+        auth_plugin_dir: nil,
         log_level: "info",
         request_limit: 1_048_576,
         request_timeout: 30,
@@ -29,6 +31,7 @@ module Hooks
       # @return [Hash] Merged configuration
       def self.load(config_path: nil)
         config = DEFAULT_CONFIG.dup
+        default_handler_dir = config[:handler_dir]
 
         # Load from file if path provided
         if config_path.is_a?(String) && File.exist?(config_path)
@@ -43,6 +46,19 @@ module Hooks
 
         # Convert string keys to symbols for consistency
         config = symbolize_keys(config)
+
+        # Support backward compatibility for handler_dir <-> handler_plugin_dir
+        # Check if values changed from default
+        if config[:handler_plugin_dir] != default_handler_dir && config[:handler_dir] == default_handler_dir
+          # Only handler_plugin_dir was changed, sync handler_dir
+          config[:handler_dir] = config[:handler_plugin_dir]
+        elsif config[:handler_dir] != default_handler_dir && config[:handler_plugin_dir] == default_handler_dir
+          # Only handler_dir was changed, sync handler_plugin_dir
+          config[:handler_plugin_dir] = config[:handler_dir]
+        elsif config[:handler_plugin_dir] != default_handler_dir && config[:handler_dir] != default_handler_dir
+          # Both changed, handler_plugin_dir takes precedence
+          config[:handler_dir] = config[:handler_plugin_dir]
+        end
 
         if config[:environment] == "production"
           config[:production] = true
@@ -104,7 +120,9 @@ module Hooks
         env_config = {}
 
         env_mappings = {
-          "HOOKS_HANDLER_DIR" => :handler_dir,
+          "HOOKS_HANDLER_DIR" => :handler_dir,  # For backward compatibility
+          "HOOKS_HANDLER_PLUGIN_DIR" => :handler_plugin_dir,
+          "HOOKS_AUTH_PLUGIN_DIR" => :auth_plugin_dir,
           "HOOKS_LOG_LEVEL" => :log_level,
           "HOOKS_REQUEST_LIMIT" => :request_limit,
           "HOOKS_REQUEST_TIMEOUT" => :request_timeout,
