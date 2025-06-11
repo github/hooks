@@ -3,6 +3,7 @@
 require_relative "../../../../spec_helper"
 
 describe Hooks::App::Auth do
+  let(:log) { instance_double(Logger).as_null_object }
   let(:test_class) do
     Class.new do
       include Hooks::App::Auth
@@ -16,6 +17,10 @@ describe Hooks::App::Auth do
   let(:instance) { test_class.new }
   let(:payload) { '{"test": "data"}' }
   let(:headers) { { "Content-Type" => "application/json" } }
+
+  before(:each) do
+    Hooks::Log.instance = log
+  end
 
   describe "#validate_auth!" do
     context "when testing security vulnerabilities" do
@@ -63,39 +68,77 @@ describe Hooks::App::Auth do
         end
 
         it "rejects request with empty string type" do
-          # TODO
+          endpoint_config = { auth: { type: "" } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication configuration missing or invalid/)
         end
       end
 
       context "with missing secret configuration" do
         it "rejects request with missing secret_env_key" do
-          # TODO
+          endpoint_config = { auth: { type: "hmac" } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication failed/)
         end
 
         it "rejects request with nil secret_env_key" do
-          # TODO
+          endpoint_config = { auth: { type: "hmac", secret_env_key: nil } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication failed/)
         end
 
         it "rejects request with empty secret_env_key" do
-          # TODO
+          endpoint_config = { auth: { type: "hmac", secret_env_key: "" } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication failed/)
         end
 
         it "rejects request with whitespace-only secret_env_key" do
-          # TODO
+          endpoint_config = { auth: { type: "hmac", secret_env_key: "   " } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication failed/)
         end
 
         it "rejects request with non-string secret_env_key" do
-          # TODO
+          endpoint_config = { auth: { type: "hmac", secret_env_key: 123 } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication failed/)
         end
       end
 
       context "with missing environment variable" do
         it "uses generic error message for missing secrets" do
-          # TODO
+          ENV.delete("NONEXISTENT_SECRET")
+          endpoint_config = { auth: { type: "hmac", secret_env_key: "NONEXISTENT_SECRET" } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication failed/)
         end
 
         it "does not leak the environment variable name in error" do
-          # TODO
+          ENV.delete("SECRET_WEBHOOK_KEY")
+          endpoint_config = { auth: { type: "hmac", secret_env_key: "SECRET_WEBHOOK_KEY" } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error do |error|
+            # Ensure error message is generic and doesn't leak the environment variable name
+            expect(error.message).not_to include("SECRET_WEBHOOK_KEY")
+            expect(error.message).to match(/authentication failed/)
+          end
         end
       end
 
