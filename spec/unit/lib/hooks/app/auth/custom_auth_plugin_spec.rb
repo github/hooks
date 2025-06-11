@@ -44,7 +44,7 @@ describe Hooks::App::Auth do
 
         expect do
           instance.validate_auth!(payload, headers, endpoint_config, empty_global_config)
-        end.to raise_error(StandardError, /Custom validators not implemented in POC/)
+        end.to raise_error(StandardError, /unsupported auth type/)
       end
     end
 

@@ -52,7 +52,7 @@ module Hooks
               error!("failed to load custom auth plugin '#{auth_type}': #{e.message}", 500)
             end
           else
-            error!("Custom validators not implemented in POC", 500)
+            error!("unsupported auth type '#{auth_type}' due to auth_plugin_dir not being set", 400)
           end
         end
 
