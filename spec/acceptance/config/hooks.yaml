@@ -1,5 +1,7 @@
 # Sample configuration for Hooks webhook server
-handler_plugin_dir: ./spec/acceptance/handlers
+handler_plugin_dir: ./spec/acceptance/plugins/handlers
+auth_plugin_dir: ./spec/acceptance/plugins/auth
+
 log_level: debug
 
 # Request handling
