@@ -5,6 +5,7 @@ tmp/
 spec/integration/tmp/
 tarballs/
 vendor/gems/
+vendor/bundle/
 .idea
 .byebug_history
 .local/
