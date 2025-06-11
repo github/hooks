@@ -3,6 +3,7 @@
 require_relative "../../../../spec_helper"
 
 describe "Custom Auth Plugin Integration" do
+  let(:log) { instance_double(Logger).as_null_object }
   let(:custom_auth_plugin_dir) { "/tmp/test_auth_plugins" }
   let(:plugin_file_content) do
     <<~RUBY
@@ -49,6 +50,10 @@ describe "Custom Auth Plugin Integration" do
 
     # Load plugins after creating the custom plugin file
     Hooks::Core::PluginLoader.load_all_plugins(global_config)
+  end
+
+  before(:each) do
+    Hooks::Log.instance = log
   end
 
   after do

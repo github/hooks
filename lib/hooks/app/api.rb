@@ -51,13 +51,16 @@ module Hooks
 
             post(full_path) do
               request_id = uuid
+              start_time = Time.now
+
               request_context = {
                 request_id:,
                 path: full_path,
-                handler: handler_class_name,
-                start_time: Time.now,
+                handler: handler_class_name
               }
 
+              # everything wrapped in the log context has access to the request context and includes it in log messages
+              # ex: Hooks::Log.info("message") will include request_id, path, handler, etc
               Core::LogContext.with(request_context) do
                 begin
                   enforce_request_limits(config)
@@ -65,7 +68,6 @@ module Hooks
                   raw_body = request.body.read
 
                   if endpoint_config[:auth]
-                    log.info "validating request (id: #{request_id}, handler: #{handler_class_name})"
                     validate_auth!(raw_body, headers, endpoint_config, config)
                   end
 
@@ -79,10 +81,11 @@ module Hooks
                     config: endpoint_config
                   )
 
-                  log.info "request processed successfully (id: #{request_id}, handler: #{handler_class_name})"
+                  log.info "request processed successfully by handler: #{handler_class_name}"
+                  log.debug "request duration: #{Time.now - start_time}s"
                   status 200
                   content_type "application/json"
-                  (response || { status: "ok" }).to_json
+                  response.to_json
                 rescue => e
                   log.error "request failed: #{e.message} (id: #{request_id}, handler: #{handler_class_name})"
                   error_response = {
