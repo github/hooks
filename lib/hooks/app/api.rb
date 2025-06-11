@@ -21,12 +21,12 @@ module Hooks
       include Hooks::App::Auth
 
       class << self
-        attr_reader :start_time
+        attr_reader :server_start_time
       end
 
       # Create a new configured API class
       def self.create(config:, endpoints:, log:)
-        @start_time = Time.now
+        @server_start_time = Time.now
 
         Hooks::Log.instance = log
 

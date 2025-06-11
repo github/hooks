@@ -10,8 +10,8 @@ describe Hooks::App::HealthEndpoint do
   end
 
   before do
-    # Mock API start_time for consistent uptime calculation
-    allow(Hooks::App::API).to receive(:start_time).and_return(Time.parse("2024-12-31T23:59:00Z"))
+    # Mock API server_start_time for consistent uptime calculation
+    allow(Hooks::App::API).to receive(:server_start_time).and_return(Time.parse("2024-12-31T23:59:00Z"))
   end
 
   describe "GET /" do
@@ -66,7 +66,7 @@ describe Hooks::App::HealthEndpoint do
     it "calculates uptime correctly" do
       # Test with different start time
       different_start = Time.parse("2024-12-31T23:58:30Z")
-      allow(Hooks::App::API).to receive(:start_time).and_return(different_start)
+      allow(Hooks::App::API).to receive(:server_start_time).and_return(different_start)
 
       get "/"
 
