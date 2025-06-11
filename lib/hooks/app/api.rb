@@ -69,7 +69,7 @@ module Hooks
                   end
 
                   payload = parse_payload(raw_body, headers, symbolize: config[:symbolize_payload])
-                  handler = load_handler(handler_class_name, config[:handler_plugin_dir])
+                  handler = load_handler(handler_class_name)
                   normalized_headers = config[:normalize_headers] ? Hooks::Utils::Normalize.headers(headers) : headers
 
                   response = handler.call(

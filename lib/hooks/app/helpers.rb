@@ -65,10 +65,9 @@ module Hooks
       # Load handler class
       #
       # @param handler_class_name [String] The name of the handler class to load
-      # @param handler_dir [String] The directory containing handler files (unused - kept for compatibility)
       # @return [Object] An instance of the loaded handler class
       # @raise [StandardError] If handler cannot be found
-      def load_handler(handler_class_name, handler_dir = nil)
+      def load_handler(handler_class_name)
         # Get handler class from loaded plugins registry (boot-time loaded only)
         begin
           handler_class = Core::PluginLoader.get_handler_plugin(handler_class_name)
