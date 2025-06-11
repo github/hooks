@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "tempfile"
+require_relative "../../../spec_helper"
 
 describe Hooks::App::Helpers do
   let(:test_class) do

@@ -65,18 +65,70 @@ module Hooks
       # Load handler class
       #
       # @param handler_class_name [String] The name of the handler class to load
-      # @param handler_dir [String] The directory containing handler files (kept for compatibility)
+      # @param handler_dir [String] The directory containing handler files (fallback for dynamic loading)
       # @return [Object] An instance of the loaded handler class
       # @raise [StandardError] If handler cannot be found
       def load_handler(handler_class_name, handler_dir = nil)
-        # Get handler class from loaded plugins registry
+        # Try to get handler class from loaded plugins registry first
         begin
           handler_class = Core::PluginLoader.get_handler_plugin(handler_class_name)
-          handler_class.new
+          return handler_class.new
         rescue => e
-          error!("failed to get handler '#{handler_class_name}': #{e.message}", 500)
+          # If not found in registry and handler_dir is provided, fall back to dynamic loading
+          if handler_dir
+            return load_handler_dynamically(handler_class_name, handler_dir)
+          else
+            error!("failed to get handler '#{handler_class_name}': #{e.message}", 500)
+          end
         end
       end
+
+      private
+
+      # Load handler class dynamically (fallback for backward compatibility)
+      #
+      # @param handler_class_name [String] The name of the handler class to load
+      # @param handler_dir [String] The directory containing handler files
+      # @return [Object] An instance of the loaded handler class
+      # @raise [LoadError] If the handler file or class cannot be found
+      # @raise [StandardError] Halts with error if handler cannot be loaded
+      def load_handler_dynamically(handler_class_name, handler_dir)
+        # Security: Validate handler class name to prevent arbitrary class loading
+        unless valid_handler_class_name?(handler_class_name)
+          error!("invalid handler class name: #{handler_class_name}", 400)
+        end
+
+        # Convert class name to file name (e.g., Team1Handler -> team1_handler.rb)
+        # E.g.2: GithubHandler -> github_handler.rb
+        # E.g.3: GitHubHandler -> git_hub_handler.rb
+        file_name = handler_class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, "") + ".rb"
+        file_path = File.join(handler_dir, file_name)
+
+        # Security: Ensure the file path doesn't escape the handler directory
+        normalized_handler_dir = Pathname.new(File.expand_path(handler_dir))
+        normalized_file_path = Pathname.new(File.expand_path(file_path))
+        unless normalized_file_path.descend.any? { |path| path == normalized_handler_dir }
+          error!("handler path outside of handler directory", 400)
+        end
+
+        if File.exist?(file_path)
+          require file_path
+          handler_class = Object.const_get(handler_class_name)
+
+          # Security: Ensure the loaded class inherits from the expected base class
+          unless handler_class < Hooks::Plugins::Handlers::Base
+            error!("handler class must inherit from Hooks::Plugins::Handlers::Base", 400)
+          end
+
+          handler_class.new
+        else
+          raise LoadError, "Handler #{handler_class_name} not found at #{file_path}"
+        end
+      rescue => e
+        error!("failed to load handler: #{e.message}", 500)
+      end
+
+      public
 
       # Load auth plugin class (DEPRECATED - plugins are now loaded at boot time)
       #

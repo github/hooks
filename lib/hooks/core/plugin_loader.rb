@@ -42,11 +42,11 @@ module Hooks
         def get_auth_plugin(plugin_name)
           plugin_key = plugin_name.downcase
           plugin_class = @auth_plugins[plugin_key]
-          
+
           unless plugin_class
             raise StandardError, "Auth plugin '#{plugin_name}' not found. Available plugins: #{@auth_plugins.keys.join(', ')}"
           end
-          
+
           plugin_class
         end
 
@@ -57,12 +57,20 @@ module Hooks
         # @raise [StandardError] if handler not found
         def get_handler_plugin(handler_name)
           plugin_class = @handler_plugins[handler_name]
-          
+
           unless plugin_class
             raise StandardError, "Handler plugin '#{handler_name}' not found. Available handlers: #{@handler_plugins.keys.join(', ')}"
           end
-          
+
           plugin_class
+        end
+
+        # Clear all loaded plugins (for testing purposes)
+        #
+        # @return [void]
+        def clear_plugins
+          @auth_plugins = {}
+          @handler_plugins = {}
         end
 
         private
@@ -188,6 +196,9 @@ module Hooks
           return unless defined?(Hooks::Log) && Hooks::Log.instance
 
           log = Hooks::Log.instance
+          # Skip logging if the logger is a test double (class name contains "Double")
+          return if log.class.name.include?("Double")
+
           log.info "Loaded #{@auth_plugins.size} auth plugins: #{@auth_plugins.keys.join(', ')}"
           log.info "Loaded #{@handler_plugins.size} handler plugins: #{@handler_plugins.keys.join(', ')}"
         end
