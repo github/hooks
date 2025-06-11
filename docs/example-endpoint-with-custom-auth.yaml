@@ -1,7 +1,0 @@
-path: /example
-handler: CoolNewHandler
-
-auth:
-  type: some_cool_auth_plugin
-  secret_env_key: SUPER_COOL_SECRET # the name of the environment variable containing the shared secret
-  header: Authorization
