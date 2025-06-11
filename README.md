@@ -139,7 +139,149 @@ Keep reading to learn how to customize your Hooks server with different plugins 
 
 ### Advanced
 
-TODO
+This section will go into a more advanced and detailed example of how to setup a Hooks server with custom plugins, authentication, and more. This section also assumes you already have the `hooks-ruby` gem installed via a bundler Gemfile as shown in the [Installation](#installation-) section above.
+
+Before we get into the details, here is a high-level overview of the steps involved:
+
+1. **Define your configuration**: Create a `hooks.yml` file to define your global configuration, including the directories for your plugins and endpoints.
+2. **Create your endpoint configurations**: Define your webhook endpoints in the `config/endpoints` directory, specifying the path and the handler plugin to use.
+3. **Implement your handler plugins**: Create custom handler plugins in the `plugins/handlers` directory to process incoming webhook requests.
+4. **Implement authentication plugins (optional)**: If you want to secure your webhook endpoints, create custom authentication plugins in the `plugins/auth` directory. Note that you might just be able to get away with using the built-in authentication plugins ([`hmac`](lib/hooks/plugins/auth/hmac.rb), or [`shared_secret`](lib/hooks/plugins/auth/shared_secret.rb)) for most use cases.
+
+This example will assume the following directory structure:
+
+```text
+├── config/
+│   ├── hooks.yml                 # global hooks config
+│   ├── puma.rb                   # puma config
+│   └── endpoints/
+│       ├── hello.yml
+│       └── goodbye.yml
+└── plugins/
+    ├── handlers/                 # custom handler plugins
+    │   ├── hello_handler.rb
+    │   └── goodbye_handler.rb
+    └── auth/
+        └── goodbye_auth.rb       # custom auth plugin (optional)
+```
+
+Let's go through each step in detail.
+
+#### 1. Define your global Hooks configuration
+
+First, create a `hooks.yml` file in the `config` directory. This file will define your global configuration for the Hooks server, including the directories for your plugins and endpoints. Here is an example of a minimal configuration file:
+
+```yaml
+# file: config/hooks.yml
+handler_plugin_dir: ./plugins/handlers
+auth_plugin_dir: ./plugins/auth
+
+# Available endpoints
+# Each endpoint configuration file should be placed in the endpoints directory
+endpoints_dir: ./config/endpoints
+
+log_level: debug
+
+# Path configuration
+root_path: /webhooks # Base path for all webhook endpoints (e.g. /webhooks/hello)
+health_path: /health
+version_path: /version
+
+# Runtime behavior
+environment: development # or production
+```
+
+#### 2. Create your endpoint configurations
+
+Endpoint configurations are defined in the `config/endpoints` directory. Each endpoint configuration file should specify the path for the webhook endpoint and the handler plugin to use. Here is an example of two endpoint configuration files:
+
+> Note: You can also define auth plugins for each endpoint if you want to secure them. For this example, the `/hello` endpoint will not have authentication, while the `/goodbye` endpoint will use a custom authentication plugin.
+
+```yaml
+# file: config/endpoints/hello.yml
+path: /hello # becomes /webhooks/hello based on the root_path in hooks.yml
+handler: HelloHandler # This is a custom handler plugin you would define in the plugins/handlers
+```
+
+```yaml
+# file: config/endpoints/goodbye.yml
+path: /goodbye # becomes /webhooks/goodbye based on the root_path in hooks.yml
+handler: GoodbyeHandler # This is another custom handler plugin you would define in the plugins/handlers
+
+auth:
+  type: Goodbye # This is a custom authentication plugin you would define in the plugins/auth
+  secret_env_key: GOODBYE_API_KEY # the name of the environment variable containing the secret
+  header: Authorization
+```
+
+#### 3. Implement your handler plugins
+
+Create custom handler plugins in the `plugins/handlers` directory to process incoming webhook requests. Here is an example of a simple handler plugin for the `/hello` endpoint:
+
+```ruby
+# file: plugins/handlers/hello_handler.rb
+class HelloHandler < Hooks::Plugins::Handlers::Base
+  def call(payload:, headers:, config:)
+    # Process the incoming webhook - optionally use the payload and headers
+    # to perform some action or validation
+    # For this example, we will just return a success message
+    {
+      message: "webhook processed successfully",
+      handler: "HelloHandler",
+      timestamp: Time.now.iso8601
+    }
+  end
+end
+```
+
+And another handler plugin for the `/goodbye` endpoint:
+
+```ruby
+# file: plugins/handlers/goodbye_handler.rb
+class GoodbyeHandler < Hooks::Plugins::Handlers::Base
+  def call(payload:, headers:, config:)
+    # Ditto for the goodbye endpoint
+    {
+      message: "goodbye webhook processed successfully",
+      handler: "GoodbyeHandler",
+      timestamp: Time.now.iso8601
+    }
+  end
+end
+```
+
+#### 4. Implement authentication plugins (optional)
+
+If you want to secure your webhook endpoints, you can create custom authentication plugins in the `plugins/auth` directory. Here is an example of a simple authentication plugin for the `/goodbye` endpoint:
+
+```ruby
+# file: plugins/auth/goodbye.rb
+# this is a custom authentication plugin for the Goodbye endpoint
+# it is extremely simple and just checks if the Authorization header matches a secret for example purposes
+module Hooks
+  module Plugins
+    module Auth
+      class Goodbye < Base
+        def self.valid?(payload:, headers:, config:)
+          # get the secret from environment variable as configured with secret_env_key
+          secret = fetch_secret(config, secret_env_key_name: :secret_env_key)
+
+          # check if the Authorization header matches the secret
+          auth_header = headers[config[:header]]
+          return false unless auth_header
+
+          # compare the Authorization header with the secret
+          Rack::Utils.secure_compare(auth_header, "Bearer #{secret}")
+        end
+      end
+    end
+  end
+end
+```
+
+#### Summary
+
+What these steps have done is set up a Hooks server that listens for incoming webhook requests at `/webhooks/hello` and `/webhooks/goodbye`. The `/hello` endpoint will respond with a success message without any authentication, while the `/goodbye` endpoint will require a valid `Authorization` header that matches the secret defined in the environment variable `GOODBYE_API_KEY`. Before the `/goodbye` endpoint enters the defined handler, it will first check the authentication plugin to ensure the request is valid.
 
 ### Authentication
 

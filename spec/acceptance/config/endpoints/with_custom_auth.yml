@@ -2,6 +2,6 @@ path: /with_custom_auth_plugin
 handler: TestHandler
 
 auth:
-  type: example_auth_plugin
+  type: example
   secret_env_key: SHARED_SECRET # the name of the environment variable containing the shared secret
   header: Authorization
