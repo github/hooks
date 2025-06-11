@@ -5,6 +5,7 @@ require_relative "config_validator"
 require_relative "logger_factory"
 require_relative "plugin_loader"
 require_relative "../app/api"
+require_relative "../utils/retry"
 
 module Hooks
   module Core
@@ -33,6 +34,9 @@ module Hooks
             custom_logger: @custom_logger
           )
         end
+
+        # Hydrate our Retryable instance
+        Retry.setup!(log: @log)
 
         # Load all plugins at boot time
         load_plugins(config)

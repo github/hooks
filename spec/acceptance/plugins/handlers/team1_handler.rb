@@ -9,6 +9,20 @@ class Team1Handler < Hooks::Plugins::Handlers::Base
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
   def call(payload:, headers:, config:)
+    log.debug("got a call to #{self.class.name} with payload: #{payload.inspect}")
+
+    # demo the global retryable instance is a kinda silly way
+    fail_on_first_time = true
+    foo = Retryable.with_context(:default) do
+      if fail_on_first_time
+        fail_on_first_time = false
+        raise StandardError, "This is a demo error to show retryable in action"
+      end
+
+      "bar"
+    end
+    log.debug("we got back the value of foo: #{foo}")
+
     # Process the payload based on type
     if payload.is_a?(Hash)
       event_type = payload[:event_type] || "unknown"

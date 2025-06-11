@@ -11,6 +11,8 @@ services:
       GITHUB_WEBHOOK_SECRET: "octoawesome-secret"
       ALT_WEBHOOK_SECRET: "octoawesome-too-secret"
       SHARED_SECRET: "octoawesome-shared-secret"
+      DEFAULT_RETRY_SLEEP: 0
+      RETRY_LOG_RETRIES: "false"
     command: ["script/server"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:8080/health"]
