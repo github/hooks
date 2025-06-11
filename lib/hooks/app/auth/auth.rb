@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../../core/plugin_loader"
+
 module Hooks
   module App
     # Provides authentication helpers for verifying incoming requests.
@@ -13,7 +15,7 @@ module Hooks
       # @param payload [String, Hash] The request payload to authenticate.
       # @param headers [Hash] The request headers.
       # @param endpoint_config [Hash] The endpoint configuration, must include :auth key.
-      # @param global_config [Hash] The global configuration (optional, needed for custom auth plugins).
+      # @param global_config [Hash] The global configuration (optional, for compatibility).
       # @raise [StandardError] Raises error if authentication fails or is misconfigured.
       # @return [void]
       # @note This method will halt execution with an error if authentication fails.
@@ -26,34 +28,11 @@ module Hooks
           error!("authentication configuration missing or invalid", 500)
         end
 
-        auth_plugin_type = auth_type.downcase
-
-        auth_class = nil
-
-        case auth_plugin_type
-        when "hmac"
-          auth_class = Plugins::Auth::HMAC
-        when "shared_secret"
-          auth_class = Plugins::Auth::SharedSecret
-        else
-          # Try to load custom auth plugin if auth_plugin_dir is configured
-          if global_config[:auth_plugin_dir]
-            # Convert auth_type to CamelCase class name
-            auth_plugin_class_name = auth_type.split("_").map(&:capitalize).join("")
-
-            # Validate the converted class name before attempting to load
-            unless valid_auth_plugin_class_name?(auth_plugin_class_name)
-              error!("invalid auth plugin type '#{auth_type}'", 400)
-            end
-
-            begin
-              auth_class = load_auth_plugin(auth_plugin_class_name, global_config[:auth_plugin_dir])
-            rescue => e
-              error!("failed to load custom auth plugin '#{auth_type}': #{e.message}", 500)
-            end
-          else
-            error!("unsupported auth type '#{auth_type}' due to auth_plugin_dir not being set", 400)
-          end
+        # Get auth plugin from loaded plugins registry (boot-time loaded only)
+        begin
+          auth_class = Core::PluginLoader.get_auth_plugin(auth_type)
+        rescue => e
+          error!("unsupported auth type '#{auth_type}'", 400)
         end
 
         unless auth_class.valid?(

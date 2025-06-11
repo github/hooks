@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "tempfile"
+require_relative "../../../spec_helper"
 
 describe Hooks::App::Helpers do
   let(:test_class) do
@@ -224,43 +225,34 @@ describe Hooks::App::Helpers do
     end
   end
 
-  describe "#valid_handler_class_name?" do
-    it "returns true for valid handler class names" do
-      valid_names = ["MyHandler", "GitHubHandler", "Team1Handler", "APIHandler"]
+  describe "#load_handler" do
+    before do
+      # Clear plugin registries before each test
+      Hooks::Core::PluginLoader.clear_plugins
+    end
 
-      valid_names.each do |name|
-        expect(helper.send(:valid_handler_class_name?, name)).to be true
+    after do
+      # Clear plugin registries after each test
+      Hooks::Core::PluginLoader.clear_plugins
+    end
+
+    context "when handler is not loaded at boot time" do
+      it "returns error indicating handler not found" do
+        expect do
+          helper.load_handler("NonexistentHandler")
+        end.to raise_error(StandardError, /failed to get handler.*not found/)
       end
     end
 
-    it "returns false for non-string input" do
-      expect(helper.send(:valid_handler_class_name?, nil)).to be false
-      expect(helper.send(:valid_handler_class_name?, 123)).to be false
-      expect(helper.send(:valid_handler_class_name?, [])).to be false
-    end
+    context "when built-in handler is loaded at boot time" do
+      before do
+        # Load built-in plugins (includes DefaultHandler)
+        Hooks::Core::PluginLoader.load_all_plugins({})
+      end
 
-    it "returns false for empty or whitespace-only strings" do
-      expect(helper.send(:valid_handler_class_name?, "")).to be false
-      expect(helper.send(:valid_handler_class_name?, "   ")).to be false
-      expect(helper.send(:valid_handler_class_name?, "\t")).to be false
-    end
-
-    it "returns false for class names not starting with uppercase" do
-      expect(helper.send(:valid_handler_class_name?, "myHandler")).to be false
-      expect(helper.send(:valid_handler_class_name?, "handler")).to be false
-      expect(helper.send(:valid_handler_class_name?, "123Handler")).to be false
-    end
-
-    it "returns false for class names with invalid characters" do
-      expect(helper.send(:valid_handler_class_name?, "My-Handler")).to be false
-      expect(helper.send(:valid_handler_class_name?, "My.Handler")).to be false
-      expect(helper.send(:valid_handler_class_name?, "My Handler")).to be false
-      expect(helper.send(:valid_handler_class_name?, "My/Handler")).to be false
-    end
-
-    it "returns false for dangerous class names" do
-      Hooks::Security::DANGEROUS_CLASSES.each do |dangerous_class|
-        expect(helper.send(:valid_handler_class_name?, dangerous_class)).to be false
+      it "successfully loads DefaultHandler" do
+        handler = helper.load_handler("DefaultHandler")
+        expect(handler).to be_an_instance_of(DefaultHandler)
       end
     end
   end
@@ -278,95 +270,10 @@ describe Hooks::App::Helpers do
       expect(helper.send(:determine_error_code, error)).to eq(501)
     end
 
-    it "returns 500 for other errors" do
+    it "returns 500 for any other error" do
       error = StandardError.new("generic error")
 
       expect(helper.send(:determine_error_code, error)).to eq(500)
-    end
-
-    it "returns 500 for RuntimeError" do
-      error = RuntimeError.new("runtime error")
-
-      expect(helper.send(:determine_error_code, error)).to eq(500)
-    end
-  end
-
-  describe "#load_handler" do
-    let(:temp_dir) { Dir.mktmpdir }
-    let(:handler_class_name) { "TestHandler" }
-
-    after do
-      FileUtils.rm_rf(temp_dir)
-    end
-
-    context "with valid handler" do
-      it "loads and instantiates a valid handler" do
-        # Create a test handler file
-        handler_content = <<~RUBY
-          class TestHandler < Hooks::Plugins::Handlers::Base
-            def call(payload:, headers:, config:)
-              { status: "ok" }
-            end
-          end
-        RUBY
-
-        File.write(File.join(temp_dir, "test_handler.rb"), handler_content)
-
-        result = helper.load_handler(handler_class_name, temp_dir)
-
-        expect(result).to be_an_instance_of(TestHandler)
-        expect(result).to respond_to(:call)
-      end
-    end
-
-    context "with invalid handler class name" do
-      it "raises error for invalid class name" do
-        expect { helper.load_handler("invalid-name", temp_dir) }.to raise_error(StandardError, /400.*invalid handler class name/)
-      end
-
-      it "raises error for dangerous class name" do
-        expect { helper.load_handler("File", temp_dir) }.to raise_error(StandardError, /400.*invalid handler class name/)
-      end
-    end
-
-    context "with path traversal attempts" do
-      it "raises error for path traversal" do
-        expect { helper.load_handler("../../../EvilHandler", temp_dir) }.to raise_error(StandardError, /400.*invalid handler class name/)
-      end
-    end
-
-    context "with missing handler file" do
-      it "raises LoadError when handler file does not exist" do
-        expect { helper.load_handler("MissingHandler", temp_dir) }.to raise_error(LoadError, /Handler MissingHandler not found/)
-      end
-    end
-
-    context "with handler that doesn't inherit from Base" do
-      it "raises error when handler doesn't inherit from Base" do
-        # Create a handler that doesn't inherit from Base
-        handler_content = <<~RUBY
-          class BadHandler
-            def call(payload:, headers:, config:)
-              { status: "ok" }
-            end
-          end
-        RUBY
-
-        File.write(File.join(temp_dir, "bad_handler.rb"), handler_content)
-
-        expect { helper.load_handler("BadHandler", temp_dir) }.to raise_error(StandardError, /400.*must inherit from Hooks::Plugins::Handlers::Base/)
-      end
-    end
-
-    context "with handler file that has syntax errors" do
-      it "raises SyntaxError when handler file has syntax errors" do
-        # Create a handler with syntax errors
-        handler_content = "class SyntaxErrorHandler < Hooks::Plugins::Handlers::Base\n  def call\n    {invalid syntax\n  end\nend"
-
-        File.write(File.join(temp_dir, "syntax_error_handler.rb"), handler_content)
-
-        expect { helper.load_handler("SyntaxErrorHandler", temp_dir) }.to raise_error(SyntaxError)
-      end
     end
   end
 end

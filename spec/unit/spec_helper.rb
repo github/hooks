@@ -36,6 +36,12 @@ Dir.glob(File.expand_path("../../lib/**/*.rb", __dir__)).each do |file|
   require file
 end
 
+# Initialize plugins for tests
+Hooks::Core::PluginLoader.load_all_plugins({
+  auth_plugin_dir: nil,
+  handler_plugin_dir: nil
+})
+
 RSpec.configure do |config|
   config.before(:each) do
     fake_time = Time.parse(TIME_MOCK)
