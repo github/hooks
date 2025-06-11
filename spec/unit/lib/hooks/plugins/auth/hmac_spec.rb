@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../../../../spec_helper"
+
 describe Hooks::Plugins::Auth::HMAC do
   let(:log) { instance_double(Logger).as_null_object }
   let(:secret) { "supersecret" }

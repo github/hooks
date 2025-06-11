@@ -46,6 +46,9 @@ describe "Custom Auth Plugin Integration" do
     FileUtils.mkdir_p(custom_auth_plugin_dir)
     File.write(File.join(custom_auth_plugin_dir, "some_cool_auth_plugin.rb"), plugin_file_content)
     ENV["SUPER_COOL_SECRET"] = "test-secret"
+    
+    # Load plugins after creating the custom plugin file
+    Hooks::Core::PluginLoader.load_all_plugins(global_config)
   end
 
   after do

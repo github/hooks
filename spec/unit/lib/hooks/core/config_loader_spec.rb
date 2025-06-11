@@ -203,6 +203,8 @@ describe Hooks::Core::ConfigLoader do
         config = described_class.load
 
         expect(config[:auth_plugin_dir]).to eq("/opt/auth/plugins")
+      ensure
+        ENV.delete("HOOKS_AUTH_PLUGIN_DIR")
       end
     end
 
