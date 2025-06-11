@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "dry-schema"
+require_relative "../security"
 
 module Hooks
   module Core
@@ -119,13 +120,7 @@ module Hooks
         return false unless handler_name.match?(/\A[A-Z][a-zA-Z0-9_]*\z/)
 
         # Must not be a system/built-in class name
-        dangerous_classes = %w[
-          File Dir Kernel Object Class Module Proc Method
-          IO Socket TCPSocket UDPSocket BasicSocket
-          Process Thread Fiber Mutex ConditionVariable
-          Marshal YAML JSON Pathname
-        ]
-        return false if dangerous_classes.include?(handler_name)
+        return false if Hooks::Security::DANGEROUS_CLASSES.include?(handler_name)
 
         true
       end

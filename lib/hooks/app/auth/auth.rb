@@ -20,11 +20,12 @@ module Hooks
         auth_config = endpoint_config[:auth]
 
         # Security: Ensure auth type is present and valid
-        unless auth_config&.dig(:type)&.is_a?(String)
+        auth_type = auth_config&.dig(:type)
+        unless auth_type&.is_a?(String) && !auth_type.strip.empty?
           error!("authentication configuration missing or invalid", 500)
         end
 
-        auth_plugin_type = auth_config[:type].downcase
+        auth_plugin_type = auth_type.downcase
 
         auth_class = nil
 

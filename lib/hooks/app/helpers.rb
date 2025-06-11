@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "securerandom"
+require_relative "../security"
 
 module Hooks
   module App
@@ -121,13 +122,7 @@ module Hooks
         return false unless class_name.match?(/\A[A-Z][a-zA-Z0-9_]*\z/)
 
         # Must not be a system/built-in class name
-        dangerous_classes = %w[
-          File Dir Kernel Object Class Module Proc Method
-          IO Socket TCPSocket UDPSocket BasicSocket
-          Process Thread Fiber Mutex ConditionVariable
-          Marshal YAML JSON Pathname
-        ]
-        return false if dangerous_classes.include?(class_name)
+        return false if Hooks::Security::DANGEROUS_CLASSES.include?(class_name)
 
         true
       end
