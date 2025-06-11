@@ -9,6 +9,7 @@ require_relative "../plugins/handlers/base"
 require_relative "../plugins/handlers/default"
 require_relative "../core/logger_factory"
 require_relative "../core/log"
+require_relative "../core/plugin_loader"
 
 # Import all core endpoint classes dynamically
 Dir[File.join(__dir__, "endpoints/**/*.rb")].sort.each { |file| require file }
@@ -63,6 +64,34 @@ module Hooks
               # ex: Hooks::Log.info("message") will include request_id, path, handler, etc
               Core::LogContext.with(request_context) do
                 begin
+                  # Build Rack environment for lifecycle hooks
+                  rack_env = {
+                    "REQUEST_METHOD" => request.request_method,
+                    "PATH_INFO" => request.path_info,
+                    "QUERY_STRING" => request.query_string,
+                    "HTTP_VERSION" => request.env["HTTP_VERSION"],
+                    "REQUEST_URI" => request.url,
+                    "SERVER_NAME" => request.env["SERVER_NAME"],
+                    "SERVER_PORT" => request.env["SERVER_PORT"],
+                    "CONTENT_TYPE" => request.content_type,
+                    "CONTENT_LENGTH" => request.content_length,
+                    "REMOTE_ADDR" => request.env["REMOTE_ADDR"],
+                    "hooks.request_id" => request_id,
+                    "hooks.handler" => handler_class_name,
+                    "hooks.endpoint_config" => endpoint_config
+                  }
+
+                  # Add HTTP headers to environment
+                  headers.each do |key, value|
+                    env_key = "HTTP_#{key.upcase.tr('-', '_')}"
+                    rack_env[env_key] = value
+                  end
+
+                  # Call lifecycle hooks: on_request
+                  Core::PluginLoader.lifecycle_plugins.each do |plugin|
+                    plugin.on_request(rack_env)
+                  end
+
                   enforce_request_limits(config)
                   request.body.rewind
                   raw_body = request.body.read
@@ -81,12 +110,24 @@ module Hooks
                     config: endpoint_config
                   )
 
+                  # Call lifecycle hooks: on_response
+                  Core::PluginLoader.lifecycle_plugins.each do |plugin|
+                    plugin.on_response(rack_env, response)
+                  end
+
                   log.info "request processed successfully by handler: #{handler_class_name}"
                   log.debug "request duration: #{Time.now - start_time}s"
                   status 200
                   content_type "application/json"
                   response.to_json
                 rescue => e
+                  # Call lifecycle hooks: on_error
+                  if defined?(rack_env)
+                    Core::PluginLoader.lifecycle_plugins.each do |plugin|
+                      plugin.on_error(e, rack_env)
+                    end
+                  end
+
                   log.error "request failed: #{e.message}"
                   error_response = {
                     error: e.message,

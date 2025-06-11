@@ -206,7 +206,7 @@ describe Hooks::Plugins::Auth::Base do
 
   describe "documentation compliance" do
     it "has the expected public interface" do
-      expect(described_class.methods(false)).to include(:valid?)
+      expect(described_class.methods(false)).to include(:valid?, :log, :stats, :failbot, :fetch_secret)
     end
 
     it "valid? method accepts the documented parameters" do
@@ -214,6 +214,102 @@ describe Hooks::Plugins::Auth::Base do
       expect(method.parameters).to include([:keyreq, :payload])
       expect(method.parameters).to include([:keyreq, :headers])
       expect(method.parameters).to include([:keyreq, :config])
+    end
+  end
+
+  describe "global component access" do
+    describe ".log" do
+      it "provides access to global log" do
+        expect(described_class.log).to be(Hooks::Log.instance)
+      end
+    end
+
+    describe ".stats" do
+      it "provides access to global stats" do
+        expect(described_class.stats).to be_a(Hooks::Core::Stats)
+        expect(described_class.stats).to eq(Hooks::Core::GlobalComponents.stats)
+      end
+    end
+
+    describe ".failbot" do
+      it "provides access to global failbot" do
+        expect(described_class.failbot).to be_a(Hooks::Core::Failbot)
+        expect(described_class.failbot).to eq(Hooks::Core::GlobalComponents.failbot)
+      end
+    end
+
+    it "allows stats and failbot usage in subclasses" do
+      test_auth_class = Class.new(described_class) do
+        def self.valid?(payload:, headers:, config:)
+          stats.increment("auth.validation", { plugin: "TestAuth" })
+
+          # Simulate validation failure
+          if headers["Authorization"].nil?
+            failbot.report("Missing authorization header", { plugin: "TestAuth" })
+            return false
+          end
+
+          true
+        end
+      end
+
+      # Create custom components for testing
+      collected_data = []
+
+      custom_stats = Class.new(Hooks::Core::Stats) do
+        def initialize(collector)
+          @collector = collector
+        end
+
+        def increment(metric_name, tags = {})
+          @collector << { type: :stats, action: :increment, metric: metric_name, tags: }
+        end
+      end
+
+      custom_failbot = Class.new(Hooks::Core::Failbot) do
+        def initialize(collector)
+          @collector = collector
+        end
+
+        def report(error_or_message, context = {})
+          @collector << { type: :failbot, action: :report, message: error_or_message, context: }
+        end
+      end
+
+      original_stats = Hooks::Core::GlobalComponents.stats
+      original_failbot = Hooks::Core::GlobalComponents.failbot
+
+      begin
+        Hooks::Core::GlobalComponents.stats = custom_stats.new(collected_data)
+        Hooks::Core::GlobalComponents.failbot = custom_failbot.new(collected_data)
+
+        # Test with authorization header (should pass)
+        result = test_auth_class.valid?(
+          payload: '{"test": "data"}',
+          headers: { "Authorization" => "Bearer token" },
+          config: {}
+        )
+        expect(result).to be true
+        expect(collected_data).to include(
+          { type: :stats, action: :increment, metric: "auth.validation", tags: { plugin: "TestAuth" } }
+        )
+
+        # Test without authorization header (should fail and report error)
+        collected_data.clear
+        result = test_auth_class.valid?(
+          payload: '{"test": "data"}',
+          headers: {},
+          config: {}
+        )
+        expect(result).to be false
+        expect(collected_data).to match_array([
+          { type: :stats, action: :increment, metric: "auth.validation", tags: { plugin: "TestAuth" } },
+          { type: :failbot, action: :report, message: "Missing authorization header", context: { plugin: "TestAuth" } }
+        ])
+      ensure
+        Hooks::Core::GlobalComponents.stats = original_stats
+        Hooks::Core::GlobalComponents.failbot = original_failbot
+      end
     end
   end
 end
