@@ -283,8 +283,8 @@ end
 
 What these steps have done is set up a Hooks server that listens for incoming webhook requests at `/webhooks/hello` and `/webhooks/goodbye`. The `/hello` endpoint will respond with a success message without any authentication, while the `/goodbye` endpoint will require a valid `Authorization` header that matches the secret defined in the environment variable `GOODBYE_API_KEY`. Before the `/goodbye` endpoint enters the defined handler, it will first check the authentication plugin to ensure the request is valid.
 
+To see a live working version of this example, check out the [spec/acceptance/](spec/acceptance/) directory in this repository, which is used for acceptance testing the Hooks framework. It contains a complete example of how to set up a Hooks server with custom plugins, authentication, and more.
+
 ### Authentication
 
-TODO
-
-See the [Auth Plugins](docs/auth_plugins.md) documentation for more information on how to create your own custom authentication plugins.
+See the [Auth Plugins](docs/auth_plugins.md) documentation for even more information on how to create your own custom authentication plugins.
