@@ -60,7 +60,7 @@ module Hooks
         result.to_h
       end
 
-      # Validate endpoint configuration
+      # Validate endpoint configuration with additional security checks
       #
       # @param config [Hash] Endpoint configuration to validate
       # @return [Hash] Validated configuration
@@ -72,7 +72,15 @@ module Hooks
           raise ValidationError, "Invalid endpoint configuration: #{result.errors.to_h}"
         end
 
-        result.to_h
+        validated_config = result.to_h
+
+        # Security: Additional validation for handler name
+        handler_name = validated_config[:handler]
+        unless valid_handler_name?(handler_name)
+          raise ValidationError, "Invalid handler name: #{handler_name}"
+        end
+
+        validated_config
       end
 
       # Validate array of endpoint configurations
@@ -92,6 +100,34 @@ module Hooks
         end
 
         validated_endpoints
+      end
+
+      private
+
+      # Validate that a handler name is safe
+      #
+      # @param handler_name [String] The handler name to validate
+      # @return [Boolean] true if the handler name is safe, false otherwise
+      def self.valid_handler_name?(handler_name)
+        # Must be a string
+        return false unless handler_name.is_a?(String)
+
+        # Must not be empty or only whitespace
+        return false if handler_name.strip.empty?
+
+        # Must match a safe pattern: alphanumeric + underscore, starting with uppercase
+        return false unless handler_name.match?(/\A[A-Z][a-zA-Z0-9_]*\z/)
+
+        # Must not be a system/built-in class name
+        dangerous_classes = %w[
+          File Dir Kernel Object Class Module Proc Method
+          IO Socket TCPSocket UDPSocket BasicSocket
+          Process Thread Fiber Mutex ConditionVariable
+          Marshal YAML JSON Pathname
+        ]
+        return false if dangerous_classes.include?(handler_name)
+
+        true
       end
     end
   end

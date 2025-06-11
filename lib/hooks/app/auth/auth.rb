@@ -18,15 +18,13 @@ module Hooks
       # @note This method will halt execution with an error if authentication fails.
       def validate_auth!(payload, headers, endpoint_config)
         auth_config = endpoint_config[:auth]
-        auth_plugin_type = auth_config[:type].downcase
-        secret_env_key = auth_config[:secret_env_key]
 
-        return unless secret_env_key
-
-        secret = ENV[secret_env_key]
-        unless secret
-          error!("secret '#{secret_env_key}' not found in environment", 500)
+        # Security: Ensure auth type is present and valid
+        unless auth_config&.dig(:type)&.is_a?(String)
+          error!("authentication configuration missing or invalid", 500)
         end
+
+        auth_plugin_type = auth_config[:type].downcase
 
         auth_class = nil
 
@@ -42,7 +40,6 @@ module Hooks
         unless auth_class.valid?(
           payload:,
           headers:,
-          secret:,
           config: endpoint_config
         )
           error!("authentication failed", 401)
