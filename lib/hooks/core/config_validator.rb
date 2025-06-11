@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "dry-schema"
+require_relative "../security"
 
 module Hooks
   module Core
@@ -11,7 +12,9 @@ module Hooks
 
       # Global configuration schema
       GLOBAL_CONFIG_SCHEMA = Dry::Schema.Params do
-        optional(:handler_dir).filled(:string)
+        optional(:handler_dir).filled(:string)  # For backward compatibility
+        optional(:handler_plugin_dir).filled(:string)
+        optional(:auth_plugin_dir).maybe(:string)
         optional(:log_level).filled(:string, included_in?: %w[debug info warn error])
         optional(:request_limit).filled(:integer, gt?: 0)
         optional(:request_timeout).filled(:integer, gt?: 0)
@@ -119,13 +122,7 @@ module Hooks
         return false unless handler_name.match?(/\A[A-Z][a-zA-Z0-9_]*\z/)
 
         # Must not be a system/built-in class name
-        dangerous_classes = %w[
-          File Dir Kernel Object Class Module Proc Method
-          IO Socket TCPSocket UDPSocket BasicSocket
-          Process Thread Fiber Mutex ConditionVariable
-          Marshal YAML JSON Pathname
-        ]
-        return false if dangerous_classes.include?(handler_name)
+        return false if Hooks::Security::DANGEROUS_CLASSES.include?(handler_name)
 
         true
       end

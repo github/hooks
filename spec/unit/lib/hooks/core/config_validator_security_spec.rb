@@ -25,24 +25,9 @@ describe "Configuration Validator Security Tests" do
         end
 
         it "rejects dangerous system class names" do
-          dangerous_configs = [
-            { path: "/webhook", handler: "File" },
-            { path: "/webhook", handler: "Dir" },
-            { path: "/webhook", handler: "Kernel" },
-            { path: "/webhook", handler: "Object" },
-            { path: "/webhook", handler: "Class" },
-            { path: "/webhook", handler: "Module" },
-            { path: "/webhook", handler: "Proc" },
-            { path: "/webhook", handler: "Method" },
-            { path: "/webhook", handler: "IO" },
-            { path: "/webhook", handler: "Socket" },
-            { path: "/webhook", handler: "TCPSocket" },
-            { path: "/webhook", handler: "Process" },
-            { path: "/webhook", handler: "Thread" },
-            { path: "/webhook", handler: "Marshal" },
-            { path: "/webhook", handler: "YAML" },
-            { path: "/webhook", handler: "JSON" }
-          ]
+          dangerous_configs = Hooks::Security::DANGEROUS_CLASSES.map do |class_name|
+            { path: "/webhook", handler: class_name }
+          end
 
           dangerous_configs.each do |config|
             expect do

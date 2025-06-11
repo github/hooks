@@ -12,7 +12,7 @@ RSpec.describe "Hooks Integration" do
   def app
     @app ||= Hooks.build(
       config: {
-        handler_dir: "./spec/integration/tmp/handlers",
+        handler_plugin_dir: "./spec/integration/tmp/handlers",
         log_level: "error", # Reduce noise in tests
         request_limit: 1048576,
         request_timeout: 15,
@@ -38,9 +38,9 @@ RSpec.describe "Hooks Integration" do
     # Create test handler
     FileUtils.mkdir_p("./spec/integration/tmp/handlers")
     File.write("./spec/integration/tmp/handlers/test_handler.rb", <<~RUBY)
-      require_relative "../../../../lib/hooks/handlers/base"
+      require_relative "../../../../lib/hooks/plugins/handlers/base"
 
-      class TestHandler < Hooks::Handlers::Base
+      class TestHandler < Hooks::Plugins::Handlers::Base
         def call(payload:, headers:, config:)
           {
             status: "test_success",

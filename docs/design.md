@@ -32,7 +32,7 @@ Note: The `hooks` gem name is already taken on RubyGems, so this project is name
 
 2. **Plugin Architecture**
 
-   * **Team Handlers**: `class MyHandler < Hooks::Handlers::Base`
+   * **Team Handlers**: `class MyHandler < Hooks::Plugins::Handlers::Base`
      * Must implement `#call(payload:, headers:, config:)` method
      * `payload`: parsed request body (JSON Hash or raw String)
      * `headers`: HTTP headers as Hash with string keys
@@ -142,7 +142,7 @@ lib/hooks/
 │   ├── logger_factory.rb     # Structured JSON logger + context enrichment
 │
 ├── handlers/
-│   └── base.rb               # `Hooks::Handlers::Base` interface: defines #call
+│   └── base.rb               # `Hooks::Plugins::Handlers::Base` interface: defines #call
 │
 ├── plugins/
 │   ├── lifecycle.rb          # `Hooks::Plugins::Lifecycle` hooks (on_request, response, error)
@@ -520,12 +520,12 @@ The health endpoint provides comprehensive status information for load balancers
 
 ### Core Classes
 
-#### `Hooks::Handlers::Base`
+#### `Hooks::Plugins::Handlers::Base`
 
 Base class for all webhook handlers.
 
 ```ruby
-class MyHandler < Hooks::Handlers::Base
+class MyHandler < Hooks::Plugins::Handlers::Base
   # @param payload [Hash, String] Parsed request body or raw string
   # @param headers [Hash<String, String>] HTTP headers
   # @param config [Hash] Merged endpoint configuration

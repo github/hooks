@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "securerandom"
+require_relative "../security"
 
 module Hooks
   module App
@@ -91,8 +92,8 @@ module Hooks
           handler_class = Object.const_get(handler_class_name)
 
           # Security: Ensure the loaded class inherits from the expected base class
-          unless handler_class < Hooks::Handlers::Base
-            error!("handler class must inherit from Hooks::Handlers::Base", 400)
+          unless handler_class < Hooks::Plugins::Handlers::Base
+            error!("handler class must inherit from Hooks::Plugins::Handlers::Base", 400)
           end
 
           handler_class.new
@@ -101,6 +102,47 @@ module Hooks
         end
       rescue => e
         error!("failed to load handler: #{e.message}", 500)
+      end
+
+      # Load auth plugin class
+      #
+      # @param auth_plugin_class_name [String] The name of the auth plugin class to load
+      # @param auth_plugin_dir [String] The directory containing auth plugin files
+      # @return [Class] The loaded auth plugin class
+      # @raise [LoadError] If the auth plugin file or class cannot be found
+      # @raise [StandardError] Halts with error if auth plugin cannot be loaded
+      def load_auth_plugin(auth_plugin_class_name, auth_plugin_dir)
+        # Security: Validate auth plugin class name to prevent arbitrary class loading
+        unless valid_auth_plugin_class_name?(auth_plugin_class_name)
+          error!("invalid auth plugin class name: #{auth_plugin_class_name}", 400)
+        end
+
+        # Convert class name to file name (e.g., SomeCoolAuthPlugin -> some_cool_auth_plugin.rb)
+        file_name = auth_plugin_class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, "") + ".rb"
+        file_path = File.join(auth_plugin_dir, file_name)
+
+        # Security: Ensure the file path doesn't escape the auth plugin directory
+        normalized_auth_plugin_dir = Pathname.new(File.expand_path(auth_plugin_dir))
+        normalized_file_path = Pathname.new(File.expand_path(file_path))
+        unless normalized_file_path.descend.any? { |path| path == normalized_auth_plugin_dir }
+          error!("auth plugin path outside of auth plugin directory", 400)
+        end
+
+        if File.exist?(file_path)
+          require file_path
+          auth_plugin_class = Object.const_get("Hooks::Plugins::Auth::#{auth_plugin_class_name}")
+
+          # Security: Ensure the loaded class inherits from the expected base class
+          unless auth_plugin_class < Hooks::Plugins::Auth::Base
+            error!("auth plugin class must inherit from Hooks::Plugins::Auth::Base", 400)
+          end
+
+          auth_plugin_class
+        else
+          error!("Auth plugin #{auth_plugin_class_name} not found at #{file_path}", 500)
+        end
+      rescue => e
+        error!("failed to load auth plugin: #{e.message}", 500)
       end
 
       private
@@ -121,13 +163,28 @@ module Hooks
         return false unless class_name.match?(/\A[A-Z][a-zA-Z0-9_]*\z/)
 
         # Must not be a system/built-in class name
-        dangerous_classes = %w[
-          File Dir Kernel Object Class Module Proc Method
-          IO Socket TCPSocket UDPSocket BasicSocket
-          Process Thread Fiber Mutex ConditionVariable
-          Marshal YAML JSON Pathname
-        ]
-        return false if dangerous_classes.include?(class_name)
+        return false if Hooks::Security::DANGEROUS_CLASSES.include?(class_name)
+
+        true
+      end
+
+      # Validate that an auth plugin class name is safe to load
+      #
+      # @param class_name [String] The class name to validate
+      # @return [Boolean] true if the class name is safe, false otherwise
+      def valid_auth_plugin_class_name?(class_name)
+        # Must be a string
+        return false unless class_name.is_a?(String)
+
+        # Must not be empty or only whitespace
+        return false if class_name.strip.empty?
+
+        # Must match a safe pattern: alphanumeric + underscore, starting with uppercase
+        # Examples: MyAuthPlugin, SomeCoolAuthPlugin, CustomAuth
+        return false unless class_name.match?(/\A[A-Z][a-zA-Z0-9_]*\z/)
+
+        # Must not be a system/built-in class name
+        return false if Hooks::Security::DANGEROUS_CLASSES.include?(class_name)
 
         true
       end

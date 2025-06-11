@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Hooks::Handlers::Base do
+describe Hooks::Plugins::Handlers::Base do
   describe "#call" do
     let(:handler) { described_class.new }
     let(:payload) { { "data" => "test" } }

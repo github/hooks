@@ -8,7 +8,8 @@ module Hooks
     # Loads and merges configuration from files and environment variables
     class ConfigLoader
       DEFAULT_CONFIG = {
-        handler_dir: "./handlers",
+        handler_plugin_dir: "./plugins/handlers",
+        auth_plugin_dir: "./plugins/auth",
         log_level: "info",
         request_limit: 1_048_576,
         request_timeout: 30,
@@ -104,7 +105,8 @@ module Hooks
         env_config = {}
 
         env_mappings = {
-          "HOOKS_HANDLER_DIR" => :handler_dir,
+          "HOOKS_HANDLER_PLUGIN_DIR" => :handler_plugin_dir,
+          "HOOKS_AUTH_PLUGIN_DIR" => :auth_plugin_dir,
           "HOOKS_LOG_LEVEL" => :log_level,
           "HOOKS_REQUEST_LIMIT" => :request_limit,
           "HOOKS_REQUEST_TIMEOUT" => :request_timeout,

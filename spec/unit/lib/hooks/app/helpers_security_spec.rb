@@ -37,9 +37,7 @@ describe "Handler Loading Security Tests" do
   describe "#load_handler security" do
     context "with malicious handler class names" do
       it "rejects system class names" do
-        dangerous_classes = %w[File Dir Kernel Object Class Module Proc Method]
-
-        dangerous_classes.each do |class_name|
+        Hooks::Security::DANGEROUS_CLASSES.each do |class_name|
           expect do
             instance.load_handler(class_name, handler_dir)
           end.to raise_error(StandardError, /invalid handler class name/)
@@ -48,6 +46,8 @@ describe "Handler Loading Security Tests" do
 
       it "rejects network-related class names" do
         network_classes = %w[IO Socket TCPSocket UDPSocket BasicSocket]
+        # Verify these are all in our dangerous classes list
+        network_classes.each { |cls| expect(Hooks::Security::DANGEROUS_CLASSES).to include(cls) }
 
         network_classes.each do |class_name|
           expect do
@@ -58,6 +58,8 @@ describe "Handler Loading Security Tests" do
 
       it "rejects process and system class names" do
         system_classes = %w[Process Thread Fiber Mutex ConditionVariable]
+        # Verify these are all in our dangerous classes list
+        system_classes.each { |cls| expect(Hooks::Security::DANGEROUS_CLASSES).to include(cls) }
 
         system_classes.each do |class_name|
           expect do
@@ -68,6 +70,8 @@ describe "Handler Loading Security Tests" do
 
       it "rejects serialization class names" do
         serialization_classes = %w[Marshal YAML JSON Pathname]
+        # Verify these are all in our dangerous classes list
+        serialization_classes.each { |cls| expect(Hooks::Security::DANGEROUS_CLASSES).to include(cls) }
 
         serialization_classes.each do |class_name|
           expect do
@@ -154,7 +158,7 @@ describe "Handler Loading Security Tests" do
         before do
           # Create a valid handler file
           File.write(handler_file, <<~RUBY)
-            class TestHandler < Hooks::Handlers::Base
+            class TestHandler < Hooks::Plugins::Handlers::Base
               def call(payload:, headers:, config:)
                 { message: "test" }
               end
@@ -165,7 +169,7 @@ describe "Handler Loading Security Tests" do
         it "successfully loads valid handlers that inherit from Base" do
           handler = instance.load_handler(handler_name, handler_dir)
           expect(handler).to be_a(TestHandler)
-          expect(handler).to be_a(Hooks::Handlers::Base)
+          expect(handler).to be_a(Hooks::Plugins::Handlers::Base)
         end
       end
 
@@ -184,10 +188,10 @@ describe "Handler Loading Security Tests" do
           RUBY
         end
 
-        it "rejects handlers that don't inherit from Hooks::Handlers::Base" do
+        it "rejects handlers that don't inherit from Hooks::Plugins::Handlers::Base" do
           expect do
             instance.load_handler(handler_name, handler_dir)
-          end.to raise_error(StandardError, /handler class must inherit from Hooks::Handlers::Base/)
+          end.to raise_error(StandardError, /handler class must inherit from Hooks::Plugins::Handlers::Base/)
         end
       end
     end
