@@ -87,11 +87,11 @@ module Hooks
                   content_type "application/json"
                   response.to_json
                 rescue => e
-                  log.error "request failed: #{e.message} (id: #{request_id}, handler: #{handler_class_name})"
+                  log.error "request failed: #{e.message}"
                   error_response = {
                     error: e.message,
                     code: determine_error_code(e),
-                    request_id: request_id
+                    request_id:
                   }
                   error_response[:backtrace] = e.backtrace unless config[:production]
                   status error_response[:code]
