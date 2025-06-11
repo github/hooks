@@ -7,7 +7,8 @@ describe Hooks::Core::ConfigLoader do
         config = described_class.load
 
         expect(config).to include(
-          handler_plugin_dir: "./handlers",
+          handler_plugin_dir: "./plugins/handlers",
+          auth_plugin_dir: "./plugins/auth",
           log_level: "info",
           request_limit: 1_048_576,
           request_timeout: 30,
@@ -33,7 +34,7 @@ describe Hooks::Core::ConfigLoader do
         expect(config[:log_level]).to eq("debug")
         expect(config[:environment]).to eq("test")
         expect(config[:production]).to be false # should be false when environment is test
-        expect(config[:handler_plugin_dir]).to eq("./handlers") # defaults should remain
+        expect(config[:handler_plugin_dir]).to eq("./plugins/handlers") # defaults should remain
       end
     end
 
@@ -69,7 +70,7 @@ describe Hooks::Core::ConfigLoader do
           expect(config[:environment]).to eq("development")
           expect(config[:request_timeout]).to eq(60)
           expect(config[:production]).to be false
-          expect(config[:handler_plugin_dir]).to eq("./handlers") # defaults should remain
+          expect(config[:handler_plugin_dir]).to eq("./plugins/handlers") # defaults should remain
         end
       end
 
@@ -185,7 +186,7 @@ describe Hooks::Core::ConfigLoader do
       it "includes auth_plugin_dir in default configuration" do
         config = described_class.load
 
-        expect(config).to include(auth_plugin_dir: nil)
+        expect(config).to include(auth_plugin_dir: "./plugins/auth")
       end
 
       it "loads auth_plugin_dir from hash config" do

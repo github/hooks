@@ -8,8 +8,8 @@ module Hooks
     # Loads and merges configuration from files and environment variables
     class ConfigLoader
       DEFAULT_CONFIG = {
-        handler_plugin_dir: "./handlers",
-        auth_plugin_dir: nil,
+        handler_plugin_dir: "./plugins/handlers",
+        auth_plugin_dir: "./plugins/auth",
         log_level: "info",
         request_limit: 1_048_576,
         request_timeout: 30,
