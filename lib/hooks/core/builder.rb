@@ -44,8 +44,8 @@ module Hooks
 
         # Build and return Grape API class
         Hooks::App::API.create(
-          config: config,
-          endpoints: endpoints,
+          config:,
+          endpoints:,
           log: @log
         )
       end

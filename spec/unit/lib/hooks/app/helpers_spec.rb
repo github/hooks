@@ -303,7 +303,7 @@ describe Hooks::App::Helpers do
       it "loads and instantiates a valid handler" do
         # Create a test handler file
         handler_content = <<~RUBY
-          class TestHandler < Hooks::Handlers::Base
+          class TestHandler < Hooks::Plugins::Handlers::Base
             def call(payload:, headers:, config:)
               { status: "ok" }
             end
@@ -354,14 +354,14 @@ describe Hooks::App::Helpers do
 
         File.write(File.join(temp_dir, "bad_handler.rb"), handler_content)
 
-        expect { helper.load_handler("BadHandler", temp_dir) }.to raise_error(StandardError, /400.*must inherit from Hooks::Handlers::Base/)
+        expect { helper.load_handler("BadHandler", temp_dir) }.to raise_error(StandardError, /400.*must inherit from Hooks::Plugins::Handlers::Base/)
       end
     end
 
     context "with handler file that has syntax errors" do
       it "raises SyntaxError when handler file has syntax errors" do
         # Create a handler with syntax errors
-        handler_content = "class SyntaxErrorHandler < Hooks::Handlers::Base\n  def call\n    {invalid syntax\n  end\nend"
+        handler_content = "class SyntaxErrorHandler < Hooks::Plugins::Handlers::Base\n  def call\n    {invalid syntax\n  end\nend"
 
         File.write(File.join(temp_dir, "syntax_error_handler.rb"), handler_content)
 

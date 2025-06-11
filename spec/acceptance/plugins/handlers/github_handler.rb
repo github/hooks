@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Example handler for GitHub webhooks
-class GithubHandler < Hooks::Handlers::Base
+class GithubHandler < Hooks::Plugins::Handlers::Base
   # Process GitHub webhook
   #
   # @param payload [Hash, String] GitHub webhook payload

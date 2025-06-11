@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Example handler for Team 1 webhooks
-class Team1Handler < Hooks::Handlers::Base
+class Team1Handler < Hooks::Plugins::Handlers::Base
   # Process Team 1 webhook
   #
   # @param payload [Hash, String] Webhook payload

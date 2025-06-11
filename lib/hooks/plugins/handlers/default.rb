@@ -2,7 +2,7 @@
 
 # Default handler when no custom handler is found
 # This handler simply acknowledges receipt of the webhook and shows a few of the built-in features
-class DefaultHandler < Hooks::Handlers::Base
+class DefaultHandler < Hooks::Plugins::Handlers::Base
   def call(payload:, headers:, config:)
 
     log.info("🔔 Default handler invoked for webhook 🔔")

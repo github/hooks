@@ -2,9 +2,8 @@
 
 require_relative "hooks/version"
 require_relative "hooks/core/builder"
-require_relative "hooks/handlers/base"
 
-# Load all plugins (request validators, lifecycle hooks, etc.)
+# Load all plugins (auth plugins, handler plugins, lifecycle hooks, etc.)
 Dir[File.join(__dir__, "hooks/plugins/**/*.rb")].sort.each do |file|
   require file
 end

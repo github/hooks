@@ -92,8 +92,8 @@ describe DefaultHandler do
   end
 
   describe "inheritance" do
-    it "inherits from Hooks::Handlers::Base" do
-      expect(described_class.superclass).to eq(Hooks::Handlers::Base)
+    it "inherits from Hooks::Plugins::Handlers::Base" do
+      expect(described_class.superclass).to eq(Hooks::Plugins::Handlers::Base)
     end
   end
 end

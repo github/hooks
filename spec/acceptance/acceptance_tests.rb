@@ -148,5 +148,37 @@ describe "Hooks" do
         expect(body["status"]).to eq("success")
       end
     end
+
+    describe "custom auth plugin" do
+
+      it "successfully validates using a custom auth plugin" do
+        payload = {}.to_json
+        headers = { "Authorization" => "Bearer octoawesome-shared-secret" }
+        response = http.post("/webhooks/with_custom_auth_plugin", payload, headers)
+
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["status"]).to eq("test_success")
+        expect(body["handler"]).to eq("TestHandler")
+      end
+
+      it "rejects requests with invalid credentials using custom auth plugin" do
+        payload = {}.to_json
+        headers = { "Authorization" => "Bearer wrong-secret" }
+        response = http.post("/webhooks/with_custom_auth_plugin", payload, headers)
+
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("authentication failed")
+      end
+
+      it "rejects requests with missing credentials using custom auth plugin" do
+        payload = {}.to_json
+        headers = {}
+        response = http.post("/webhooks/with_custom_auth_plugin", payload, headers)
+
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("authentication failed")
+      end
+    end
   end
 end

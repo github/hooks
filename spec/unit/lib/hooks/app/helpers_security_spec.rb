@@ -158,7 +158,7 @@ describe "Handler Loading Security Tests" do
         before do
           # Create a valid handler file
           File.write(handler_file, <<~RUBY)
-            class TestHandler < Hooks::Handlers::Base
+            class TestHandler < Hooks::Plugins::Handlers::Base
               def call(payload:, headers:, config:)
                 { message: "test" }
               end
@@ -169,7 +169,7 @@ describe "Handler Loading Security Tests" do
         it "successfully loads valid handlers that inherit from Base" do
           handler = instance.load_handler(handler_name, handler_dir)
           expect(handler).to be_a(TestHandler)
-          expect(handler).to be_a(Hooks::Handlers::Base)
+          expect(handler).to be_a(Hooks::Plugins::Handlers::Base)
         end
       end
 
@@ -188,10 +188,10 @@ describe "Handler Loading Security Tests" do
           RUBY
         end
 
-        it "rejects handlers that don't inherit from Hooks::Handlers::Base" do
+        it "rejects handlers that don't inherit from Hooks::Plugins::Handlers::Base" do
           expect do
             instance.load_handler(handler_name, handler_dir)
-          end.to raise_error(StandardError, /handler class must inherit from Hooks::Handlers::Base/)
+          end.to raise_error(StandardError, /handler class must inherit from Hooks::Plugins::Handlers::Base/)
         end
       end
     end
