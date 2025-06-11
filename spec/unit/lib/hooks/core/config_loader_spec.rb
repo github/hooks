@@ -7,7 +7,7 @@ describe Hooks::Core::ConfigLoader do
         config = described_class.load
 
         expect(config).to include(
-          handler_dir: "./handlers",
+          handler_plugin_dir: "./handlers",
           log_level: "info",
           request_limit: 1_048_576,
           request_timeout: 30,
@@ -33,7 +33,7 @@ describe Hooks::Core::ConfigLoader do
         expect(config[:log_level]).to eq("debug")
         expect(config[:environment]).to eq("test")
         expect(config[:production]).to be false # should be false when environment is test
-        expect(config[:handler_dir]).to eq("./handlers") # defaults should remain
+        expect(config[:handler_plugin_dir]).to eq("./handlers") # defaults should remain
       end
     end
 
@@ -69,7 +69,7 @@ describe Hooks::Core::ConfigLoader do
           expect(config[:environment]).to eq("development")
           expect(config[:request_timeout]).to eq(60)
           expect(config[:production]).to be false
-          expect(config[:handler_dir]).to eq("./handlers") # defaults should remain
+          expect(config[:handler_plugin_dir]).to eq("./handlers") # defaults should remain
         end
       end
 
@@ -202,56 +202,6 @@ describe Hooks::Core::ConfigLoader do
         config = described_class.load
 
         expect(config[:auth_plugin_dir]).to eq("/opt/auth/plugins")
-      end
-    end
-
-    context "with handler directory backward compatibility" do
-      it "uses handler_plugin_dir when both are set" do
-        custom_config = {
-          handler_dir: "./old/handlers",
-          handler_plugin_dir: "./new/handlers"
-        }
-
-        config = described_class.load(config_path: custom_config)
-
-        expect(config[:handler_dir]).to eq("./new/handlers") # backward compatibility
-        expect(config[:handler_plugin_dir]).to eq("./new/handlers")
-      end
-
-      it "sets handler_plugin_dir from handler_dir for backward compatibility" do
-        custom_config = { handler_dir: "./legacy/handlers" }
-
-        config = described_class.load(config_path: custom_config)
-
-        expect(config[:handler_dir]).to eq("./legacy/handlers")
-        expect(config[:handler_plugin_dir]).to eq("./legacy/handlers")
-      end
-
-      it "sets handler_dir from handler_plugin_dir for backward compatibility" do
-        custom_config = { handler_plugin_dir: "./new/handlers" }
-
-        config = described_class.load(config_path: custom_config)
-
-        expect(config[:handler_dir]).to eq("./new/handlers") # backward compatibility
-        expect(config[:handler_plugin_dir]).to eq("./new/handlers")
-      end
-
-      it "supports old HOOKS_HANDLER_DIR environment variable" do
-        ENV["HOOKS_HANDLER_DIR"] = "/legacy/handlers"
-
-        config = described_class.load
-
-        expect(config[:handler_dir]).to eq("/legacy/handlers")
-        expect(config[:handler_plugin_dir]).to eq("/legacy/handlers")
-      end
-
-      it "supports new HOOKS_HANDLER_PLUGIN_DIR environment variable" do
-        ENV["HOOKS_HANDLER_PLUGIN_DIR"] = "/new/handlers"
-
-        config = described_class.load
-
-        expect(config[:handler_dir]).to eq("/new/handlers") # backward compatibility
-        expect(config[:handler_plugin_dir]).to eq("/new/handlers")
       end
     end
 

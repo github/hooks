@@ -103,16 +103,14 @@ describe "Custom Auth Plugin Integration" do
 
     expect(config[:auth_plugin_dir]).to eq("./custom/auth/plugins")
     expect(config[:handler_plugin_dir]).to eq("./custom/handlers")
-    expect(config[:handler_dir]).to eq("./custom/handlers") # backward compatibility
   end
 
-  it "maintains backward compatibility with handler_dir" do
-    # Test that old handler_dir configuration still works
+  it "uses handler_plugin_dir configuration" do
+    # Test that handler_plugin_dir configuration works
     config = Hooks::Core::ConfigLoader.load(config_path: {
-      handler_dir: "./legacy/handlers"
+      handler_plugin_dir: "./custom/handlers"
     })
 
-    expect(config[:handler_dir]).to eq("./legacy/handlers")
-    expect(config[:handler_plugin_dir]).to eq("./legacy/handlers")
+    expect(config[:handler_plugin_dir]).to eq("./custom/handlers")
   end
 end

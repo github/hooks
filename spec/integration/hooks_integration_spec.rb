@@ -12,7 +12,7 @@ RSpec.describe "Hooks Integration" do
   def app
     @app ||= Hooks.build(
       config: {
-        handler_dir: "./spec/integration/tmp/handlers",
+        handler_plugin_dir: "./spec/integration/tmp/handlers",
         log_level: "error", # Reduce noise in tests
         request_limit: 1048576,
         request_timeout: 15,
