@@ -102,7 +102,7 @@ First, create a `config.ru` file:
 
 ```ruby
 # file: config.ru
-require "hooks-ruby"
+require "hooks"
 
 # See the config documentation below for the full list of available options
 # For this example, we will just set use_catchall_route to true
