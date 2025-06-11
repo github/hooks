@@ -54,7 +54,8 @@ module Hooks
               request_context = {
                 request_id:,
                 path: full_path,
-                handler: handler_class_name
+                handler: handler_class_name,
+                start_time: Time.now,
               }
 
               Core::LogContext.with(request_context) do
