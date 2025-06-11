@@ -72,7 +72,7 @@ Here is a very high-level overview of how Hooks works:
     end
     ```
 
-That is pretty much it! Below you will find more detailed instructions on how to install and use Hooks, as well as how to create your own plugins. This high-level overview should give you a good idea of how Hooks works and how you can use it to handle webhooks in your applications. You may also be interested in using your own custom authentication plugins to secure your webhook endpoints, which is covered in the [Authentication](#authentication) section below.
+That is pretty much it! Below you will find more detailed instructions on how to install and use Hooks, as well as how to create your own plugins. This high-level overview should give you a good idea of how Hooks works and how you can use it to handle webhooks in your applications. You may also be interested in using your own custom authentication plugins to secure your webhook endpoints, which is covered in the [Authentication](#authentication-plugins) section below.
 
 ## Installation 💎
 
@@ -286,9 +286,13 @@ What these steps have done is set up a Hooks server that listens for incoming we
 
 To see a live working version of this example, check out the [`spec/acceptance/`](spec/acceptance/) directory in this repository, which is used for acceptance testing the Hooks framework. It contains a complete example of how to set up a Hooks server with custom plugins, authentication, and more.
 
-### Authentication
+### Authentication Plugins
 
 See the [Auth Plugins](docs/auth_plugins.md) documentation for even more information on how to create your own custom authentication plugins.
+
+### Handler Plugins
+
+See the [Handler Plugins](docs/handler_plugins.md) documentation for in-depth information about handler plugins and how you can create your own to extend the functionality of the Hooks framework for your own deployment.
 
 ## Contributing 🤝
 
