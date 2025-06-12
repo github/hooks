@@ -277,7 +277,7 @@ class CustomErrorPlugin < Hooks::Plugins::Lifecycle
     {
       error: "Custom error message",
       code: determine_error_code(exception),
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 end

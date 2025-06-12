@@ -5,7 +5,7 @@ class Hello < Hooks::Plugins::Handlers::Base
     {
       status: "success",
       handler: self.class.name,
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 end

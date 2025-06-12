@@ -48,7 +48,7 @@ RSpec.describe "Hooks Integration" do
             status: "test_success",
             payload_received: payload,
             config_opts: config[:opts],
-            timestamp: Time.now.iso8601
+            timestamp: Time.now.utc.iso8601
           }
         end
       end

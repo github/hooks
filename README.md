@@ -66,7 +66,7 @@ Here is a very high-level overview of how Hooks works:
           status: "success",
           handler: "MyCustomHandler",
           payload_received: payload,
-          timestamp: Time.now.iso8601
+          timestamp: Time.now.utc.iso8601
         }
       end
     end
@@ -229,7 +229,7 @@ class HelloHandler < Hooks::Plugins::Handlers::Base
     {
       message: "webhook processed successfully",
       handler: "HelloHandler",
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 end
@@ -245,7 +245,7 @@ class GoodbyeHandler < Hooks::Plugins::Handlers::Base
     {
       message: "goodbye webhook processed successfully",
       handler: "GoodbyeHandler",
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 end
