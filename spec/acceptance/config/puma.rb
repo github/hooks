@@ -11,7 +11,7 @@ log_formatter do |msg|
   timestamp = Time.now.strftime("%Y-%m-%dT%H:%M:%S.%L%z")
   {
     time: timestamp,
-    level: ENV.fetch("LOG_LEVEL", "INFO").upcase,
+    level: ENV.fetch("LOG_LEVEL", "info").downcase,
     progname: "puma",
     msg: msg.rstrip
   }.to_json
