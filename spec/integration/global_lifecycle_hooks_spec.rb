@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+ENV["HOOKS_SILENCE_CONFIG_LOADER_MESSAGES"] = "true" # Silence config loader messages in tests
+
 require_relative "../../lib/hooks"
 require "rack/test"
 require "json"

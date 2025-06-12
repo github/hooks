@@ -24,23 +24,39 @@ module Hooks
         normalize_headers: true
       }.freeze
 
+      SILENCE_CONFIG_LOADER_MESSAGES = ENV.fetch(
+        "HOOKS_SILENCE_CONFIG_LOADER_MESSAGES", "false"
+      ).downcase == "true".freeze
+
       # Load and merge configuration from various sources
       #
       # @param config_path [String, Hash] Path to config file or config hash
       # @return [Hash] Merged configuration
       def self.load(config_path: nil)
         config = DEFAULT_CONFIG.dup
+        overrides = []
 
         # Load from file if path provided
         if config_path.is_a?(String) && File.exist?(config_path)
           file_config = load_config_file(config_path)
-          config.merge!(file_config) if file_config
-        elsif config_path.is_a?(Hash)
-          config.merge!(config_path)
+          if file_config
+            overrides << "file config"
+            config.merge!(file_config)
+          end
         end
 
-        # Override with environment variables
-        config.merge!(load_env_config)
+        # Override with environment variables (before programmatic config)
+        env_config = load_env_config
+        if env_config.any?
+          overrides << "environment variables"
+          config.merge!(env_config)
+        end
+
+        # Programmatic config has highest priority
+        if config_path.is_a?(Hash)
+          overrides << "programmatic config"
+          config.merge!(config_path)
+        end
 
         # Convert string keys to symbols for consistency
         config = symbolize_keys(config)
@@ -49,6 +65,11 @@ module Hooks
           config[:production] = true
         else
           config[:production] = false
+        end
+
+        # Log overrides if any were made
+        if overrides.any?
+          puts "INFO: Configuration overrides applied from: #{overrides.join(', ')}" unless SILENCE_CONFIG_LOADER_MESSAGES
         end
 
         return config
@@ -93,8 +114,9 @@ module Hooks
         end
 
         result
-      rescue => _e
-        # In production, we'd log this error
+      rescue => e
+        # Log this error with meaningful information
+        puts "ERROR: Failed to load config file '#{file_path}': #{e.message}" unless SILENCE_CONFIG_LOADER_MESSAGES
         nil
       end
 
@@ -105,8 +127,11 @@ module Hooks
         env_config = {}
 
         env_mappings = {
+          "HOOKS_HANDLER_DIR" => :handler_dir,
           "HOOKS_HANDLER_PLUGIN_DIR" => :handler_plugin_dir,
           "HOOKS_AUTH_PLUGIN_DIR" => :auth_plugin_dir,
+          "HOOKS_LIFECYCLE_PLUGIN_DIR" => :lifecycle_plugin_dir,
+          "HOOKS_INSTRUMENTS_PLUGIN_DIR" => :instruments_plugin_dir,
           "HOOKS_LOG_LEVEL" => :log_level,
           "HOOKS_REQUEST_LIMIT" => :request_limit,
           "HOOKS_REQUEST_TIMEOUT" => :request_timeout,
@@ -114,17 +139,23 @@ module Hooks
           "HOOKS_HEALTH_PATH" => :health_path,
           "HOOKS_VERSION_PATH" => :version_path,
           "HOOKS_ENVIRONMENT" => :environment,
-          "HOOKS_ENDPOINTS_DIR" => :endpoints_dir
+          "HOOKS_ENDPOINTS_DIR" => :endpoints_dir,
+          "HOOKS_USE_CATCHALL_ROUTE" => :use_catchall_route,
+          "HOOKS_SYMBOLIZE_PAYLOAD" => :symbolize_payload,
+          "HOOKS_NORMALIZE_HEADERS" => :normalize_headers
         }
 
         env_mappings.each do |env_key, config_key|
           value = ENV[env_key]
           next unless value
 
-          # Convert numeric values
+          # Convert values to appropriate types
           case config_key
           when :request_limit, :request_timeout
             env_config[config_key] = value.to_i
+          when :use_catchall_route, :symbolize_payload, :normalize_headers
+            # Convert string to boolean
+            env_config[config_key] = %w[true 1 yes on].include?(value.downcase)
           else
             env_config[config_key] = value
           end
