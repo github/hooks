@@ -147,6 +147,8 @@ auth:
   format: "algorithm=signature"  # produces "sha256=abc123..."
 ```
 
+See the [Auth Plugins documentation](./auth_plugins.md) for more details on how to implement custom authentication plugins. You will also find configurations for built-in authentication plugins in that document as well.
+
 ### `opts`
 
 Additional options for the endpoint. This section can include any custom options that the handler may require. The options are specific to the handler and can vary based on its implementation. You can put anything your heart desires here.
