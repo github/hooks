@@ -249,9 +249,13 @@ module Hooks
           if timestamp_value =~ /\A(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?: )\+0000\z/
             timestamp_value = "#{$1}T#{$2}+00:00"
           end
+          # Ensure the timestamp explicitly includes a UTC indicator
+          return nil unless timestamp_value =~ /(Z|\+00:00|\+0000)\z/
           return nil unless iso8601_timestamp?(timestamp_value)
           t = Time.parse(timestamp_value) rescue nil
           return nil unless t
+          # The check for UTC indicator in regex makes this t.utc? or t.utc_offset == 0 redundant
+          # but kept for safety, though it should always be true now if Time.parse succeeds.
           (t.utc? || t.utc_offset == 0) ? t.to_i : nil
         end
 
