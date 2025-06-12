@@ -172,4 +172,252 @@ describe Hooks::Core::PluginLoader do
       )
     end
   end
+
+  describe "failure scenarios" do
+    describe "auth plugin loading failures" do
+      it "raises error when auth plugin file fails to load" do
+        temp_auth_dir = File.join(temp_dir, "auth_failures")
+        FileUtils.mkdir_p(temp_auth_dir)
+
+        # Create a malformed Ruby file
+        malformed_file = File.join(temp_auth_dir, "broken_auth.rb")
+        File.write(malformed_file, "class BrokenAuth\n  # Missing end statement")
+
+        expect {
+          described_class.load_all_plugins({ auth_plugin_dir: temp_auth_dir })
+        }.to raise_error(StandardError, /Failed to load auth plugin from.*broken_auth\.rb/)
+      end
+
+      it "raises error for auth plugin path traversal attempt" do
+        temp_auth_dir = File.join(temp_dir, "auth_secure")
+        FileUtils.mkdir_p(temp_auth_dir)
+
+        # Create a plugin file outside the auth directory
+        outside_file = File.join(temp_dir, "outside_auth.rb")
+        File.write(outside_file, "# Outside file")
+
+        expect {
+          described_class.send(:load_custom_auth_plugin, outside_file, temp_auth_dir)
+        }.to raise_error(SecurityError, /Auth plugin path outside of auth plugin directory/)
+      end
+
+      it "raises error for invalid auth plugin class name" do
+        temp_auth_dir = File.join(temp_dir, "auth_invalid")
+        FileUtils.mkdir_p(temp_auth_dir)
+
+        # Create plugin with invalid class name
+        invalid_file = File.join(temp_auth_dir, "file.rb")
+        File.write(invalid_file, "# File with dangerous class name")
+
+        expect {
+          described_class.send(:load_custom_auth_plugin, invalid_file, temp_auth_dir)
+        }.to raise_error(StandardError, /Invalid auth plugin class name: File/)
+      end
+
+      it "raises error when auth plugin doesn't inherit from correct base class" do
+        temp_auth_dir = File.join(temp_dir, "auth_inheritance")
+        FileUtils.mkdir_p(temp_auth_dir)
+
+        # Create plugin with wrong inheritance
+        wrong_file = File.join(temp_auth_dir, "wrong_auth.rb")
+        File.write(wrong_file, <<~RUBY)
+          module Hooks
+            module Plugins
+              module Auth
+                class WrongAuth
+                  def self.valid?(payload:, headers:, config:)
+                    true
+                  end
+                end
+              end
+            end
+          end
+        RUBY
+
+        expect {
+          described_class.send(:load_custom_auth_plugin, wrong_file, temp_auth_dir)
+        }.to raise_error(StandardError, /Auth plugin class must inherit from Hooks::Plugins::Auth::Base/)
+      end
+    end
+
+    describe "handler plugin loading failures" do
+      it "raises error when handler plugin file fails to load" do
+        temp_handler_dir = File.join(temp_dir, "handler_failures")
+        FileUtils.mkdir_p(temp_handler_dir)
+
+        # Create a malformed Ruby file
+        malformed_file = File.join(temp_handler_dir, "broken_handler.rb")
+        File.write(malformed_file, "class BrokenHandler\n  # Missing end statement")
+
+        expect {
+          described_class.load_all_plugins({ handler_plugin_dir: temp_handler_dir })
+        }.to raise_error(StandardError, /Failed to load handler plugin from.*broken_handler\.rb/)
+      end
+
+      it "raises error for handler plugin path traversal attempt" do
+        temp_handler_dir = File.join(temp_dir, "handler_secure")
+        FileUtils.mkdir_p(temp_handler_dir)
+
+        # Create a plugin file outside the handler directory
+        outside_file = File.join(temp_dir, "outside_handler.rb")
+        File.write(outside_file, "# Outside file")
+
+        expect {
+          described_class.send(:load_custom_handler_plugin, outside_file, temp_handler_dir)
+        }.to raise_error(SecurityError, /Handler plugin path outside of handler plugin directory/)
+      end
+
+      it "raises error for invalid handler plugin class name" do
+        temp_handler_dir = File.join(temp_dir, "handler_invalid")
+        FileUtils.mkdir_p(temp_handler_dir)
+
+        # Create plugin with invalid class name
+        invalid_file = File.join(temp_handler_dir, "file.rb")
+        File.write(invalid_file, "# File with dangerous class name")
+
+        expect {
+          described_class.send(:load_custom_handler_plugin, invalid_file, temp_handler_dir)
+        }.to raise_error(StandardError, /Invalid handler class name: File/)
+      end
+
+      it "raises error when handler plugin doesn't inherit from correct base class" do
+        temp_handler_dir = File.join(temp_dir, "handler_inheritance")
+        FileUtils.mkdir_p(temp_handler_dir)
+
+        # Create plugin with wrong inheritance
+        wrong_file = File.join(temp_handler_dir, "wrong_handler.rb")
+        File.write(wrong_file, <<~RUBY)
+          class WrongHandler
+            def call(payload:, headers:, config:)
+              { message: "wrong handler" }
+            end
+          end
+        RUBY
+
+        expect {
+          described_class.send(:load_custom_handler_plugin, wrong_file, temp_handler_dir)
+        }.to raise_error(StandardError, /Handler class must inherit from Hooks::Plugins::Handlers::Base/)
+      end
+    end
+
+    describe "lifecycle plugin loading failures" do
+      it "raises error when lifecycle plugin file fails to load" do
+        temp_lifecycle_dir = File.join(temp_dir, "lifecycle_failures")
+        FileUtils.mkdir_p(temp_lifecycle_dir)
+
+        # Create a malformed Ruby file
+        malformed_file = File.join(temp_lifecycle_dir, "broken_lifecycle.rb")
+        File.write(malformed_file, "class BrokenLifecycle\n  # Missing end statement")
+
+        expect {
+          described_class.load_all_plugins({ lifecycle_plugin_dir: temp_lifecycle_dir })
+        }.to raise_error(StandardError, /Failed to load lifecycle plugin from.*broken_lifecycle\.rb/)
+      end
+
+      it "raises error for lifecycle plugin path traversal attempt" do
+        temp_lifecycle_dir = File.join(temp_dir, "lifecycle_secure")
+        FileUtils.mkdir_p(temp_lifecycle_dir)
+
+        # Create a plugin file outside the lifecycle directory
+        outside_file = File.join(temp_dir, "outside_lifecycle.rb")
+        File.write(outside_file, "# Outside file")
+
+        expect {
+          described_class.send(:load_custom_lifecycle_plugin, outside_file, temp_lifecycle_dir)
+        }.to raise_error(SecurityError, /Lifecycle plugin path outside of lifecycle plugin directory/)
+      end
+
+      it "raises error for invalid lifecycle plugin class name" do
+        temp_lifecycle_dir = File.join(temp_dir, "lifecycle_invalid")
+        FileUtils.mkdir_p(temp_lifecycle_dir)
+
+        # Create plugin with invalid class name
+        invalid_file = File.join(temp_lifecycle_dir, "file.rb")
+        File.write(invalid_file, "# File with dangerous class name")
+
+        expect {
+          described_class.send(:load_custom_lifecycle_plugin, invalid_file, temp_lifecycle_dir)
+        }.to raise_error(StandardError, /Invalid lifecycle plugin class name: File/)
+      end
+
+      it "raises error when lifecycle plugin doesn't inherit from correct base class" do
+        temp_lifecycle_dir = File.join(temp_dir, "lifecycle_inheritance")
+        FileUtils.mkdir_p(temp_lifecycle_dir)
+
+        # Create plugin with wrong inheritance
+        wrong_file = File.join(temp_lifecycle_dir, "wrong_lifecycle.rb")
+        File.write(wrong_file, <<~RUBY)
+          class WrongLifecycle
+            def on_request(env)
+              # Wrong base class
+            end
+          end
+        RUBY
+
+        expect {
+          described_class.send(:load_custom_lifecycle_plugin, wrong_file, temp_lifecycle_dir)
+        }.to raise_error(StandardError, /Lifecycle plugin class must inherit from Hooks::Plugins::Lifecycle/)
+      end
+    end
+
+    describe "instrument plugin loading failures" do
+      it "raises error when instrument plugin file fails to load" do
+        temp_instrument_dir = File.join(temp_dir, "instrument_failures")
+        FileUtils.mkdir_p(temp_instrument_dir)
+
+        # Create a malformed Ruby file
+        malformed_file = File.join(temp_instrument_dir, "broken_instrument.rb")
+        File.write(malformed_file, "class BrokenInstrument\n  # Missing end statement")
+
+        expect {
+          described_class.load_all_plugins({ instruments_plugin_dir: temp_instrument_dir })
+        }.to raise_error(StandardError, /Failed to load instrument plugin from.*broken_instrument\.rb/)
+      end
+
+      it "raises error for instrument plugin path traversal attempt" do
+        temp_instrument_dir = File.join(temp_dir, "instrument_secure")
+        FileUtils.mkdir_p(temp_instrument_dir)
+
+        # Create a plugin file outside the instrument directory
+        outside_file = File.join(temp_dir, "outside_instrument.rb")
+        File.write(outside_file, "# Outside file")
+
+        expect {
+          described_class.send(:load_custom_instrument_plugin, outside_file, temp_instrument_dir)
+        }.to raise_error(SecurityError, /Instrument plugin path outside of instruments plugin directory/)
+      end
+
+      it "raises error for invalid instrument plugin class name" do
+        temp_instrument_dir = File.join(temp_dir, "instrument_invalid")
+        FileUtils.mkdir_p(temp_instrument_dir)
+
+        # Create plugin with invalid class name
+        invalid_file = File.join(temp_instrument_dir, "file.rb")
+        File.write(invalid_file, "# File with dangerous class name")
+
+        expect {
+          described_class.send(:load_custom_instrument_plugin, invalid_file, temp_instrument_dir)
+        }.to raise_error(StandardError, /Invalid instrument plugin class name: File/)
+      end
+
+      it "raises error when instrument plugin doesn't inherit from correct base class" do
+        temp_instrument_dir = File.join(temp_dir, "instrument_inheritance")
+        FileUtils.mkdir_p(temp_instrument_dir)
+
+        # Create plugin with wrong inheritance
+        wrong_file = File.join(temp_instrument_dir, "wrong_instrument.rb")
+        File.write(wrong_file, <<~RUBY)
+          class WrongInstrument
+            def record(metric_name, value, tags = {})
+              # Wrong base class
+            end
+          end
+        RUBY
+
+        expect {
+          described_class.send(:load_custom_instrument_plugin, wrong_file, temp_instrument_dir)
+        }.to raise_error(StandardError, /Instrument plugin class must inherit from StatsBase or FailbotBase/)
+      end
+    end
+  end
 end

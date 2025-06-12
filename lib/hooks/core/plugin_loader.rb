@@ -123,7 +123,7 @@ module Hooks
           Dir.glob(File.join(auth_plugin_dir, "*.rb")).sort.each do |file_path|
             begin
               load_custom_auth_plugin(file_path, auth_plugin_dir)
-            rescue => e
+            rescue StandardError, SyntaxError => e
               raise StandardError, "Failed to load auth plugin from #{file_path}: #{e.message}"
             end
           end
@@ -139,7 +139,7 @@ module Hooks
           Dir.glob(File.join(handler_plugin_dir, "*.rb")).sort.each do |file_path|
             begin
               load_custom_handler_plugin(file_path, handler_plugin_dir)
-            rescue => e
+            rescue StandardError, SyntaxError => e
               raise StandardError, "Failed to load handler plugin from #{file_path}: #{e.message}"
             end
           end
@@ -155,7 +155,7 @@ module Hooks
           Dir.glob(File.join(lifecycle_plugin_dir, "*.rb")).sort.each do |file_path|
             begin
               load_custom_lifecycle_plugin(file_path, lifecycle_plugin_dir)
-            rescue => e
+            rescue StandardError, SyntaxError => e
               raise StandardError, "Failed to load lifecycle plugin from #{file_path}: #{e.message}"
             end
           end
@@ -171,7 +171,7 @@ module Hooks
           Dir.glob(File.join(instruments_plugin_dir, "*.rb")).sort.each do |file_path|
             begin
               load_custom_instrument_plugin(file_path, instruments_plugin_dir)
-            rescue => e
+            rescue StandardError, SyntaxError => e
               raise StandardError, "Failed to load instrument plugin from #{file_path}: #{e.message}"
             end
           end
