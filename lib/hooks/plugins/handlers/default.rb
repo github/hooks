@@ -15,7 +15,7 @@ class DefaultHandler < Hooks::Plugins::Handlers::Base
     {
       message: "webhook processed successfully",
       handler: "DefaultHandler",
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 end

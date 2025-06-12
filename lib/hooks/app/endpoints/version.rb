@@ -10,7 +10,7 @@ module Hooks
         content_type "application/json"
         {
           version: Hooks::VERSION,
-          timestamp: Time.now.iso8601
+          timestamp: Time.now.utc.iso8601
         }.to_json
       end
     end

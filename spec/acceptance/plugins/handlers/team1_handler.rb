@@ -43,7 +43,7 @@ class Team1Handler < Hooks::Plugins::Handlers::Base
         message: "Raw payload processed",
         payload_size: payload.length,
         environment: config.dig(:opts, :env),
-        timestamp: Time.now.iso8601
+        timestamp: Time.now.utc.iso8601
       }
     end
   end
@@ -62,7 +62,7 @@ class Team1Handler < Hooks::Plugins::Handlers::Base
       deployment_id: payload["deployment_id"],
       environment: payload["environment"] || config.dig(:opts, :env),
       teams_notified: config.dig(:opts, :teams),
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 
@@ -83,7 +83,7 @@ class Team1Handler < Hooks::Plugins::Handlers::Base
       alert_id: payload["alert_id"],
       level: alert_level,
       channels_notified: config.dig(:opts, :notify_channels),
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 
@@ -98,7 +98,7 @@ class Team1Handler < Hooks::Plugins::Handlers::Base
       handler: "Team1Handler",
       event_type: payload["event_type"],
       environment: config.dig(:opts, :env),
-      timestamp: Time.now.iso8601
+      timestamp: Time.now.utc.iso8601
     }
   end
 end

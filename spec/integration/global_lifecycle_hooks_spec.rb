@@ -92,7 +92,7 @@ RSpec.describe "Global Lifecycle Hooks Integration" do
           {
             status: "success",
             handler: "IntegrationTestHandler",
-            timestamp: Time.now.iso8601,
+            timestamp: Time.now.utc.iso8601,
             payload_received: !payload.nil?
           }
         end
