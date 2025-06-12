@@ -206,7 +206,7 @@ describe Hooks::Plugins::Auth::Base do
 
   describe "documentation compliance" do
     it "has the expected public interface" do
-      expect(described_class.methods(false)).to include(:valid?, :log, :stats, :failbot, :fetch_secret)
+      expect(described_class.methods).to include(:valid?, :log, :stats, :failbot, :fetch_secret)
     end
 
     it "valid? method accepts the documented parameters" do

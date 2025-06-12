@@ -40,6 +40,7 @@ module Hooks
         DEFAULT_CONFIG = {
           algorithm: "sha256",
           format: "algorithm=signature",  # Format: algorithm=hash
+          header: "X-Signature",         # Default header containing the signature
           timestamp_tolerance: 300,       # 5 minutes tolerance for timestamp validation
           version_prefix: "v0"           # Default version prefix for versioned signatures
         }.freeze
@@ -157,7 +158,7 @@ module Hooks
           tolerance = validator_config[:timestamp_tolerance] || DEFAULT_CONFIG[:timestamp_tolerance]
 
           DEFAULT_CONFIG.merge({
-            header: validator_config[:header] || "X-Signature",
+            header: validator_config[:header] || DEFAULT_CONFIG[:header],
             timestamp_header: validator_config[:timestamp_header],
             timestamp_tolerance: tolerance,
             algorithm: algorithm,
