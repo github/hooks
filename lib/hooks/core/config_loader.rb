@@ -65,9 +65,7 @@ module Hooks
 
         # Log overrides if any were made
         if overrides.any?
-          # Use puts for now since logger might not be initialized yet
-          # This will be replaced with proper logging once the logger is available
-          puts "INFO: Configuration overrides applied from: #{overrides.join(', ')}"
+          logger.info("Configuration overrides applied from: #{overrides.join(', ')}")
         end
 
         return config
