@@ -191,5 +191,35 @@ describe "Hooks" do
         expect(response.body).to include("Boomtown error occurred")
       end
     end
+
+    describe "okta setup" do
+      it "sends a POST request to the /webhooks/okta_webhook_setup endpoint and it fails because it is not a GET" do
+        payload = {}.to_json
+        headers = {}
+        response = http.post("/webhooks/okta_webhook_setup", payload, headers)
+
+        expect(response).to be_a(Net::HTTPMethodNotAllowed)
+        expect(response.body).to include("405 Not Allowed")
+      end
+
+      it "sends a GET request to the /webhooks/okta_webhook_setup endpoint and it returns the verification challenge" do
+        headers = { "x-okta-verification-challenge" => "test-challenge" }
+        response = http.get("/webhooks/okta_webhook_setup", headers)
+
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["verification"]).to eq("test-challenge")
+      end
+
+      it "sends a GET request to the /webhooks/okta_webhook_setup endpoint but it is missing the verification challenge header" do
+        response = http.get("/webhooks/okta_webhook_setup")
+
+        expect(response).to be_a(Net::HTTPSuccess)
+        expect(response.code).to eq("200")
+        body = JSON.parse(response.body)
+        expect(body["error"]).to eq("Missing verification challenge header")
+        expect(body["expected_header"]).to eq("x-okta-verification-challenge")
+      end
+    end
   end
 end

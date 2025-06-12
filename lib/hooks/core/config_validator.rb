@@ -34,6 +34,7 @@ module Hooks
       ENDPOINT_CONFIG_SCHEMA = Dry::Schema.Params do
         required(:path).filled(:string)
         required(:handler).filled(:string)
+        optional(:method).filled(:string, included_in?: %w[get post put patch delete head options])
 
         optional(:auth).hash do
           required(:type).filled(:string)

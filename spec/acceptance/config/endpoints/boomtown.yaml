@@ -1,2 +1,3 @@
 path: /boomtown
 handler: Boomtown
+method: post
