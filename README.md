@@ -302,6 +302,10 @@ See the [Lifecycle Plugins](docs/lifecycle_plugins.md) documentation for informa
 
 See the [Instrument Plugins](docs/instrument_plugins.md) documentation for information on how to create instrument plugins that can be used to collect metrics or report exceptions during webhook processing. These plugins can be used to integrate with monitoring and alerting systems.
 
+### Configuration
+
+See the [Configuration](docs/configuration.md) documentation for detailed information on how to configure your Hooks server, including global options, endpoint options, and more.
+
 ## Contributing 🤝
 
 See the [Contributing](CONTRIBUTING.md) document for information on how to contribute to the Hooks project, including setting up your development environment, running tests, and releasing new versions.
