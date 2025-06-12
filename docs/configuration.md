@@ -128,6 +128,8 @@ method: post  # Most webhooks use POST
 method: put   # Some REST APIs might use PUT for updates
 ```
 
+In some cases, webhook providers (such as Okta) may require a one time verification request via a GET request. In such cases, you can set the method to `get` for that specific endpoint and then write a handler that processes the verification request.
+
 ### `auth`
 
 Authentication configuration for the endpoint. This section defines how incoming requests will be authenticated before being processed by the handler.
