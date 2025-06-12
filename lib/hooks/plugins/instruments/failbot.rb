@@ -7,11 +7,25 @@ module Hooks
     module Instruments
       # Default failbot instrument implementation
       #
-      # This is a stub implementation that does nothing by default.
-      # Users can replace this with their own implementation for services
-      # like Sentry, Rollbar, etc.
+      # This is a no-op implementation that provides the error reporting interface
+      # without actually sending errors anywhere. It serves as a safe default when
+      # no custom error reporting implementation is configured.
+      #
+      # Users should replace this with their own implementation for services
+      # like Sentry, Rollbar, Honeybadger, etc.
+      #
+      # @example Replacing with a custom implementation
+      #   # In your application initialization:
+      #   custom_failbot = MySentryFailbotImplementation.new
+      #   Hooks::Core::GlobalComponents.failbot = custom_failbot
+      #
+      # @see Hooks::Plugins::Instruments::FailbotBase
+      # @see Hooks::Core::GlobalComponents
       class Failbot < FailbotBase
-        # Inherit from FailbotBase to provide a default implementation of the failbot instrument.
+        # Inherit from FailbotBase to provide a default no-op implementation
+        # of the error reporting instrument interface.
+        #
+        # All methods from FailbotBase are inherited and provide safe no-op behavior.
       end
     end
   end
