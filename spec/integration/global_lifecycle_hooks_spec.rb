@@ -23,7 +23,7 @@ RSpec.describe "Global Lifecycle Hooks Integration" do
       lifecycle_plugin_dir: temp_lifecycle_dir,
       handler_plugin_dir: temp_handler_dir,
       endpoints_dir: temp_endpoints_dir,
-      log_level: "info",
+      log_level: "error", # Reduce noise in tests
       root_path: "/webhooks",
       health_path: "/health",
       version_path: "/version",
