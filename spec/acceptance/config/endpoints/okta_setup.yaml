@@ -1,0 +1,3 @@
+path: /okta_webhook_setup
+handler: OktaSetupHandler
+method: get
