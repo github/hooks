@@ -113,6 +113,12 @@ describe Hooks::Plugins::Auth::TimestampValidator do
         result = validator.parse(iso_timestamp)
         expect(result).to be_nil
       end
+
+      it "parses space-separated UTC timestamp with +0000" do
+        space_timestamp = "2025-06-12 10:30:00 +0000"
+        result = validator.parse(space_timestamp)
+        expect(result).to eq(Time.parse("2025-06-12T10:30:00+00:00").to_i)
+      end
     end
 
     context "security validations" do

@@ -142,7 +142,8 @@ module Hooks
           "HOOKS_ENDPOINTS_DIR" => :endpoints_dir,
           "HOOKS_USE_CATCHALL_ROUTE" => :use_catchall_route,
           "HOOKS_SYMBOLIZE_PAYLOAD" => :symbolize_payload,
-          "HOOKS_NORMALIZE_HEADERS" => :normalize_headers
+          "HOOKS_NORMALIZE_HEADERS" => :normalize_headers,
+          "HOOKS_SOME_STRING_VAR" => :some_string_var # Added for test
         }
 
         env_mappings.each do |env_key, config_key|

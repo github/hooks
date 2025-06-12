@@ -143,8 +143,9 @@ describe Hooks::Core::ConfigLoader do
 
     context "with environment variables" do
       around do |example|
-        original_env = ENV.to_h
+        original_env = ENV.to_h.dup # Use .dup to ensure we have a copy
         example.run
+      ensure # Ensure ENV is restored even if the example fails
         ENV.replace(original_env)
       end
 
@@ -171,6 +172,9 @@ describe Hooks::Core::ConfigLoader do
         expect(config[:log_level]).to eq("warn")
         expect(config[:environment]).to eq("production") # should remain default
         expect(config[:production]).to be true
+        # Ensure other ENV vars are not set from previous examples in this context
+        expect(ENV["HOOKS_ENVIRONMENT"]).to be_nil
+        expect(ENV["HOOKS_REQUEST_LIMIT"]).to be_nil
       end
 
       it "processes empty environment variables (empty strings are truthy)" do
@@ -180,9 +184,32 @@ describe Hooks::Core::ConfigLoader do
 
         expect(config[:log_level]).to eq("") # empty string is processed
       end
+
+      it "converts boolean environment variables correctly" do
+        ENV["HOOKS_USE_CATCHALL_ROUTE"] = "true"
+        ENV["HOOKS_SYMBOLIZE_PAYLOAD"] = "1"
+        ENV["HOOKS_NORMALIZE_HEADERS"] = "yes"
+        # Add a non-boolean var to ensure it's not misinterpreted
+        ENV["HOOKS_SOME_STRING_VAR"] = "test_value"
+
+
+        config = described_class.load
+
+        expect(config[:use_catchall_route]).to be true
+        expect(config[:symbolize_payload]).to be true
+        expect(config[:normalize_headers]).to be true
+        expect(config[:some_string_var]).to eq("test_value") # Check the string var
+      end
     end
 
     context "with auth plugin directory configuration" do
+      around do |example|
+        original_env = ENV.to_h.dup
+        example.run
+      ensure
+        ENV.replace(original_env)
+      end
+
       it "includes auth_plugin_dir in default configuration" do
         config = described_class.load
 
@@ -203,8 +230,7 @@ describe Hooks::Core::ConfigLoader do
         config = described_class.load
 
         expect(config[:auth_plugin_dir]).to eq("/opt/auth/plugins")
-      ensure
-        ENV.delete("HOOKS_AUTH_PLUGIN_DIR")
+        # No ensure block needed here as the around hook handles cleanup
       end
     end
 
