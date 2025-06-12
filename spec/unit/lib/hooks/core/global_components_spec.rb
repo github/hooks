@@ -3,7 +3,7 @@
 describe Hooks::Core::GlobalComponents do
   describe ".stats" do
     it "returns a Stats instance by default" do
-      expect(described_class.stats).to be_a(Hooks::Core::Stats)
+      expect(described_class.stats).to be_a(Hooks::Plugins::Instruments::Stats)
     end
 
     it "can be set to a custom stats instance" do
@@ -20,7 +20,7 @@ describe Hooks::Core::GlobalComponents do
 
   describe ".failbot" do
     it "returns a Failbot instance by default" do
-      expect(described_class.failbot).to be_a(Hooks::Core::Failbot)
+      expect(described_class.failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
     end
 
     it "can be set to a custom failbot instance" do
@@ -47,8 +47,8 @@ describe Hooks::Core::GlobalComponents do
       described_class.reset
 
       # Verify they are back to default instances
-      expect(described_class.stats).to be_a(Hooks::Core::Stats)
-      expect(described_class.failbot).to be_a(Hooks::Core::Failbot)
+      expect(described_class.stats).to be_a(Hooks::Plugins::Instruments::Stats)
+      expect(described_class.failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
     end
   end
 end

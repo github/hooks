@@ -95,6 +95,7 @@ describe Hooks::Core::PluginLoader do
       expect(logger_double).to receive(:info).with(/Loaded \d+ auth plugins/)
       expect(logger_double).to receive(:info).with(/Loaded \d+ handler plugins/)
       expect(logger_double).to receive(:info).with(/Loaded \d+ lifecycle plugins/)
+      expect(logger_double).to receive(:info).with(/Loaded instruments:/)
 
       described_class.send(:log_loaded_plugins)
     end

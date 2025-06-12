@@ -167,14 +167,14 @@ describe Hooks::Plugins::Handlers::Base do
 
     describe "#stats" do
       it "provides access to global stats" do
-        expect(handler.stats).to be_a(Hooks::Core::Stats)
+        expect(handler.stats).to be_a(Hooks::Plugins::Instruments::Stats)
         expect(handler.stats).to eq(Hooks::Core::GlobalComponents.stats)
       end
     end
 
     describe "#failbot" do
       it "provides access to global failbot" do
-        expect(handler.failbot).to be_a(Hooks::Core::Failbot)
+        expect(handler.failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
         expect(handler.failbot).to eq(Hooks::Core::GlobalComponents.failbot)
       end
     end

@@ -16,6 +16,7 @@ module Hooks
         optional(:handler_plugin_dir).filled(:string)
         optional(:auth_plugin_dir).maybe(:string)
         optional(:lifecycle_plugin_dir).maybe(:string)
+        optional(:instruments_plugin_dir).maybe(:string)
         optional(:log_level).filled(:string, included_in?: %w[debug info warn error])
         optional(:request_limit).filled(:integer, gt?: 0)
         optional(:request_timeout).filled(:integer, gt?: 0)

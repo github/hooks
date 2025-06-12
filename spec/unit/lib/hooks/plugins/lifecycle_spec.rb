@@ -248,14 +248,14 @@ describe Hooks::Plugins::Lifecycle do
   describe "global component access" do
     describe "#stats" do
       it "provides access to global stats" do
-        expect(plugin.stats).to be_a(Hooks::Core::Stats)
+        expect(plugin.stats).to be_a(Hooks::Plugins::Instruments::Stats)
         expect(plugin.stats).to eq(Hooks::Core::GlobalComponents.stats)
       end
     end
 
     describe "#failbot" do
       it "provides access to global failbot" do
-        expect(plugin.failbot).to be_a(Hooks::Core::Failbot)
+        expect(plugin.failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
         expect(plugin.failbot).to eq(Hooks::Core::GlobalComponents.failbot)
       end
     end

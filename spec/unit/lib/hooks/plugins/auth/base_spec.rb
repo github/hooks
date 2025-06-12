@@ -226,14 +226,14 @@ describe Hooks::Plugins::Auth::Base do
 
     describe ".stats" do
       it "provides access to global stats" do
-        expect(described_class.stats).to be_a(Hooks::Core::Stats)
+        expect(described_class.stats).to be_a(Hooks::Plugins::Instruments::Stats)
         expect(described_class.stats).to eq(Hooks::Core::GlobalComponents.stats)
       end
     end
 
     describe ".failbot" do
       it "provides access to global failbot" do
-        expect(described_class.failbot).to be_a(Hooks::Core::Failbot)
+        expect(described_class.failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
         expect(described_class.failbot).to eq(Hooks::Core::GlobalComponents.failbot)
       end
     end
