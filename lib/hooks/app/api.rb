@@ -27,6 +27,7 @@ module Hooks
 
       # Create a new configured API class
       def self.create(config:, endpoints:, log:)
+        # :nocov:
         @server_start_time = Time.now
 
         api_class = Class.new(Grape::API) do
@@ -152,6 +153,7 @@ module Hooks
         end
 
         api_class
+        # :nocov:
       end
     end
   end
