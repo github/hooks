@@ -12,6 +12,7 @@ FAKE_ALT_HMAC_SECRET = "octoawesome-2-secret"
 
 ENV["GITHUB_WEBHOOK_SECRET"] = FAKE_HMAC_SECRET
 ENV["ALT_WEBHOOK_SECRET"] = FAKE_ALT_HMAC_SECRET
+ENV["HOOKS_SILENCE_CONFIG_LOADER_MESSAGES"] = "true"
 
 COV_DIR = File.expand_path("../../coverage", File.dirname(__FILE__))
 

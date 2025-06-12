@@ -24,6 +24,10 @@ module Hooks
         normalize_headers: true
       }.freeze
 
+      SILENCE_CONFIG_LOADER_MESSAGES = ENV.fetch(
+        "HOOKS_SILENCE_CONFIG_LOADER_MESSAGES", "false"
+      ).downcase == "true".freeze
+
       # Load and merge configuration from various sources
       #
       # @param config_path [String, Hash] Path to config file or config hash
@@ -65,7 +69,7 @@ module Hooks
 
         # Log overrides if any were made
         if overrides.any?
-          puts "INFO: Configuration overrides applied from: #{overrides.join(', ')}"
+          puts "INFO: Configuration overrides applied from: #{overrides.join(', ')}" unless SILENCE_CONFIG_LOADER_MESSAGES
         end
 
         return config
@@ -112,7 +116,7 @@ module Hooks
         result
       rescue => e
         # Log this error with meaningful information
-        puts "ERROR: Failed to load config file '#{file_path}': #{e.message}"
+        puts "ERROR: Failed to load config file '#{file_path}': #{e.message}" unless SILENCE_CONFIG_LOADER_MESSAGES
         nil
       end
 
