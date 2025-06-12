@@ -37,12 +37,8 @@ module Hooks
         end
 
         log.debug("validating auth for request with auth_class: #{auth_class.name}")
-
-        unless auth_class.valid?(
-          payload:,
-          headers:,
-          config: endpoint_config
-        )
+        unless auth_class.valid?(payload:, headers:, config: endpoint_config)
+          log.warn("authentication failed for request with auth_class: #{auth_class.name}")
           error!("authentication failed", 401)
         end
       end
