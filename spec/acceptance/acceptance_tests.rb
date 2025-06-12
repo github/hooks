@@ -117,12 +117,149 @@ describe "Hooks" do
     end
 
     describe "slack" do
-      it "receives a POST request but contains an invalid HMAC signature" do
+      it "successfully processes a valid POST request with HMAC signature and timestamp" do
         payload = { text: "Hello, Slack!" }
-        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, payload.to_json)
-        headers = { "Content-Type" => "application/json", "Signature-256" => "sha256=#{digest}" }
-        response = http.post("/webhooks/slack", payload.to_json, headers)
+        timestamp = Time.now.to_i.to_s
+        body = payload.to_json
+        signing_payload = "v0:#{timestamp}:#{body}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => timestamp
+        }
+        response = http.post("/webhooks/slack", body, headers)
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["status"]).to eq("success")
+      end
 
+      it "rejects request with expired timestamp" do
+        payload = { text: "Hello, Slack!" }
+        # Use timestamp that's 10 minutes old (beyond the 5 minute tolerance)
+        expired_timestamp = (Time.now.to_i - 600).to_s
+
+        signing_payload = "v0:#{expired_timestamp}:#{payload.to_json}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => expired_timestamp
+        }
+
+        response = http.post("/webhooks/slack", payload.to_json, headers)
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("authentication failed")
+      end
+
+      it "rejects request with missing timestamp header" do
+        payload = { text: "Hello, Slack!" }
+        timestamp = Time.now.to_i.to_s
+
+        # Create signature with timestamp but don't include timestamp header
+        signing_payload = "v0:#{timestamp}:#{payload.to_json}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}"
+          # Missing X-Timestamp header
+        }
+
+        response = http.post("/webhooks/slack", payload.to_json, headers)
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("authentication failed")
+      end
+
+      it "rejects request with invalid timestamp format" do
+        payload = { text: "Hello, Slack!" }
+        invalid_timestamp = "not-a-timestamp"
+
+        signing_payload = "v0:#{invalid_timestamp}:#{payload.to_json}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => invalid_timestamp
+        }
+
+        response = http.post("/webhooks/slack", payload.to_json, headers)
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("authentication failed")
+      end
+
+      it "successfully processes request with ISO 8601 UTC timestamp" do
+        payload = { text: "Hello, Slack!" }
+        iso_timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+        body = payload.to_json
+        signing_payload = "v0:#{iso_timestamp}:#{body}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => iso_timestamp
+        }
+        response = http.post("/webhooks/slack", body, headers)
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["status"]).to eq("success")
+      end
+
+      it "successfully processes request with ISO 8601 UTC timestamp using +00:00 format" do
+        payload = { text: "Hello, Slack!" }
+        iso_timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        body = payload.to_json
+        signing_payload = "v0:#{iso_timestamp}:#{body}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => iso_timestamp
+        }
+        response = http.post("/webhooks/slack", body, headers)
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["status"]).to eq("success")
+      end
+
+      it "rejects request with non-UTC ISO 8601 timestamp" do
+        payload = { text: "Hello, Slack!" }
+        # Use EST timezone (non-UTC)
+        non_utc_timestamp = Time.now.strftime("%Y-%m-%dT%H:%M:%S-05:00")
+
+        signing_payload = "v0:#{non_utc_timestamp}:#{payload.to_json}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => non_utc_timestamp
+        }
+
+        response = http.post("/webhooks/slack", payload.to_json, headers)
+        expect(response).to be_a(Net::HTTPUnauthorized)
+        expect(response.body).to include("authentication failed")
+      end
+
+      it "rejects request with timestamp manipulation attack" do
+        payload = { text: "Hello, Slack!" }
+        original_timestamp = Time.now.to_i.to_s
+        manipulated_timestamp = (Time.now.to_i + 100).to_s  # Future timestamp
+
+        # Create signature with original timestamp
+        signing_payload = "v0:#{original_timestamp}:#{payload.to_json}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+
+        # But send manipulated timestamp in header
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => manipulated_timestamp
+        }
+
+        response = http.post("/webhooks/slack", payload.to_json, headers)
         expect(response).to be_a(Net::HTTPUnauthorized)
         expect(response.body).to include("authentication failed")
       end

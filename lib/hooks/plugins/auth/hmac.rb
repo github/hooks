@@ -117,7 +117,10 @@ module Hooks
 
           # Validate timestamp if required (for services that include timestamp validation)
           if validator_config[:timestamp_header]
-            return false unless valid_timestamp?(normalized_headers, validator_config)
+            unless valid_timestamp?(normalized_headers, validator_config)
+              log.warn("Auth::HMAC validation failed: Invalid timestamp")
+              return false
+            end
           end
 
           # Compute expected signature
@@ -180,34 +183,99 @@ module Hooks
         #
         # Checks if the provided timestamp is within the configured tolerance
         # of the current time. This prevents replay attacks using old requests.
+        # Supports both ISO 8601 UTC timestamps and Unix timestamps.
         #
         # @param headers [Hash<String, String>] Normalized HTTP headers
         # @param config [Hash<Symbol, Object>] Validator configuration
         # @return [Boolean] true if timestamp is valid or not required, false otherwise
         # @note Returns false if timestamp header is missing when required
         # @note Tolerance is applied as absolute difference (past or future)
+        # @note Tries ISO 8601 UTC format first, then falls back to Unix timestamp
         # @api private
         def self.valid_timestamp?(headers, config)
           timestamp_header = config[:timestamp_header]
+          tolerance = config[:timestamp_tolerance] || 300
           return false unless timestamp_header
 
-          timestamp_header = timestamp_header.downcase
-          timestamp_value = headers[timestamp_header]
-
+          timestamp_value = headers[timestamp_header.downcase]
           return false unless timestamp_value
+          return false if timestamp_value.strip.empty?
 
-          # Security: Strict timestamp validation - must be only digits with no leading zeros
-          return false unless timestamp_value.match?(/\A[1-9]\d*\z/) || timestamp_value == "0"
+          parsed_timestamp = parse_timestamp(timestamp_value.strip)
+          return false unless parsed_timestamp
 
-          timestamp = timestamp_value.to_i
+          # parsed_timestamp is a Time object
+          now = Time.now.utc
+          (now - parsed_timestamp).abs <= tolerance
+        end
 
-          # Ensure timestamp is a positive integer (reject zero and negative)
-          return false unless timestamp > 0
+        # Parse timestamp value supporting both ISO 8601 UTC and Unix formats
+        #
+        # Attempts to parse the timestamp in the following order:
+        # 1. ISO 8601 UTC format (e.g., "2025-06-12T10:30:00Z")
+        # 2. Unix timestamp (e.g., "1609459200")
+        #
+        # @param timestamp_value [String] The timestamp string to parse
+        # @return [Time, nil] Time object if parsing succeeds, nil otherwise
+        # @note Security: Strict validation prevents various injection attacks
+        # @api private
+        def self.parse_timestamp(timestamp_value)
+          # Try ISO 8601 first, then Unix
+          ts = parse_iso8601_timestamp(timestamp_value)
+          return ts if ts
+          ts = parse_unix_timestamp(timestamp_value)
+          return ts if ts
+          nil
+        end
 
-          current_time = Time.now.to_i
-          tolerance = config[:timestamp_tolerance]
+        # Check if timestamp string looks like ISO 8601 UTC format
+        #
+        # @param timestamp_value [String] The timestamp string to check
+        # @return [Boolean] true if it appears to be ISO 8601 format
+        # @api private
+        def self.iso8601_timestamp?(timestamp_value)
+          # Accepts Z, +00:00, or +0000, and T or space as separator
+          !!(timestamp_value =~ /\A\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(Z|\+00:00|\+0000)\z/)
+        end
 
-          (current_time - timestamp).abs <= tolerance
+        # Parse ISO 8601 UTC timestamp string
+        #
+        # @param timestamp_value [String] ISO 8601 timestamp string
+        # @return [Time, nil] Time object if parsing succeeds, nil otherwise
+        # @note Only accepts UTC timestamps (ending with 'Z' or explicit UTC)
+        # @api private
+        def self.parse_iso8601_timestamp(timestamp_value)
+          # Normalize 'YYYY-MM-DD HH:MM:SS(.fraction)? +0000' to 'YYYY-MM-DDTHH:MM:SS(.fraction)?+00:00'
+          if timestamp_value =~ /\A(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?: )\+0000\z/
+            timestamp_value = "#{$1}T#{$2}+00:00"
+          end
+          return nil unless iso8601_timestamp?(timestamp_value)
+          t = Time.iso8601(timestamp_value) rescue nil
+          return nil unless t
+          # Only accept UTC (Z, +00:00, or +0000)
+          return t if t.utc? || t.utc_offset == 0
+          nil
+        end
+
+        # Parse Unix timestamp string
+        #
+        # @param timestamp_value [String] Unix timestamp string
+        # @return [Time, nil] Time object if parsing succeeds, nil otherwise
+        # @api private
+        def self.parse_unix_timestamp(timestamp_value)
+          return nil unless unix_timestamp?(timestamp_value)
+          ts = timestamp_value.to_i
+          return nil if ts <= 0
+          Time.at(ts).utc
+        end
+
+        # Check if timestamp string looks like Unix timestamp format
+        #
+        # @param timestamp_value [String] The timestamp string to check
+        # @return [Boolean] true if it appears to be Unix timestamp format
+        # @api private
+        def self.unix_timestamp?(timestamp_value)
+          !!(timestamp_value =~ /\A\d+\z/) || timestamp_value == "0"
         end
 
         # Compute HMAC signature based on configuration requirements
