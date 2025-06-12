@@ -209,6 +209,11 @@ module Hooks
         end
 
         # Parse timestamp value supporting both ISO 8601 UTC and Unix formats
+        #
+        # @param timestamp_value [String] The timestamp string to parse
+        # @return [Integer, nil] Epoch seconds if parsing succeeds, nil otherwise
+        # @note Security: Strict validation prevents various injection attacks
+        # @api private
         def self.parse_timestamp(timestamp_value)
           # Reject if contains any control characters, whitespace, or null bytes
           if timestamp_value =~ /[\u0000-\u001F\u007F-\u009F]/
@@ -230,11 +235,20 @@ module Hooks
         end
 
         # Check if timestamp string looks like ISO 8601 UTC format (must have UTC indicator)
+        #
+        # @param timestamp_value [String] The timestamp string to check
+        # @return [Boolean] true if it appears to be ISO 8601 format (with or without UTC indicator)
+        # @api private
         def self.iso8601_timestamp?(timestamp_value)
           !!(timestamp_value =~ /\A\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(Z|\+00:00|\+0000)?\z/)
         end
 
         # Parse ISO 8601 UTC timestamp string (must have UTC indicator)
+        #
+        # @param timestamp_value [String] ISO 8601 timestamp string
+        # @return [Integer, nil] Epoch seconds if parsing succeeds, nil otherwise
+        # @note Only accepts UTC timestamps (ending with 'Z', '+00:00', '+0000')
+        # @api private
         def self.parse_iso8601_timestamp(timestamp_value)
           if timestamp_value =~ /\A(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?: )\+0000\z/
             timestamp_value = "#{$1}T#{$2}+00:00"
@@ -246,6 +260,11 @@ module Hooks
         end
 
         # Parse Unix timestamp string (must be positive integer, no leading zeros except for "0")
+        #
+        # @param timestamp_value [String] Unix timestamp string
+        # @return [Integer, nil] Epoch seconds if parsing succeeds, nil otherwise
+        # @note Only accepts positive integer values, no leading zeros except for "0"
+        # @api private
         def self.parse_unix_timestamp(timestamp_value)
           return nil unless unix_timestamp?(timestamp_value)
           ts = timestamp_value.to_i
@@ -254,6 +273,10 @@ module Hooks
         end
 
         # Check if timestamp string looks like Unix timestamp format (no leading zeros except "0")
+        #
+        # @param timestamp_value [String] The timestamp string to check
+        # @return [Boolean] true if it appears to be Unix timestamp format
+        # @api private
         def self.unix_timestamp?(timestamp_value)
           return true if timestamp_value == "0"
           !!(timestamp_value =~ /\A[1-9]\d*\z/)
@@ -306,7 +329,7 @@ module Hooks
         #   - {body}: Replaced with the raw payload
         # @example Template usage
         #   template: "{version}:{timestamp}:{body}"
-        #   result: "v0:1609459200:{"event":"push"}"
+        #   result: "v0:1609459200:{\"event\":\"push\"}"
         # @api private
         def self.build_signing_payload(payload:, headers:, config:)
           template = config[:payload_template]
@@ -336,7 +359,7 @@ module Hooks
         #   - :algorithm_prefixed: "sha256=abc123..." (GitHub style)
         #   - :hash_only: "abc123..." (Shopify style)
         #   - :version_prefixed: "v0=abc123..." (Slack style)
-        # @note Defaults to algorithm_prefixed format for unknown format styles
+        # @note Defaults to algorithm-prefixed format for unknown format styles
         # @api private
         def self.format_signature(hash, config)
           format_style = FORMATS[config[:format]]
