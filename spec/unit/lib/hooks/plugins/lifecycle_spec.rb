@@ -248,6 +248,12 @@ describe Hooks::Plugins::Lifecycle do
   end
 
   describe "global component access" do
+    describe "#log" do
+      it "provides access to global logger" do
+        expect(plugin.log).to be(Hooks::Log.instance)
+      end
+    end
+
     describe "#stats" do
       it "provides access to global stats" do
         expect(plugin.stats).to be_a(Hooks::Plugins::Instruments::Stats)

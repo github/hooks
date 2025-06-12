@@ -180,6 +180,18 @@ describe Hooks::Core::ConfigLoader do
 
         expect(config[:log_level]).to eq("") # empty string is processed
       end
+
+      it "converts boolean environment variables correctly" do
+        ENV["HOOKS_USE_CATCHALL_ROUTE"] = "true"
+        ENV["HOOKS_SYMBOLIZE_PAYLOAD"] = "1"
+        ENV["HOOKS_NORMALIZE_HEADERS"] = "yes"
+
+        config = described_class.load
+
+        expect(config[:use_catchall_route]).to be true
+        expect(config[:symbolize_payload]).to be true
+        expect(config[:normalize_headers]).to be true
+      end
     end
 
     context "with auth plugin directory configuration" do
