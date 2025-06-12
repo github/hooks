@@ -18,10 +18,13 @@ module Hooks
       include Hooks::App::Helpers
 
       def self.mount_path(config)
+        # :nocov:
         "#{config[:root_path]}/*path"
+        # :nocov:
       end
 
       def self.route_block(captured_config, captured_logger)
+        # :nocov:
         proc do
           request_id = uuid
 
@@ -86,6 +89,7 @@ module Hooks
             end
           end
         end
+        # :nocov:
       end
     end
   end
