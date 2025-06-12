@@ -236,7 +236,7 @@ describe Hooks::App::Helpers do
         # Mock logger to capture debug messages
         logger = instance_double("Logger")
         allow(helper).to receive(:log).and_return(logger)
-        expect(logger).to receive(:warn).with(/JSON parsing security limit exceeded/)
+        expect(logger).to receive(:warn).with(/JSON parsing limit exceeded/)
 
         # Mock the safe_json_parse method to simulate nesting limit exceeded
         allow(helper).to receive(:safe_json_parse).and_raise(ArgumentError, "nesting exceeded")

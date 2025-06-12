@@ -40,7 +40,7 @@ module Hooks
         # Note: Timeout enforcement would typically be handled at the server level (Puma, etc.)
       end
 
-      # Parse request payload with security limits
+      # Parse request payload
       #
       # @param raw_body [String] The raw request body
       # @param headers [Hash] The request headers
@@ -59,9 +59,8 @@ module Hooks
             return parsed_payload
           rescue JSON::ParserError, ArgumentError => e
             # If JSON parsing fails or security limits exceeded, return raw body
-            # Log security violations at debug level to avoid log spam
             if e.message.include?("nesting") || e.message.include?("depth")
-              log.warn("JSON parsing security limit exceeded: #{e.message}")
+              log.warn("JSON parsing limit exceeded: #{e.message}")
             end
           end
         end
@@ -87,7 +86,7 @@ module Hooks
 
       private
 
-      # Safely parse JSON with security limits to prevent JSON bombs
+      # Safely parse JSON
       #
       # @param json_string [String] The JSON string to parse
       # @return [Hash, Array] Parsed JSON object
