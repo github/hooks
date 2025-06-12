@@ -142,6 +142,9 @@ RSpec.describe "Global Lifecycle Hooks Integration" do
       end
     end
 
+    # Ensure the app is built and plugins are loaded before accessing global components
+    app
+
     original_stats = Hooks::Core::GlobalComponents.stats
     original_failbot = Hooks::Core::GlobalComponents.failbot
 

@@ -29,10 +29,10 @@ describe Hooks::Core::PluginLoader do
       })
     end
 
-  describe ".load_custom_instrument_plugins" do
-    it "loads custom stats instrument plugins" do
-      # Create a custom stats plugin file
-      custom_stats_content = <<~RUBY
+    describe ".load_custom_instrument_plugins" do
+      it "loads custom stats instrument plugins" do
+        # Create a custom stats plugin file
+        custom_stats_content = <<~RUBY
         class CustomStats < Hooks::Plugins::Instruments::StatsBase
           def record(metric_name, value, tags = {})
             # Custom implementation
@@ -48,17 +48,17 @@ describe Hooks::Core::PluginLoader do
         end
       RUBY
 
-      File.write(File.join(test_plugin_dir, "custom_stats.rb"), custom_stats_content)
+        File.write(File.join(test_plugin_dir, "custom_stats.rb"), custom_stats_content)
 
-      expect { described_class.send(:load_custom_instrument_plugins, test_plugin_dir) }.not_to raise_error
+        expect { described_class.send(:load_custom_instrument_plugins, test_plugin_dir) }.not_to raise_error
 
-      # Verify the stats plugin was loaded
-      expect(described_class.instrument_plugins[:stats]).to be_a(CustomStats)
-    end
+        # Verify the stats plugin was loaded
+        expect(described_class.instrument_plugins[:stats]).to be_a(CustomStats)
+      end
 
-    it "loads custom failbot instrument plugins" do
-      # Create a custom failbot plugin file
-      custom_failbot_content = <<~RUBY
+      it "loads custom failbot instrument plugins" do
+        # Create a custom failbot plugin file
+        custom_failbot_content = <<~RUBY
         class CustomFailbot < Hooks::Plugins::Instruments::FailbotBase
           def report(error_or_message, context = {})
             # Custom implementation
@@ -74,17 +74,17 @@ describe Hooks::Core::PluginLoader do
         end
       RUBY
 
-      File.write(File.join(test_plugin_dir, "custom_failbot.rb"), custom_failbot_content)
+        File.write(File.join(test_plugin_dir, "custom_failbot.rb"), custom_failbot_content)
 
-      expect { described_class.send(:load_custom_instrument_plugins, test_plugin_dir) }.not_to raise_error
+        expect { described_class.send(:load_custom_instrument_plugins, test_plugin_dir) }.not_to raise_error
 
-      # Verify the failbot plugin was loaded
-      expect(described_class.instrument_plugins[:failbot]).to be_a(CustomFailbot)
-    end
+        # Verify the failbot plugin was loaded
+        expect(described_class.instrument_plugins[:failbot]).to be_a(CustomFailbot)
+      end
 
-    it "raises error for invalid inheritance" do
-      # Create an invalid plugin file that doesn't inherit from base classes
-      invalid_content = <<~RUBY
+      it "raises error for invalid inheritance" do
+        # Create an invalid plugin file that doesn't inherit from base classes
+        invalid_content = <<~RUBY
         class InvalidInstrument
           def some_method
             # This doesn't inherit from the right base class
@@ -92,15 +92,15 @@ describe Hooks::Core::PluginLoader do
         end
       RUBY
 
-      File.write(File.join(test_plugin_dir, "invalid_instrument.rb"), invalid_content)
+        File.write(File.join(test_plugin_dir, "invalid_instrument.rb"), invalid_content)
 
-      expect do
-        described_class.send(:load_custom_instrument_plugins, test_plugin_dir)
-      end.to raise_error(StandardError, /must inherit from StatsBase or FailbotBase/)
-    end
+        expect do
+          described_class.send(:load_custom_instrument_plugins, test_plugin_dir)
+        end.to raise_error(StandardError, /must inherit from StatsBase or FailbotBase/)
+      end
 
-    it "validates class names for security" do
-      malicious_content = <<~RUBY
+      it "validates class names for security" do
+        malicious_content = <<~RUBY
         class File < Hooks::Plugins::Instruments::StatsBase
           def record(metric_name, value, tags = {})
             # Malicious implementation
@@ -108,48 +108,48 @@ describe Hooks::Core::PluginLoader do
         end
       RUBY
 
-      File.write(File.join(test_plugin_dir, "file.rb"), malicious_content)
+        File.write(File.join(test_plugin_dir, "file.rb"), malicious_content)
 
-      expect do
-        described_class.send(:load_custom_instrument_plugins, test_plugin_dir)
-      end.to raise_error(StandardError, /Invalid instrument plugin class name/)
-    end
-  end
-
-  describe ".get_instrument_plugin" do
-    before do
-      # Load default instruments
-      described_class.send(:load_default_instruments)
+        expect do
+          described_class.send(:load_custom_instrument_plugins, test_plugin_dir)
+        end.to raise_error(StandardError, /Invalid instrument plugin class name/)
+      end
     end
 
-    it "returns the stats instrument" do
-      stats = described_class.get_instrument_plugin(:stats)
-      expect(stats).to be_a(Hooks::Plugins::Instruments::Stats)
+    describe ".get_instrument_plugin" do
+      before do
+        # Load default instruments
+        described_class.send(:load_default_instruments)
+      end
+
+      it "returns the stats instrument" do
+        stats = described_class.get_instrument_plugin(:stats)
+        expect(stats).to be_a(Hooks::Plugins::Instruments::Stats)
+      end
+
+      it "returns the failbot instrument" do
+        failbot = described_class.get_instrument_plugin(:failbot)
+        expect(failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
+      end
+
+      it "raises error for unknown instrument type" do
+        expect do
+          described_class.get_instrument_plugin(:unknown)
+        end.to raise_error(StandardError, "Instrument plugin 'unknown' not found")
+      end
     end
 
-    it "returns the failbot instrument" do
-      failbot = described_class.get_instrument_plugin(:failbot)
-      expect(failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
-    end
+    describe ".load_default_instruments" do
+      it "loads default stats and failbot instances" do
+        described_class.send(:load_default_instruments)
 
-    it "raises error for unknown instrument type" do
-      expect do
-        described_class.get_instrument_plugin(:unknown)
-      end.to raise_error(StandardError, "Instrument plugin 'unknown' not found")
-    end
-  end
+        expect(described_class.instrument_plugins[:stats]).to be_a(Hooks::Plugins::Instruments::Stats)
+        expect(described_class.instrument_plugins[:failbot]).to be_a(Hooks::Plugins::Instruments::Failbot)
+      end
 
-  describe ".load_default_instruments" do
-    it "loads default stats and failbot instances" do
-      described_class.send(:load_default_instruments)
-
-      expect(described_class.instrument_plugins[:stats]).to be_a(Hooks::Plugins::Instruments::Stats)
-      expect(described_class.instrument_plugins[:failbot]).to be_a(Hooks::Plugins::Instruments::Failbot)
-    end
-
-    it "doesn't override custom instruments if already loaded" do
-      # Create custom stats
-      custom_stats_content = <<~RUBY
+      it "doesn't override custom instruments if already loaded" do
+        # Create custom stats
+        custom_stats_content = <<~RUBY
         class MyCustomStats < Hooks::Plugins::Instruments::StatsBase
           def record(metric_name, value, tags = {})
             # Custom implementation
@@ -157,31 +157,31 @@ describe Hooks::Core::PluginLoader do
         end
       RUBY
 
-      File.write(File.join(test_plugin_dir, "my_custom_stats.rb"), custom_stats_content)
-      described_class.send(:load_custom_instrument_plugins, test_plugin_dir)
+        File.write(File.join(test_plugin_dir, "my_custom_stats.rb"), custom_stats_content)
+        described_class.send(:load_custom_instrument_plugins, test_plugin_dir)
 
-      # Load defaults
-      described_class.send(:load_default_instruments)
+        # Load defaults
+        described_class.send(:load_default_instruments)
 
-      # Should still have custom stats, but default failbot
-      expect(described_class.instrument_plugins[:stats]).to be_a(MyCustomStats)
-      expect(described_class.instrument_plugins[:failbot]).to be_a(Hooks::Plugins::Instruments::Failbot)
-    end
-  end
-
-  describe ".valid_instrument_class_name?" do
-    it "accepts valid class names" do
-      expect(described_class.send(:valid_instrument_class_name?, "CustomStats")).to be true
-      expect(described_class.send(:valid_instrument_class_name?, "MyCustomFailbot")).to be true
-      expect(described_class.send(:valid_instrument_class_name?, "DatadogStats")).to be true
+        # Should still have custom stats, but default failbot
+        expect(described_class.instrument_plugins[:stats]).to be_a(MyCustomStats)
+        expect(described_class.instrument_plugins[:failbot]).to be_a(Hooks::Plugins::Instruments::Failbot)
+      end
     end
 
-    it "rejects invalid class names" do
-      expect(described_class.send(:valid_instrument_class_name?, "")).to be false
-      expect(described_class.send(:valid_instrument_class_name?, "lowercaseClass")).to be false
-      expect(described_class.send(:valid_instrument_class_name?, "Class-With-Dashes")).to be false
-      expect(described_class.send(:valid_instrument_class_name?, "File")).to be false
+    describe ".valid_instrument_class_name?" do
+      it "accepts valid class names" do
+        expect(described_class.send(:valid_instrument_class_name?, "CustomStats")).to be true
+        expect(described_class.send(:valid_instrument_class_name?, "MyCustomFailbot")).to be true
+        expect(described_class.send(:valid_instrument_class_name?, "DatadogStats")).to be true
+      end
+
+      it "rejects invalid class names" do
+        expect(described_class.send(:valid_instrument_class_name?, "")).to be false
+        expect(described_class.send(:valid_instrument_class_name?, "lowercaseClass")).to be false
+        expect(described_class.send(:valid_instrument_class_name?, "Class-With-Dashes")).to be false
+        expect(described_class.send(:valid_instrument_class_name?, "File")).to be false
+      end
     end
-  end
   end
 end
