@@ -95,7 +95,6 @@ module Hooks
       def safe_json_parse(json_string)
         # Security limits for JSON parsing
         max_nesting = ENV.fetch("JSON_MAX_NESTING", "20").to_i
-        max_create_depth = ENV.fetch("JSON_MAX_CREATE_DEPTH", "15").to_i
 
         # Additional size check before parsing
         if json_string.length > ENV.fetch("JSON_MAX_SIZE", "10485760").to_i # 10MB default
