@@ -12,7 +12,6 @@ module Hooks
 
       class << self
         attr_accessor :stats, :failbot
-
       end
 
       # Reset components to default instances (for testing)

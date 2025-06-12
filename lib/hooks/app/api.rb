@@ -29,8 +29,6 @@ module Hooks
       def self.create(config:, endpoints:, log:)
         @server_start_time = Time.now
 
-        Hooks::Log.instance = log
-
         api_class = Class.new(Grape::API) do
           content_type :json, "application/json"
           content_type :txt, "text/plain"
