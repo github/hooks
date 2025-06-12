@@ -125,7 +125,7 @@ module Hooks
         def log_warning(message)
           return unless defined?(Hooks::Log) && Hooks::Log.instance
 
-          Hooks::Log.instance.warn("Auth::HMAC validation failed: #{message}")
+          Hooks::Log.instance.warn("Auth::TimestampValidator validation failed: #{message}")
         end
       end
     end
