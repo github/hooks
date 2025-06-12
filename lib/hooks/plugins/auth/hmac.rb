@@ -252,20 +252,20 @@ module Hooks
             timestamp_value = "#{$1}T#{$2}+00:00"
           end
           return nil unless iso8601_timestamp?(timestamp_value)
-          
+
           # Manual parsing to avoid mocked Time.iso8601
           if timestamp_value =~ /\A(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|\+00:00|\+0000)?\z/
             year, month, day, hour, min, sec, frac = $1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i, $7
             tz_suffix = $8
-            
+
             # Validate date/time ranges
             return nil if month < 1 || month > 12
             return nil if day < 1 || day > 31
             return nil if hour > 23 || min > 59 || sec > 59
-            
+
             # Only accept UTC timestamps
-            return nil unless tz_suffix && (tz_suffix == 'Z' || tz_suffix == '+00:00' || tz_suffix == '+0000')
-            
+            return nil unless tz_suffix && (tz_suffix == "Z" || tz_suffix == "+00:00" || tz_suffix == "+0000")
+
             # Convert to Unix timestamp manually to avoid mocked Time.new
             # This is a simplified calculation that works for valid dates
             begin
@@ -274,13 +274,13 @@ module Hooks
               days_since_epoch = Date.new(year, month, day).mjd - Date.new(1970, 1, 1).mjd
               seconds_in_day = hour * 3600 + min * 60 + sec
               unix_timestamp = days_since_epoch * 86400 + seconds_in_day
-              
+
               # Handle fractional seconds
               if frac
                 fractional = ("0.#{frac}".to_f)
                 unix_timestamp += fractional
               end
-              
+
               # Use Time.at which should work even in mocked environment
               time = Time.at(unix_timestamp)
               return time.utc
@@ -288,7 +288,7 @@ module Hooks
               return nil
             end
           end
-          
+
           nil
         end
 
