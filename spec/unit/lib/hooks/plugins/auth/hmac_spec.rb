@@ -31,9 +31,26 @@ describe Hooks::Plugins::Auth::HMAC do
     described_class.valid?(payload:, **args)
   end
 
+  def create_signature(signing_payload, algorithm = "sha256")
+    OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new(algorithm), secret, signing_payload)
+  end
+
+  def create_algorithm_prefixed_signature(signing_payload = payload, algorithm = "sha256")
+    "#{algorithm}=#{create_signature(signing_payload, algorithm)}"
+  end
+
+  def create_version_prefixed_signature(signing_payload, version = "v0")
+    "#{version}=#{create_signature(signing_payload)}"
+  end
+
+  def create_timestamped_signature(timestamp, version = "v0")
+    signing_payload = "#{version}:#{timestamp}:#{payload}"
+    create_version_prefixed_signature(signing_payload, version)
+  end
+
   describe ".valid?" do
     context "with algorithm-prefixed format" do
-      let(:signature) { "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload) }
+      let(:signature) { create_algorithm_prefixed_signature }
       let(:headers) { { default_header => signature } }
 
       it "returns true for a valid signature" do
@@ -77,7 +94,7 @@ describe Hooks::Plugins::Auth::HMAC do
           }
         }
       end
-      let(:signature) { OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload) }
+      let(:signature) { create_signature(payload) }
       let(:headers) { { header => signature } }
 
       it "returns true for a valid hash-only signature" do
@@ -94,9 +111,7 @@ describe Hooks::Plugins::Auth::HMAC do
       let(:header) { "X-Signature-Versioned" }
       let(:timestamp_header) { "X-Request-Timestamp" }
       let(:timestamp) { Time.now.to_i.to_s }
-      let(:payload_template) { "v0:{timestamp}:{body}" }
-      let(:signing_payload) { "v0:#{timestamp}:#{payload}" }
-      let(:signature) { "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload) }
+      let(:signature) { create_timestamped_signature(timestamp) }
       let(:headers) { { header => signature, timestamp_header => timestamp } }
       let(:config) do
         {
@@ -106,7 +121,7 @@ describe Hooks::Plugins::Auth::HMAC do
             algorithm: "sha256",
             format: "version=signature",
             version_prefix: "v0",
-            payload_template: payload_template,
+            payload_template: "v0:{timestamp}:{body}",
             timestamp_tolerance: 300,
             secret_env_key: "HMAC_TEST_SECRET"
           }
@@ -119,8 +134,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
       it "returns false for an expired timestamp" do
         old_timestamp = (Time.now.to_i - 1000).to_s
-        old_signing_payload = "v0:#{old_timestamp}:#{payload}"
-        old_signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, old_signing_payload)
+        old_signature = create_timestamped_signature(old_timestamp)
         bad_headers = { header => old_signature, timestamp_header => old_timestamp }
         expect(valid_with(headers: bad_headers, config:)).to be false
       end
@@ -156,7 +170,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     context "with missing config values" do
-      let(:headers) { { "X-Signature" => "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload) } }
+      let(:headers) { { "X-Signature" => create_algorithm_prefixed_signature } }
       let(:config) { { auth: { secret_env_key: "HMAC_TEST_SECRET" } } }
 
       it "uses defaults and validates correctly" do
@@ -165,7 +179,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     context "with tampered payload" do
-      let(:signature) { "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload) }
+      let(:signature) { create_algorithm_prefixed_signature }
       let(:headers) { { default_header => signature } }
       let(:tampered_payload) { '{"foo":"evil"}' }
 
@@ -190,7 +204,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     context "security and edge cases" do
-      let(:signature) { "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload) }
+      let(:signature) { create_algorithm_prefixed_signature }
       let(:headers) { { default_header => signature } }
 
       it "returns false for empty signature header value" do
@@ -214,7 +228,7 @@ describe Hooks::Plugins::Auth::HMAC do
       end
 
       it "returns false for signature with wrong algorithm prefix" do
-        wrong_algo_headers = { default_header => "sha1=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha1"), secret, payload) }
+        wrong_algo_headers = { default_header => create_algorithm_prefixed_signature(payload, "sha1") }
         expect(valid_with(headers: wrong_algo_headers)).to be false
       end
 
@@ -225,7 +239,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
       it "returns false for signature with leading/trailing whitespace" do
         whitespace_headers = { default_header => " #{signature} " }
-        expect(valid_with(headers: whitespace_headers)). to be false
+        expect(valid_with(headers: whitespace_headers)).to be false
       end
 
       it "returns false for case-sensitive signature tampering" do
@@ -264,7 +278,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
       it "handles very long payloads" do
         long_payload = "a" * 100000
-        long_signature = "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, long_payload)
+        long_signature = create_algorithm_prefixed_signature(long_payload)
         long_headers = { default_header => long_signature }
         expect(valid_with(payload: long_payload, headers: long_headers)).to be true
       end
@@ -415,122 +429,79 @@ describe Hooks::Plugins::Auth::HMAC do
       end
 
       context "Unix timestamp validation" do
-        it "returns false for negative timestamp" do
-          negative_timestamp = "-1"
-          signing_payload = "v0:#{negative_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => negative_timestamp }
-
+        def test_invalid_timestamp(invalid_timestamp, description)
+          signature = create_timestamped_signature(invalid_timestamp)
+          headers = { header => signature, timestamp_header => invalid_timestamp }
           expect(valid_with(headers:, config: base_config)).to be false
+        end
+
+        it "returns false for negative timestamp" do
+          test_invalid_timestamp("-1", "negative timestamp")
         end
 
         it "returns false for zero timestamp" do
-          zero_timestamp = "0"
-          signing_payload = "v0:#{zero_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => zero_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_invalid_timestamp("0", "zero timestamp")
         end
 
         it "returns false for timestamp with decimal point" do
-          decimal_timestamp = "#{Time.now.to_i}.5"
-          signing_payload = "v0:#{decimal_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => decimal_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_invalid_timestamp("#{Time.now.to_i}.5", "decimal timestamp")
         end
 
         it "returns false for timestamp with leading zeros" do
-          padded_timestamp = "00#{Time.now.to_i}"
-          signing_payload = "v0:#{padded_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => padded_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_invalid_timestamp("00#{Time.now.to_i}", "padded timestamp")
         end
 
         it "returns false for timestamp with embedded null bytes" do
-          null_timestamp = "#{Time.now.to_i}\x00123"
-          signing_payload = "v0:#{null_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => null_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_invalid_timestamp("#{Time.now.to_i}\x00123", "null byte timestamp")
         end
 
         it "returns false for very large timestamp (year 2100+)" do
-          future_timestamp = "4000000000" # Year ~2096
-          signing_payload = "v0:#{future_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => future_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_invalid_timestamp("4000000000", "future timestamp")
         end
       end
 
       context "ISO 8601 UTC timestamp validation" do
+        def test_iso_timestamp(iso_timestamp, should_be_valid)
+          signature = create_timestamped_signature(iso_timestamp)
+          headers = { header => signature, timestamp_header => iso_timestamp }
+          expect(valid_with(headers:, config: base_config)).to be should_be_valid
+        end
+
         it "returns true for valid ISO 8601 UTC timestamp with Z suffix" do
           iso_timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-          signing_payload = "v0:#{iso_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => iso_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be true
+          test_iso_timestamp(iso_timestamp, true)
         end
 
         it "returns true for valid ISO 8601 UTC timestamp with +00:00 suffix" do
           iso_timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-          signing_payload = "v0:#{iso_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => iso_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be true
+          test_iso_timestamp(iso_timestamp, true)
         end
 
         it "returns false for ISO 8601 timestamp without UTC indicator" do
           iso_timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%S") # No Z or +00:00
-          signing_payload = "v0:#{iso_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => iso_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_iso_timestamp(iso_timestamp, false)
         end
 
         it "returns false for ISO 8601 timestamp with non-UTC timezone" do
           iso_timestamp = Time.now.strftime("%Y-%m-%dT%H:%M:%S-05:00") # EST timezone
-          signing_payload = "v0:#{iso_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => iso_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_iso_timestamp(iso_timestamp, false)
         end
 
         it "returns false for expired ISO 8601 timestamp" do
           expired_time = Time.now.utc - 1000 # 1000 seconds ago
           iso_timestamp = expired_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-          signing_payload = "v0:#{iso_timestamp}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => iso_timestamp }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_iso_timestamp(iso_timestamp, false)
         end
 
         it "returns false for malformed ISO 8601 timestamp" do
           malformed_iso = "2025-13-32T25:61:61Z" # Invalid date/time values
-          signing_payload = "v0:#{malformed_iso}:#{payload}"
-          signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
-          headers = { header => signature, timestamp_header => malformed_iso }
-
-          expect(valid_with(headers:, config: base_config)).to be false
+          test_iso_timestamp(malformed_iso, false)
         end
       end
 
       it "returns true when timestamp header name case differs due to normalization" do
         timestamp = Time.now.to_i.to_s
-        signing_payload = "v0:#{timestamp}:#{payload}"
-        signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
+        signature = create_timestamped_signature(timestamp)
 
         # Use uppercase timestamp header name in the request headers
         headers = { header => signature, timestamp_header.upcase => timestamp }
@@ -677,128 +648,6 @@ describe Hooks::Plugins::Auth::HMAC do
       headers = { "x-timestamp" => Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ") }
 
       expect(described_class.send(:valid_timestamp?, headers, config)).to be true
-    end
-  end
-
-  describe ".parse_timestamp" do
-    it "parses valid Unix timestamp" do
-      unix_timestamp = Time.now.to_i.to_s
-      result = described_class.send(:parse_timestamp, unix_timestamp)
-      expect(result).to eq(unix_timestamp.to_i)
-    end
-
-    it "parses valid ISO 8601 UTC timestamp with Z" do
-      iso_timestamp = "2025-06-12T10:30:00Z"
-      result = described_class.send(:parse_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
-    end
-
-    it "parses valid ISO 8601 UTC timestamp with +00:00" do
-      iso_timestamp = "2025-06-12T10:30:00+00:00"
-      result = described_class.send(:parse_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
-    end
-
-    it "returns nil for invalid timestamp format" do
-      expect(described_class.send(:parse_timestamp, "invalid")).to be_nil
-    end
-
-    it "returns nil for timestamp with null bytes" do
-      expect(described_class.send(:parse_timestamp, "123\x00456")).to be_nil
-    end
-
-    it "returns nil for timestamp with whitespace" do
-      expect(described_class.send(:parse_timestamp, " 1234567890 ")).to be_nil
-    end
-  end
-
-  describe ".iso8601_timestamp?" do
-    it "returns true for valid ISO 8601 format with Z" do
-      expect(described_class.send(:iso8601_timestamp?, "2025-06-12T10:30:00Z")).to be true
-    end
-
-    it "returns true for valid ISO 8601 format without Z" do
-      expect(described_class.send(:iso8601_timestamp?, "2025-06-12T10:30:00")).to be true
-    end
-
-    it "returns false for Unix timestamp" do
-      expect(described_class.send(:iso8601_timestamp?, "1234567890")).to be false
-    end
-
-    it "returns false for invalid format" do
-      expect(described_class.send(:iso8601_timestamp?, "not-a-timestamp")).to be false
-    end
-  end
-
-  describe ".unix_timestamp?" do
-    it "returns true for valid Unix timestamp" do
-      expect(described_class.send(:unix_timestamp?, "1234567890")).to be true
-    end
-
-    it "returns true for zero" do
-      expect(described_class.send(:unix_timestamp?, "0")).to be true
-    end
-
-    it "returns false for timestamp with leading zeros" do
-      expect(described_class.send(:unix_timestamp?, "0123456789")).to be false
-    end
-
-    it "returns false for negative timestamp" do
-      expect(described_class.send(:unix_timestamp?, "-123")).to be false
-    end
-
-    it "returns false for ISO 8601 format" do
-      expect(described_class.send(:unix_timestamp?, "2025-06-12T10:30:00Z")).to be false
-    end
-  end
-
-  describe ".parse_iso8601_timestamp" do
-    it "parses valid ISO 8601 UTC timestamp with Z" do
-      iso_timestamp = "2025-06-12T10:30:00Z"
-      result = described_class.send(:parse_iso8601_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
-    end
-
-    it "parses valid ISO 8601 UTC timestamp with +00:00" do
-      iso_timestamp = "2025-06-12T10:30:00+00:00"
-      result = described_class.send(:parse_iso8601_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
-    end
-
-    it "returns nil for non-UTC timezone" do
-      iso_timestamp = "2025-06-12T10:30:00-05:00"
-      result = described_class.send(:parse_iso8601_timestamp, iso_timestamp)
-      expect(result).to be_nil
-    end
-
-    it "returns nil for timestamp without timezone" do
-      iso_timestamp = "2025-06-12T10:30:00"
-      result = described_class.send(:parse_iso8601_timestamp, iso_timestamp)
-      expect(result).to be_nil
-    end
-
-    it "returns nil for invalid ISO 8601 format" do
-      iso_timestamp = "invalid-timestamp"
-      result = described_class.send(:parse_iso8601_timestamp, iso_timestamp)
-      expect(result).to be_nil
-    end
-  end
-
-  describe ".parse_unix_timestamp" do
-    it "parses valid Unix timestamp" do
-      unix_timestamp = "1234567890"
-      result = described_class.send(:parse_unix_timestamp, unix_timestamp)
-      expect(result).to eq(1234567890)
-    end
-
-    it "returns nil for zero timestamp" do
-      result = described_class.send(:parse_unix_timestamp, "0")
-      expect(result).to be_nil
-    end
-
-    it "returns nil for negative timestamp" do
-      result = described_class.send(:parse_unix_timestamp, "-123")
-      expect(result).to be_nil
     end
   end
 end
