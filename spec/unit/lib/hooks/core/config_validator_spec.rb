@@ -244,6 +244,33 @@ describe Hooks::Core::ConfigValidator do
 
         expect(result).to eq(config)
       end
+
+      it "returns validated configuration with method specified" do
+        config = {
+          path: "/webhook/put",
+          handler: "PutHandler",
+          method: "put"
+        }
+
+        result = described_class.validate_endpoint_config(config)
+
+        expect(result).to eq(config)
+      end
+
+      it "accepts all valid HTTP methods" do
+        valid_methods = %w[get post put patch delete head options]
+
+        valid_methods.each do |method|
+          config = {
+            path: "/webhook/test",
+            handler: "TestHandler",
+            method: method
+          }
+
+          result = described_class.validate_endpoint_config(config)
+          expect(result[:method]).to eq(method)
+        end
+      end
     end
 
     context "with invalid configuration" do
@@ -399,6 +426,30 @@ describe Hooks::Core::ConfigValidator do
             header: "",
             algorithm: ""
           }
+        }
+
+        expect {
+          described_class.validate_endpoint_config(config)
+        }.to raise_error(described_class::ValidationError, /Invalid endpoint configuration/)
+      end
+
+      it "raises ValidationError for invalid HTTP method" do
+        config = {
+          path: "/webhook/test",
+          handler: "TestHandler",
+          method: "invalid"
+        }
+
+        expect {
+          described_class.validate_endpoint_config(config)
+        }.to raise_error(described_class::ValidationError, /Invalid endpoint configuration/)
+      end
+
+      it "raises ValidationError for non-string method" do
+        config = {
+          path: "/webhook/test",
+          handler: "TestHandler",
+          method: 123
         }
 
         expect {
