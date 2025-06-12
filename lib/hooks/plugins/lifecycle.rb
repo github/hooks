@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../core/global_components"
+require_relative "../core/component_access"
 
 module Hooks
   module Plugins
@@ -8,6 +9,8 @@ module Hooks
     #
     # Plugins can hook into request/response/error lifecycle events
     class Lifecycle
+      include Hooks::Core::ComponentAccess
+
       # Called before handler execution
       #
       # @param env [Hash] Rack environment
@@ -29,42 +32,6 @@ module Hooks
       # @param env [Hash] Rack environment
       def on_error(exception, env)
         # Override in subclass for error handling logic
-      end
-
-      # Short logger accessor for all subclasses
-      # @return [Hooks::Log] Logger instance
-      #
-      # Provides a convenient way for lifecycle plugins to log messages without needing
-      # to reference the full Hooks::Log namespace.
-      #
-      # @example Logging an error in an inherited class
-      #   log.error("oh no an error occured")
-      def log
-        Hooks::Log.instance
-      end
-
-      # Global stats component accessor
-      # @return [Hooks::Core::Stats] Stats instance for metrics reporting
-      #
-      # Provides access to the global stats component for reporting metrics
-      # to services like DataDog, New Relic, etc.
-      #
-      # @example Recording a metric in an inherited class
-      #   stats.increment("lifecycle.request_processed")
-      def stats
-        Hooks::Core::GlobalComponents.stats
-      end
-
-      # Global failbot component accessor
-      # @return [Hooks::Core::Failbot] Failbot instance for error reporting
-      #
-      # Provides access to the global failbot component for reporting errors
-      # to services like Sentry, Rollbar, etc.
-      #
-      # @example Reporting an error in an inherited class
-      #   failbot.report("Lifecycle hook failed")
-      def failbot
-        Hooks::Core::GlobalComponents.failbot
       end
     end
   end

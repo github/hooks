@@ -145,7 +145,7 @@ describe Hooks::Plugins::Handlers::Base do
 
   describe "documentation compliance" do
     it "has the expected public interface" do
-      expect(described_class.instance_methods(false)).to include(:call, :log, :stats, :failbot)
+      expect(described_class.instance_methods).to include(:call, :log, :stats, :failbot)
     end
 
     it "call method accepts the documented parameters" do
