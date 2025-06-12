@@ -48,7 +48,7 @@ module Hooks
       # @return [Hash, String] Parsed JSON as Hash (optionally symbolized), or raw body if not JSON
       def parse_payload(raw_body, headers, symbolize: true)
         # Optimized content type check - check most common header first
-        content_type = headers["Content-Type"] || headers["CONTENT_TYPE"] || headers["content-type"]
+        content_type = headers["Content-Type"] || headers["CONTENT_TYPE"] || headers["content-type"] || headers["HTTP_CONTENT_TYPE"]
 
         # Try to parse as JSON if content type suggests it or if it looks like JSON
         if content_type&.include?("application/json") || (raw_body.strip.start_with?("{", "[") rescue false)
