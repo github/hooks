@@ -1,0 +1,79 @@
+[1mdiff --git a/spec/unit/lib/hooks/plugins/auth/hmac_spec.rb b/spec/unit/lib/hooks/plugins/auth/hmac_spec.rb[m
+[1mindex 9e8b01c..fa12174 100644[m
+[1m--- a/spec/unit/lib/hooks/plugins/auth/hmac_spec.rb[m
+[1m+++ b/spec/unit/lib/hooks/plugins/auth/hmac_spec.rb[m
+[36m@@ -70,7 +70,8 @@[m [mdescribe Hooks::Plugins::Auth::HMAC do[m
+           auth: {[m
+             header: header,[m
+             algorithm: "sha256",[m
+[31m-            format: "signature_only"[m
+[32m+[m[32m            format: "signature_only",[m
+[32m+[m[32m            secret_env_key: "HMAC_TEST_SECRET"[m
+           }[m
+         }[m
+       end[m
+[36m@@ -78,7 +79,7 @@[m [mdescribe Hooks::Plugins::Auth::HMAC do[m
+       let(:headers) { { header => signature } }[m
+ [m
+       it "returns true for a valid hash-only signature" do[m
+[31m-        # TODO[m
+[32m+[m[32m        expect(valid_with(headers:, config:)).to be true[m
+       end[m
+ [m
+       it "returns false for an invalid hash-only signature" do[m
+[36m@@ -104,13 +105,14 @@[m [mdescribe Hooks::Plugins::Auth::HMAC do[m
+             format: "version=signature",[m
+             version_prefix: "v0",[m
+             payload_template: payload_template,[m
+[31m-            timestamp_tolerance: 300[m
+[32m+[m[32m            timestamp_tolerance: 300,[m
+[32m+[m[32m            secret_env_key: "HMAC_TEST_SECRET"[m
+           }[m
+         }[m
+       end[m
+ [m
+       it "returns true for a valid versioned signature with valid timestamp" do[m
+[31m-        # TODO[m
+[32m+[m[32m        expect(valid_with(headers:, config:)).to be true[m
+       end[m
+ [m
+       it "returns false for an expired timestamp" do[m
+[36m@@ -153,10 +155,10 @@[m [mdescribe Hooks::Plugins::Auth::HMAC do[m
+ [m
+     context "with missing config values" do[m
+       let(:headers) { { "X-Signature" => "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload) } }[m
+[31m-      let(:config) { {} }[m
+[32m+[m[32m      let(:config) { { auth: { secret_env_key: "HMAC_TEST_SECRET" } } }[m
+ [m
+       it "uses defaults and validates correctly" do[m
+[31m-        # TODO[m
+[32m+[m[32m        expect(valid_with(headers:, config:)).to be true[m
+       end[m
+     end[m
+ [m
+[36m@@ -404,7 +406,8 @@[m [mdescribe Hooks::Plugins::Auth::HMAC do[m
+             format: "version=signature",[m
+             version_prefix: "v0",[m
+             payload_template: "v0:{timestamp}:{body}",[m
+[31m-            timestamp_tolerance: 300[m
+[32m+[m[32m            timestamp_tolerance: 300,[m
+[32m+[m[32m            secret_env_key: "HMAC_TEST_SECRET"[m
+           }[m
+         }[m
+       end[m
+[36m@@ -464,7 +467,14 @@[m [mdescribe Hooks::Plugins::Auth::HMAC do[m
+       end[m
+ [m
+       it "returns true when timestamp header name case differs due to normalization" do[m
+[31m-        # TODO[m
+[32m+[m[32m        timestamp = Time.now.to_i.to_s[m
+[32m+[m[32m        signing_payload = "v0:#{timestamp}:#{payload}"[m
+[32m+[m[32m        signature = "v0=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)[m
+[32m+[m
+[32m+[m[32m        # Use uppercase timestamp header name in the request headers[m
+[32m+[m[32m        headers = { header => signature, timestamp_header.upcase => timestamp }[m
+[32m+[m
+[32m+[m[32m        expect(valid_with(headers:, config: base_config)).to be true[m
+       end[m
+     end[m
+ [m
