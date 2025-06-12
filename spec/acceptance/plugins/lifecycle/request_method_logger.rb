@@ -5,4 +5,8 @@ class RequestMethodLogger < Hooks::Plugins::Lifecycle
   def on_request(env)
     log.debug("on_request called with method: #{env['REQUEST_METHOD']}")
   end
+
+  def on_response(env, response)
+    stats.success
+  end
 end

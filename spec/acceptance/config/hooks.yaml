@@ -2,6 +2,7 @@
 handler_plugin_dir: ./spec/acceptance/plugins/handlers
 auth_plugin_dir: ./spec/acceptance/plugins/auth
 lifecycle_plugin_dir: ./spec/acceptance/plugins/lifecycle
+instruments_plugin_dir: ./spec/acceptance/plugins/instruments
 
 log_level: debug
 
