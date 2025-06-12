@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../../../spec_helper"
+
 describe Hooks::Plugins::Lifecycle do
   let(:plugin) { described_class.new }
   let(:env) { { "REQUEST_METHOD" => "POST", "PATH_INFO" => "/webhook" } }

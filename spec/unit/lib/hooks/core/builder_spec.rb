@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../../../spec_helper"
+
 describe Hooks::Core::Builder do
   let(:log) { instance_double(Logger).as_null_object }
   let(:temp_dir) { "/tmp/hooks_builder_test" }
@@ -271,6 +273,20 @@ describe Hooks::Core::Builder do
           builder.build
         }.to raise_error(Hooks::Core::ConfigurationError,
                          "Endpoint validation failed: Invalid endpoint")
+      end
+
+      it "raises ConfigurationError when plugin loading fails" do
+        allow(Hooks::Core::ConfigLoader).to receive(:load).and_return({ endpoints_dir: "/test" })
+        allow(Hooks::Core::ConfigValidator).to receive(:validate_global_config).and_return({ endpoints_dir: "/test" })
+        allow(Hooks::Core::ConfigLoader).to receive(:load_endpoints).and_return([])
+        allow(Hooks::Core::ConfigValidator).to receive(:validate_endpoints).and_return([])
+        allow(Hooks::Core::PluginLoader).to receive(:load_all_plugins)
+          .and_raise(StandardError, "Plugin loading error")
+
+        expect {
+          builder.build
+        }.to raise_error(Hooks::Core::ConfigurationError,
+                         "Plugin loading failed: Plugin loading error")
       end
     end
   end

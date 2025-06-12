@@ -300,6 +300,19 @@ describe Hooks::App::Helpers do
     end
   end
 
+  describe "#safe_json_parse" do
+    it "raises ArgumentError when JSON payload exceeds size limit" do
+      # Test the actual size limit by temporarily setting a small limit
+      stub_const("ENV", ENV.to_h.merge("JSON_MAX_SIZE" => "10"))
+
+      large_json = '{"data": "' + "x" * 20 + '"}'
+
+      expect {
+        helper.send(:safe_json_parse, large_json)
+      }.to raise_error(ArgumentError, "JSON payload too large for parsing")
+    end
+  end
+
   describe "#determine_error_code" do
     it "returns 400 for ArgumentError" do
       error = ArgumentError.new("bad argument")
