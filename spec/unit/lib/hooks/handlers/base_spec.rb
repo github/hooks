@@ -145,7 +145,7 @@ describe Hooks::Plugins::Handlers::Base do
 
   describe "documentation compliance" do
     it "has the expected public interface" do
-      expect(described_class.instance_methods(false)).to include(:call)
+      expect(described_class.instance_methods(false)).to include(:call, :log, :stats, :failbot)
     end
 
     it "call method accepts the documented parameters" do
@@ -153,6 +153,94 @@ describe Hooks::Plugins::Handlers::Base do
       expect(method.parameters).to include([:keyreq, :payload])
       expect(method.parameters).to include([:keyreq, :headers])
       expect(method.parameters).to include([:keyreq, :config])
+    end
+  end
+
+  describe "global component access" do
+    let(:handler) { described_class.new }
+
+    describe "#log" do
+      it "provides access to global log" do
+        expect(handler.log).to be(Hooks::Log.instance)
+      end
+    end
+
+    describe "#stats" do
+      it "provides access to global stats" do
+        expect(handler.stats).to be_a(Hooks::Plugins::Instruments::Stats)
+        expect(handler.stats).to eq(Hooks::Core::GlobalComponents.stats)
+      end
+    end
+
+    describe "#failbot" do
+      it "provides access to global failbot" do
+        expect(handler.failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
+        expect(handler.failbot).to eq(Hooks::Core::GlobalComponents.failbot)
+      end
+    end
+
+    it "allows stats and failbot usage in subclasses" do
+      test_handler_class = Class.new(described_class) do
+        def call(payload:, headers:, config:)
+          stats.increment("handler.called", { handler: "TestHandler" })
+
+          if payload.nil?
+            failbot.report("Payload is nil", { handler: "TestHandler" })
+          end
+
+          { status: "processed" }
+        end
+      end
+
+      # Create custom components for testing
+      collected_data = []
+
+      custom_stats = Class.new(Hooks::Core::Stats) do
+        def initialize(collector)
+          @collector = collector
+        end
+
+        def increment(metric_name, tags = {})
+          @collector << { type: :stats, action: :increment, metric: metric_name, tags: }
+        end
+      end
+
+      custom_failbot = Class.new(Hooks::Core::Failbot) do
+        def initialize(collector)
+          @collector = collector
+        end
+
+        def report(error_or_message, context = {})
+          @collector << { type: :failbot, action: :report, message: error_or_message, context: }
+        end
+      end
+
+      original_stats = Hooks::Core::GlobalComponents.stats
+      original_failbot = Hooks::Core::GlobalComponents.failbot
+
+      begin
+        Hooks::Core::GlobalComponents.stats = custom_stats.new(collected_data)
+        Hooks::Core::GlobalComponents.failbot = custom_failbot.new(collected_data)
+
+        handler = test_handler_class.new
+
+        # Test with non-nil payload
+        handler.call(payload: { "test" => "data" }, headers: {}, config: {})
+        expect(collected_data).to include(
+          { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "TestHandler" } }
+        )
+
+        # Test with nil payload
+        collected_data.clear
+        handler.call(payload: nil, headers: {}, config: {})
+        expect(collected_data).to match_array([
+          { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "TestHandler" } },
+          { type: :failbot, action: :report, message: "Payload is nil", context: { handler: "TestHandler" } }
+        ])
+      ensure
+        Hooks::Core::GlobalComponents.stats = original_stats
+        Hooks::Core::GlobalComponents.failbot = original_failbot
+      end
     end
   end
 end

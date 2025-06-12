@@ -39,7 +39,9 @@ end
 # Initialize plugins for tests
 Hooks::Core::PluginLoader.load_all_plugins({
   auth_plugin_dir: nil,
-  handler_plugin_dir: nil
+  handler_plugin_dir: nil,
+  lifecycle_plugin_dir: nil,
+  instruments_plugin_dir: nil
 })
 
 RSpec.configure do |config|

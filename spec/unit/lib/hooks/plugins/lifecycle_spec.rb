@@ -244,4 +244,81 @@ describe Hooks::Plugins::Lifecycle do
       ])
     end
   end
+
+  describe "global component access" do
+    describe "#stats" do
+      it "provides access to global stats" do
+        expect(plugin.stats).to be_a(Hooks::Plugins::Instruments::Stats)
+        expect(plugin.stats).to eq(Hooks::Core::GlobalComponents.stats)
+      end
+    end
+
+    describe "#failbot" do
+      it "provides access to global failbot" do
+        expect(plugin.failbot).to be_a(Hooks::Plugins::Instruments::Failbot)
+        expect(plugin.failbot).to eq(Hooks::Core::GlobalComponents.failbot)
+      end
+    end
+
+    it "allows stats and failbot usage in subclasses" do
+      metrics_plugin_class = Class.new(described_class) do
+        def initialize
+          @recorded_metrics = []
+          @reported_errors = []
+        end
+
+        def on_request(env)
+          stats.increment("lifecycle.request", { path: env["PATH_INFO"] })
+        end
+
+        def on_error(exception, env)
+          failbot.report(exception, { path: env["PATH_INFO"] })
+        end
+
+        attr_reader :recorded_metrics, :reported_errors
+      end
+
+      # Create custom stats and failbot for testing
+      custom_stats = Class.new(Hooks::Core::Stats) do
+        def initialize(collector)
+          @collector = collector
+        end
+
+        def increment(metric_name, tags = {})
+          @collector << { type: :increment, metric: metric_name, tags: }
+        end
+      end
+
+      custom_failbot = Class.new(Hooks::Core::Failbot) do
+        def initialize(collector)
+          @collector = collector
+        end
+
+        def report(error_or_message, context = {})
+          @collector << { type: :report, error: error_or_message, context: }
+        end
+      end
+
+      collected_data = []
+      original_stats = Hooks::Core::GlobalComponents.stats
+      original_failbot = Hooks::Core::GlobalComponents.failbot
+
+      begin
+        Hooks::Core::GlobalComponents.stats = custom_stats.new(collected_data)
+        Hooks::Core::GlobalComponents.failbot = custom_failbot.new(collected_data)
+
+        plugin = metrics_plugin_class.new
+        plugin.on_request(env)
+        plugin.on_error(exception, env)
+
+        expect(collected_data).to match_array([
+          { type: :increment, metric: "lifecycle.request", tags: { path: "/webhook" } },
+          { type: :report, error: exception, context: { path: "/webhook" } }
+        ])
+      ensure
+        Hooks::Core::GlobalComponents.stats = original_stats
+        Hooks::Core::GlobalComponents.failbot = original_failbot
+      end
+    end
+  end
 end

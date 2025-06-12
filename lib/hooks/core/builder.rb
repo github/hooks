@@ -35,6 +35,8 @@ module Hooks
           )
         end
 
+        Hooks::Log.instance = @log
+
         # Hydrate our Retryable instance
         Retry.setup!(log: @log)
 

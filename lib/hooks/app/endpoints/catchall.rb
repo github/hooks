@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+# !!! IMPORTANT !!!
+# This file handles the catchall endpoint for the Hooks application.
+# You should not be using catchall endpoints in production.
+# This is mainly for development, testing, and demo purposes.
+# The logging is limited, lifecycle hooks are not called,
+# and it does not support plugins or instruments.
+# Use with caution!
+
 require "grape"
 require_relative "../../plugins/handlers/default"
 require_relative "../helpers"
@@ -10,10 +18,13 @@ module Hooks
       include Hooks::App::Helpers
 
       def self.mount_path(config)
+        # :nocov:
         "#{config[:root_path]}/*path"
+        # :nocov:
       end
 
       def self.route_block(captured_config, captured_logger)
+        # :nocov:
         proc do
           request_id = uuid
 
@@ -23,7 +34,7 @@ module Hooks
 
           # Set request context for logging
           request_context = {
-            request_id: request_id,
+            request_id:,
             path: "/#{params[:path]}",
             handler: "DefaultHandler"
           }
@@ -45,8 +56,8 @@ module Hooks
 
               # Call handler
               response = handler.call(
-                payload: payload,
-                headers: headers,
+                payload:,
+                headers:,
                 config: {}
               )
 
@@ -78,6 +89,7 @@ module Hooks
             end
           end
         end
+        # :nocov:
       end
     end
   end
