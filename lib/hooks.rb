@@ -2,8 +2,6 @@
 
 require_relative "hooks/version"
 require_relative "hooks/core/builder"
-
-# Load core components explicitly for better performance and security
 require_relative "hooks/core/config_loader"
 require_relative "hooks/core/config_validator"
 require_relative "hooks/core/logger_factory"
@@ -12,8 +10,6 @@ require_relative "hooks/core/global_components"
 require_relative "hooks/core/log"
 require_relative "hooks/core/failbot"
 require_relative "hooks/core/stats"
-
-# Load essential plugins explicitly
 require_relative "hooks/plugins/auth/base"
 require_relative "hooks/plugins/auth/hmac"
 require_relative "hooks/plugins/auth/shared_secret"
@@ -24,12 +20,8 @@ require_relative "hooks/plugins/instruments/stats_base"
 require_relative "hooks/plugins/instruments/failbot_base"
 require_relative "hooks/plugins/instruments/stats"
 require_relative "hooks/plugins/instruments/failbot"
-
-# Load utils explicitly
 require_relative "hooks/utils/normalize"
 require_relative "hooks/utils/retry"
-
-# Load security module
 require_relative "hooks/security"
 require_relative "hooks/version"
 

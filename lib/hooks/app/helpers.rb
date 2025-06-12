@@ -61,7 +61,7 @@ module Hooks
             # If JSON parsing fails or security limits exceeded, return raw body
             # Log security violations at debug level to avoid log spam
             if e.message.include?("nesting") || e.message.include?("depth")
-              log.debug("JSON parsing security limit exceeded: #{e.message}")
+              log.warn("JSON parsing security limit exceeded: #{e.message}")
             end
           end
         end
