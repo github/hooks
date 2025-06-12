@@ -220,10 +220,6 @@ module Hooks
             log.warn("Auth::HMAC validation failed: Timestamp contains invalid characters")
             return nil
           end
-          if timestamp_value != timestamp_value.strip
-            log.warn("Auth::HMAC validation failed: Timestamp contains leading/trailing whitespace")
-            return nil
-          end
           ts = parse_iso8601_timestamp(timestamp_value)
           return ts if ts
           ts = parse_unix_timestamp(timestamp_value)
