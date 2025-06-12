@@ -21,13 +21,15 @@ module Hooks
       # @return [void]
       # @note Timeout enforcement should be handled at the server level (e.g., Puma)
       def enforce_request_limits(config)
-        # Check content length (handle different header formats and sources)
-        content_length = headers["Content-Length"] || headers["CONTENT_LENGTH"] ||
-                        headers["content-length"] || headers["HTTP_CONTENT_LENGTH"] ||
-                        env["CONTENT_LENGTH"] || env["HTTP_CONTENT_LENGTH"]
+        # Optimized content length check - check most common sources first
+        content_length = request.content_length if respond_to?(:request) && request.respond_to?(:content_length)
 
-        # Also try to get from request object directly
-        content_length ||= request.content_length if respond_to?(:request) && request.respond_to?(:content_length)
+        content_length ||= headers["Content-Length"] ||
+                          headers["CONTENT_LENGTH"] ||
+                          headers["content-length"] ||
+                          headers["HTTP_CONTENT_LENGTH"] ||
+                          env["CONTENT_LENGTH"] ||
+                          env["HTTP_CONTENT_LENGTH"]
 
         content_length = content_length&.to_i
 
@@ -45,16 +47,21 @@ module Hooks
       # @param symbolize [Boolean] Whether to symbolize keys in parsed JSON (default: true)
       # @return [Hash, String] Parsed JSON as Hash (optionally symbolized), or raw body if not JSON
       def parse_payload(raw_body, headers, symbolize: true)
+        # Optimized content type check - check most common header first
         content_type = headers["Content-Type"] || headers["CONTENT_TYPE"] || headers["content-type"] || headers["HTTP_CONTENT_TYPE"]
 
         # Try to parse as JSON if content type suggests it or if it looks like JSON
         if content_type&.include?("application/json") || (raw_body.strip.start_with?("{", "[") rescue false)
           begin
-            parsed_payload = JSON.parse(raw_body)
+            # Security: Limit JSON parsing depth and complexity to prevent JSON bombs
+            parsed_payload = safe_json_parse(raw_body)
             parsed_payload = parsed_payload.transform_keys(&:to_sym) if symbolize && parsed_payload.is_a?(Hash)
             return parsed_payload
-          rescue JSON::ParserError
-            # If JSON parsing fails, return raw body
+          rescue JSON::ParserError, ArgumentError => e
+            # If JSON parsing fails or security limits exceeded, return raw body
+            if e.message.include?("nesting") || e.message.include?("depth")
+              log.warn("JSON parsing limit exceeded: #{e.message}")
+            end
           end
         end
 
@@ -78,6 +85,29 @@ module Hooks
       end
 
       private
+
+      # Safely parse JSON
+      #
+      # @param json_string [String] The JSON string to parse
+      # @return [Hash, Array] Parsed JSON object
+      # @raise [JSON::ParserError] If JSON is invalid
+      # @raise [ArgumentError] If security limits are exceeded
+      def safe_json_parse(json_string)
+        # Security limits for JSON parsing
+        max_nesting = ENV.fetch("JSON_MAX_NESTING", "20").to_i
+
+        # Additional size check before parsing
+        if json_string.length > ENV.fetch("JSON_MAX_SIZE", "10485760").to_i # 10MB default
+          raise ArgumentError, "JSON payload too large for parsing"
+        end
+
+        JSON.parse(json_string, {
+          max_nesting: max_nesting,
+          create_additions: false,  # Security: Disable object creation from JSON
+          object_class: Hash,       # Use plain Hash instead of custom classes
+          array_class: Array        # Use plain Array instead of custom classes
+        })
+      end
 
       # Determine HTTP error code from exception
       #

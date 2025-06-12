@@ -204,6 +204,49 @@ describe Hooks::App::Helpers do
       end
     end
 
+    context "with JSON security limits" do
+      it "handles deeply nested JSON within limits" do
+        headers = { "Content-Type" => "application/json" }
+        # Create a nested JSON structure within reasonable limits
+        nested_json = '{"level1": {"level2": {"level3": {"value": "test"}}}}'
+
+        result = helper.parse_payload(nested_json, headers)
+
+        expect(result).to eq({ level1: { "level2" => { "level3" => { "value" => "test" } } } })
+      end
+
+      it "returns raw body when JSON exceeds size limits" do
+        headers = { "Content-Type" => "application/json" }
+
+        # Mock the safe_json_parse method to test the size limit behavior
+        allow(helper).to receive(:safe_json_parse).and_raise(ArgumentError, "JSON payload too large for parsing")
+
+        # Create a JSON string
+        json_data = '{"data": "test"}'
+
+        result = helper.parse_payload(json_data, headers)
+
+        # Should return raw body when size limit exceeded
+        expect(result).to eq(json_data)
+      end
+
+      it "logs debug message when JSON security limits are exceeded" do
+        headers = { "Content-Type" => "application/json" }
+
+        # Mock logger to capture debug messages
+        logger = instance_double("Logger")
+        allow(helper).to receive(:log).and_return(logger)
+        expect(logger).to receive(:warn).with(/JSON parsing limit exceeded/)
+
+        # Mock the safe_json_parse method to simulate nesting limit exceeded
+        allow(helper).to receive(:safe_json_parse).and_raise(ArgumentError, "nesting exceeded")
+
+        json_data = '{"data": "test"}'
+        result = helper.parse_payload(json_data, headers)
+        expect(result).to eq(json_data)
+      end
+    end
+
     context "with non-JSON content" do
       it "returns raw body for plain text" do
         headers = { "Content-Type" => "text/plain" }

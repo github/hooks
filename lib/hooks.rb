@@ -2,21 +2,28 @@
 
 require_relative "hooks/version"
 require_relative "hooks/core/builder"
-
-# Load all core components
-Dir[File.join(__dir__, "hooks/core/**/*.rb")].sort.each do |file|
-  require file
-end
-
-# Load all plugins (auth plugins, handler plugins, lifecycle hooks, etc.)
-Dir[File.join(__dir__, "hooks/plugins/**/*.rb")].sort.each do |file|
-  require file
-end
-
-# Load all utils
-Dir[File.join(__dir__, "hooks/utils/**/*.rb")].sort.each do |file|
-  require file
-end
+require_relative "hooks/core/config_loader"
+require_relative "hooks/core/config_validator"
+require_relative "hooks/core/logger_factory"
+require_relative "hooks/core/plugin_loader"
+require_relative "hooks/core/global_components"
+require_relative "hooks/core/log"
+require_relative "hooks/core/failbot"
+require_relative "hooks/core/stats"
+require_relative "hooks/plugins/auth/base"
+require_relative "hooks/plugins/auth/hmac"
+require_relative "hooks/plugins/auth/shared_secret"
+require_relative "hooks/plugins/handlers/base"
+require_relative "hooks/plugins/handlers/default"
+require_relative "hooks/plugins/lifecycle"
+require_relative "hooks/plugins/instruments/stats_base"
+require_relative "hooks/plugins/instruments/failbot_base"
+require_relative "hooks/plugins/instruments/stats"
+require_relative "hooks/plugins/instruments/failbot"
+require_relative "hooks/utils/normalize"
+require_relative "hooks/utils/retry"
+require_relative "hooks/security"
+require_relative "hooks/version"
 
 # Main module for the Hooks webhook server framework
 module Hooks
