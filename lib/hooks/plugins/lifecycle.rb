@@ -31,6 +31,18 @@ module Hooks
         # Override in subclass for error handling logic
       end
 
+      # Short logger accessor for all subclasses
+      # @return [Hooks::Log] Logger instance
+      #
+      # Provides a convenient way for lifecycle plugins to log messages without needing
+      # to reference the full Hooks::Log namespace.
+      #
+      # @example Logging an error in an inherited class
+      #   log.error("oh no an error occured")
+      def log
+        Hooks::Log.instance
+      end
+
       # Global stats component accessor
       # @return [Hooks::Core::Stats] Stats instance for metrics reporting
       #

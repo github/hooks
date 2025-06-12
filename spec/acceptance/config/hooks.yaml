@@ -1,6 +1,7 @@
 # Sample configuration for Hooks webhook server
 handler_plugin_dir: ./spec/acceptance/plugins/handlers
 auth_plugin_dir: ./spec/acceptance/plugins/auth
+lifecycle_plugin_dir: ./spec/acceptance/plugins/lifecycle
 
 log_level: debug
 
