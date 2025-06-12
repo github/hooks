@@ -76,7 +76,9 @@ module Hooks
                     "REMOTE_ADDR" => request.env["REMOTE_ADDR"],
                     "hooks.request_id" => request_id,
                     "hooks.handler" => handler_class_name,
-                    "hooks.endpoint_config" => endpoint_config
+                    "hooks.endpoint_config" => endpoint_config,
+                    "hooks.start_time" => start_time.iso8601,
+                    "hooks.full_path" => full_path
                   }
 
                   # Add HTTP headers to environment
@@ -113,12 +115,12 @@ module Hooks
                     plugin.on_response(rack_env, response)
                   end
 
-                  log.info "request processed successfully by handler: #{handler_class_name}"
-                  log.debug "request duration: #{Time.now - start_time}s"
+                  log.info("successfully processed webhook event with handler: #{handler_class_name}")
+                  log.debug("processing duration: #{Time.now - start_time}s")
                   status 200
                   content_type "application/json"
                   response.to_json
-                rescue => e
+                rescue StandardError => e
                   # Call lifecycle hooks: on_error
                   if defined?(rack_env)
                     Core::PluginLoader.lifecycle_plugins.each do |plugin|
@@ -126,7 +128,7 @@ module Hooks
                     end
                   end
 
-                  log.error "request failed: #{e.message}"
+                  log.error("an error occuring during the processing of a webhook event - #{e.message}")
                   error_response = {
                     error: e.message,
                     code: determine_error_code(e),
