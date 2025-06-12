@@ -180,5 +180,16 @@ describe "Hooks" do
         expect(response.body).to include("authentication failed")
       end
     end
+
+    describe "boomtown" do
+      it "sends a POST request to the /webhooks/boomtown endpoint and it explodes" do
+        payload = {}.to_json
+        headers = {}
+        response = http.post("/webhooks/boomtown", payload, headers)
+
+        expect(response).to be_a(Net::HTTPInternalServerError)
+        expect(response.body).to include("Boomtown error occurred")
+      end
+    end
   end
 end
