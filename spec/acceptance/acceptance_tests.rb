@@ -207,6 +207,23 @@ describe "Hooks" do
         expect(body["status"]).to eq("success")
       end
 
+      it "successfully processes request with ISO 8601 UTC timestamp (ruby default method)" do
+        payload = { text: "Hello, Slack!" }
+        iso_timestamp = Time.now.utc.iso8601
+        body = payload.to_json
+        signing_payload = "v0:#{iso_timestamp}:#{body}"
+        digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), FAKE_ALT_HMAC_SECRET, signing_payload)
+        headers = {
+          "Content-Type" => "application/json",
+          "Signature-256" => "v0=#{digest}",
+          "X-Timestamp" => iso_timestamp
+        }
+        response = http.post("/webhooks/slack", body, headers)
+        expect(response).to be_a(Net::HTTPSuccess)
+        body = JSON.parse(response.body)
+        expect(body["status"]).to eq("success")
+      end
+
       it "successfully processes request with ISO 8601 UTC timestamp using +00:00 format" do
         payload = { text: "Hello, Slack!" }
         iso_timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%S+00:00")
