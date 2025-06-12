@@ -4,7 +4,7 @@ set -e # prevent any kind of script failures
 
 source script/env "$@"
 
-echo -e "${PURPLE}[#]${OFF} ${BLUE}Running acceptance tests${OFF}"
+echo -e "${PURPLE}[#]${OFF} ${BLUE}Running integration tests${OFF}"
 bundle exec bin/rspec spec/integration && rspec_exit=$? || rspec_exit=$?
 echo ""
 echo "---------------------------------------"
