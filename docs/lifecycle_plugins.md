@@ -104,20 +104,20 @@ end
 
 ```ruby
 def on_request(env)
-  # Increment counters
+  # Increment counters (example)
   stats.increment("webhook.requests", { event: env["HTTP_X_GITHUB_EVENT"] })
   
-  # Record values
+  # Record values (example)
   stats.record("webhook.payload_size", env["CONTENT_LENGTH"].to_i)
   
-  # Measure execution time
+  # Measure execution time (example)
   stats.measure("webhook.processing", { handler: env["hooks.handler"] }) do
     # Processing happens in the handler
   end
 end
 
 def on_response(env, response)
-  # Record timing from environment
+  # Record timing from environment (example)
   stats.timing("webhook.duration", env["hooks.processing_time"])
 end
 ```
@@ -126,22 +126,22 @@ end
 
 ```ruby
 def on_error(exception, env)
-  # Report errors with context
+  # Report errors with context (example)
   failbot.report(exception, {
     endpoint: env["PATH_INFO"],
     event_type: env["HTTP_X_GITHUB_EVENT"],
     handler: env["hooks.handler"]
   })
   
-  # Report critical errors
+  # Report critical errors (example)
   failbot.critical("Handler crashed", { handler: env["hooks.handler"] })
   
-  # Report warnings
+  # Report warnings (example)
   failbot.warning("Slow webhook processing", { duration: env["hooks.processing_time"] })
 end
 
 def on_request(env)
-  # Capture and report exceptions during processing
+  # Capture and report exceptions during processing (example)
   failbot.capture({ context: "request_validation" }) do
     validate_webhook_signature(env)
   end
@@ -161,7 +161,7 @@ auth_plugin_dir: ./plugins/auth
 
 Place your lifecycle plugin files in the specified directory:
 
-```
+```text
 plugins/
 └── lifecycle/
     ├── metrics_lifecycle.rb

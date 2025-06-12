@@ -294,6 +294,14 @@ See the [Auth Plugins](docs/auth_plugins.md) documentation for even more informa
 
 See the [Handler Plugins](docs/handler_plugins.md) documentation for in-depth information about handler plugins and how you can create your own to extend the functionality of the Hooks framework for your own deployment.
 
+### Lifecycle Plugins
+
+See the [Lifecycle Plugins](docs/lifecycle_plugins.md) documentation for information on how to create lifecycle plugins that can hook into the request/response/error lifecycle of the Hooks framework, allowing you to add custom behavior at various stages of processing webhook requests.
+
+### Instrument Plugins
+
+See the [Instrument Plugins](docs/instrument_plugins.md) documentation for information on how to create instrument plugins that can be used to collect metrics or report exceptions during webhook processing. These plugins can be used to integrate with monitoring and alerting systems.
+
 ## Contributing 🤝
 
 See the [Contributing](CONTRIBUTING.md) document for information on how to contribute to the Hooks project, including setting up your development environment, running tests, and releasing new versions.

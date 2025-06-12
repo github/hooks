@@ -1,72 +1,35 @@
 # Instrument Plugins
 
-Instrument plugins provide global components for cross-cutting concerns like metrics collection and error reporting. The hooks framework includes two built-in instrument types: `stats` for metrics and `failbot` for error reporting.
+Instrument plugins provide global components for cross-cutting concerns like metrics collection and error reporting. The hooks framework includes two built-in instrument types: `stats` for metrics and `failbot` for error reporting. By default, these instruments are no-op implementations that do not require any external dependencies. You can create custom implementations to integrate with your preferred monitoring and error reporting services.
 
 ## Overview
 
 By default, the framework provides no-op stub implementations that do nothing. This allows you to write code that calls instrument methods without requiring external dependencies. You can replace these stubs with real implementations that integrate with your monitoring and error reporting services.
 
 The instrument plugins are accessible throughout the entire application:
+
 - In handlers via `stats` and `failbot` methods
 - In auth plugins via `stats` and `failbot` class methods  
 - In lifecycle plugins via `stats` and `failbot` methods
-
-## Built-in Instruments
-
-### Stats
-
-The stats instrument provides methods for metrics collection:
-
-```ruby
-# Increment counters
-stats.increment("webhook.processed", { handler: "MyHandler" })
-
-# Record values
-stats.record("webhook.payload_size", 1024, { event: "push" })
-
-# Record timing manually
-stats.timing("webhook.duration", 0.5, { handler: "MyHandler" })
-
-# Measure execution time automatically
-result = stats.measure("database.query", { table: "webhooks" }) do
-  # Database operation here
-  perform_database_query
-end
-```
-
-### Failbot
-
-The failbot instrument provides methods for error reporting:
-
-```ruby
-# Report exceptions
-begin
-  risky_operation
-rescue => e
-  failbot.report(e, { context: "webhook_processing" })
-end
-
-# Report critical errors
-failbot.critical("Database connection lost", { service: "postgres" })
-
-# Report warnings
-failbot.warning("Slow response time detected", { duration: 2.5 })
-
-# Capture exceptions automatically
-result = failbot.capture({ operation: "webhook_validation" }) do
-  validate_webhook_payload(payload)
-end
-```
 
 ## Creating Custom Instruments
 
 To create custom instrument implementations, inherit from the appropriate base class and implement the required methods.
 
+To actually have `stats` and `failbot` do something useful, you need to create custom classes that inherit from the base classes provided by the framework. Here’s an example of how to implement custom stats and failbot plugins.
+
+You would then set the following attribute in your `hooks.yml` configuration file to point to these custom instrument plugins:
+
+```yaml
+# hooks.yml
+instruments_plugin_dir: ./plugins/instruments
+```
+
 ### Custom Stats Implementation
 
 ```ruby
-# custom_stats.rb
-class CustomStats < Hooks::Plugins::Instruments::StatsBase
+# plugins/instruments/stats.rb
+class Stats < Hooks::Plugins::Instruments::StatsBase
   def initialize
     # Initialize your metrics client
     @client = MyMetricsService.new(
@@ -107,8 +70,8 @@ end
 ### Custom Failbot Implementation
 
 ```ruby
-# custom_failbot.rb  
-class CustomFailbot < Hooks::Plugins::Instruments::FailbotBase
+# plugins/instruments/failbot.rb  
+class Failbot < Hooks::Plugins::Instruments::FailbotBase
   def initialize
     # Initialize your error reporting client
     @client = MyErrorService.new(
@@ -168,11 +131,11 @@ lifecycle_plugin_dir: ./plugins/lifecycle
 
 Place your instrument plugin files in the specified directory:
 
-```
+```text
 plugins/
 └── instruments/
-    ├── custom_stats.rb
-    └── custom_failbot.rb
+    ├── stats.rb
+    └── failbot.rb
 ```
 
 ## File Naming and Class Detection
@@ -183,11 +146,11 @@ The framework automatically detects which type of instrument you're creating bas
 - Classes inheriting from `FailbotBase` become the `failbot` instrument
 
 File naming follows snake_case to PascalCase conversion:
-- `custom_stats.rb` → `CustomStats`
-- `datadog_stats.rb` → `DatadogStats`  
+
+- `stats.rb` → `stats`
 - `sentry_failbot.rb` → `SentryFailbot`
 
-You can only have one stats plugin and one failbot plugin loaded. If multiple plugins of the same type are found, the last one loaded will be used.
+You can only have one `stats` plugin and one `failbot` plugin loaded. If multiple plugins of the same type are found, the last one loaded will be used.
 
 ## Usage in Your Code
 
