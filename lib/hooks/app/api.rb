@@ -47,8 +47,9 @@ module Hooks
           endpoints.each do |endpoint_config|
             full_path = "#{config[:root_path]}#{endpoint_config[:path]}"
             handler_class_name = endpoint_config[:handler]
+            http_method = (endpoint_config[:method] || "post").downcase.to_sym
 
-            post(full_path) do
+            send(http_method, full_path) do
               request_id = uuid
               start_time = Time.now
 

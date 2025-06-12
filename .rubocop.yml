@@ -19,6 +19,7 @@ GitHub/InsecureHashAlgorithm:
 GitHub/AvoidObjectSendWithDynamicMethod:
   Exclude:
     - "spec/unit/lib/hooks/core/logger_factory_spec.rb"
+    - "lib/hooks/app/api.rb"
 
 Style/HashSyntax:
   Enabled: false

@@ -113,6 +113,23 @@ handler: GithubHandler
 
 > For readability, you should use CamelCase for handler names, as they are Ruby classes. You should then name the file in the `handler_plugin_dir` as `github_handler.rb`.
 
+### `method`
+
+The HTTP method that the endpoint will respond to. This allows you to configure endpoints for different HTTP verbs based on your webhook provider's requirements.
+
+**Default:** `post`  
+**Valid values:** `get`, `post`, `put`, `patch`, `delete`, `head`, `options`
+
+**Example:**
+
+```yaml
+method: post  # Most webhooks use POST
+# or
+method: put   # Some REST APIs might use PUT for updates
+```
+
+In some cases, webhook providers (such as Okta) may require a one time verification request via a GET request. In such cases, you can set the method to `get` for that specific endpoint and then write a handler that processes the verification request.
+
 ### `auth`
 
 Authentication configuration for the endpoint. This section defines how incoming requests will be authenticated before being processed by the handler.
