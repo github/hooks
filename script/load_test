@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "net/http"
+require "json"
+require "uri"
+
+# Configuration
+TARGET_URL = "http://0.0.0.0:8080/webhooks/hello"
+REQUEST_COUNT = 10_000 # Total number of requests to send
+EMPTY_JSON_BODY = "{}"
+
+# Parse the target URL
+uri = URI.parse(TARGET_URL)
+
+# Initialize statistics tracking
+response_times = []
+success_count = 0
+error_count = 0
+
+puts "Starting load test..."
+puts "Target: #{TARGET_URL}"
+puts "Requests: #{REQUEST_COUNT}"
+puts "Payload: #{EMPTY_JSON_BODY}"
+puts ""
+
+# Perform the load test
+REQUEST_COUNT.times do |i|
+  start_time = Time.now
+
+  begin
+    # Create HTTP connection
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = false if uri.scheme == "http"
+
+    # Create POST request
+    request = Net::HTTP::Post.new(uri.path)
+    request["Content-Type"] = "application/json"
+    request.body = EMPTY_JSON_BODY
+
+    # Send request and measure time
+    response = http.request(request)
+    end_time = Time.now
+
+    response_time_ms = ((end_time - start_time) * 1000).round(2)
+    response_times << response_time_ms
+
+    if response.code.to_i >= 200 && response.code.to_i < 300
+      success_count += 1
+    else
+      error_count += 1
+    end
+
+    # Progress indicator
+    if (i + 1) % 100 == 0
+      puts "Completed #{i + 1}/#{REQUEST_COUNT} requests"
+    end
+
+  rescue => e
+    end_time = Time.now
+    response_time_ms = ((end_time - start_time) * 1000).round(2)
+    response_times << response_time_ms
+    error_count += 1
+    puts "Error on request #{i + 1}: #{e.message}"
+  end
+end
+
+puts ""
+puts "Load test completed!"
+puts ""
+
+# Calculate statistics
+if response_times.any?
+  sorted_times = response_times.sort
+  average_time = (response_times.sum / response_times.length).round(2)
+  min_time = sorted_times.first
+  max_time = sorted_times.last
+  median_time = if sorted_times.length.odd?
+                  sorted_times[sorted_times.length / 2]
+                else
+                  ((sorted_times[sorted_times.length / 2 - 1] + sorted_times[sorted_times.length / 2]) / 2.0).round(2)
+                end
+
+  # Calculate percentiles
+  p95_index = (sorted_times.length * 0.95).ceil - 1
+  p99_index = (sorted_times.length * 0.99).ceil - 1
+  p95_time = sorted_times[p95_index]
+  p99_time = sorted_times[p99_index]
+
+  puts "=== RESULTS SUMMARY ==="
+  puts "Total requests: #{REQUEST_COUNT}"
+  puts "Successful requests: #{success_count}"
+  puts "Failed requests: #{error_count}"
+  puts "Success rate: #{((success_count.to_f / REQUEST_COUNT) * 100).round(2)}%"
+  puts ""
+  puts "=== RESPONSE TIME STATISTICS (ms) ==="
+  puts "Average: #{average_time} ms"
+  puts "Minimum: #{min_time} ms"
+  puts "Maximum: #{max_time} ms"
+  puts "Median:  #{median_time} ms"
+  puts "95th percentile: #{p95_time} ms"
+  puts "99th percentile: #{p99_time} ms"
+else
+  puts "No response times recorded!"
+end
