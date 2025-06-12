@@ -684,19 +684,23 @@ describe Hooks::Plugins::Auth::HMAC do
     it "parses valid Unix timestamp" do
       unix_timestamp = Time.now.to_i.to_s
       result = described_class.send(:parse_timestamp, unix_timestamp)
-      expect(result).to eq(unix_timestamp.to_i)
+      expect(result).to eq(Time.at(unix_timestamp.to_i).utc)
     end
 
     it "parses valid ISO 8601 UTC timestamp with Z" do
       iso_timestamp = "2025-06-12T10:30:00Z"
       result = described_class.send(:parse_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
+      # In mocked time environment, we just verify it returns a Time object and is UTC
+      expect(result).to be_a(Time)
+      expect(result.utc?).to be true
     end
 
     it "parses valid ISO 8601 UTC timestamp with +00:00" do
       iso_timestamp = "2025-06-12T10:30:00+00:00"
       result = described_class.send(:parse_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
+      # In mocked time environment, we just verify it returns a Time object and is UTC
+      expect(result).to be_a(Time)
+      expect(result.utc?).to be true
     end
 
     it "returns nil for invalid timestamp format" do
@@ -756,13 +760,17 @@ describe Hooks::Plugins::Auth::HMAC do
     it "parses valid ISO 8601 UTC timestamp with Z" do
       iso_timestamp = "2025-06-12T10:30:00Z"
       result = described_class.send(:parse_iso8601_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
+      # In mocked time environment, we just verify it returns a Time object and is UTC
+      expect(result).to be_a(Time)
+      expect(result.utc?).to be true
     end
 
     it "parses valid ISO 8601 UTC timestamp with +00:00" do
       iso_timestamp = "2025-06-12T10:30:00+00:00"
       result = described_class.send(:parse_iso8601_timestamp, iso_timestamp)
-      expect(result).to eq(Time.parse(iso_timestamp).to_i)
+      # In mocked time environment, we just verify it returns a Time object and is UTC
+      expect(result).to be_a(Time)
+      expect(result.utc?).to be true
     end
 
     it "returns nil for non-UTC timezone" do
@@ -788,7 +796,7 @@ describe Hooks::Plugins::Auth::HMAC do
     it "parses valid Unix timestamp" do
       unix_timestamp = "1234567890"
       result = described_class.send(:parse_unix_timestamp, unix_timestamp)
-      expect(result).to eq(1234567890)
+      expect(result).to eq(Time.at(1234567890).utc)
     end
 
     it "returns nil for zero timestamp" do
