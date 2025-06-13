@@ -345,6 +345,51 @@ describe Hooks::Plugins::Auth::SharedSecret do
         )
         expect(result).to be true
       end
+
+      it "logs debug message on successful validation" do
+        headers = { "X-API-Key" => api_key }
+        allow(Hooks::Log.instance).to receive(:debug)
+
+        described_class.valid?(
+          payload: '{"data":"value"}',
+          headers:,
+          config: api_config
+        )
+
+        expect(Hooks::Log.instance).to have_received(:debug).with("Auth::SharedSecret validation successful for header 'X-API-Key'")
+      end
+    end
+
+    context "Debug and warning logging coverage" do
+      let(:test_secret) { "test-secret-123" }
+      let(:test_config) do
+        {
+          auth: {
+            header: "Authorization",
+            secret_env_key: "TEST_SECRET"
+          }
+        }
+      end
+
+      before do
+        allow(ENV).to receive(:[]).with("TEST_SECRET").and_return(test_secret)
+        allow(Hooks::Log.instance).to receive(:debug)
+        allow(Hooks::Log.instance).to receive(:warn)
+        allow(Hooks::Log.instance).to receive(:error)
+      end
+
+      it "logs warning when signature mismatch occurs" do
+        headers = { "Authorization" => "wrong-secret" }
+
+        result = described_class.valid?(
+          payload: '{"data":"value"}',
+          headers:,
+          config: test_config
+        )
+
+        expect(result).to be false
+        expect(Hooks::Log.instance).to have_received(:warn).with("Auth::SharedSecret validation failed: Signature mismatch")
+      end
     end
   end
 end

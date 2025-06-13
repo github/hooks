@@ -92,26 +92,32 @@ module Hooks
           validator_config = build_config(config)
 
           # Security: Check raw headers BEFORE normalization to detect tampering
-          return false unless headers.respond_to?(:each)
+          unless headers.respond_to?(:each)
+            log.warn("Auth::HMAC validation failed: Invalid headers object")
+            return false
+          end
 
           signature_header = validator_config[:header]
 
-          # Find the signature header with case-insensitive matching but preserve original value
-          raw_signature = nil
-          headers.each do |key, value|
-            if key.to_s.downcase == signature_header.downcase
-              raw_signature = value.to_s
-              break
-            end
+          # Find the signature header with case-insensitive matching
+          raw_signature = find_header_value(headers, signature_header)
+
+          if raw_signature.nil? || raw_signature.empty?
+            log.warn("Auth::HMAC validation failed: Missing or empty signature header '#{signature_header}'")
+            return false
           end
 
-          return false if raw_signature.nil? || raw_signature.empty?
-
           # Security: Reject signatures with leading/trailing whitespace
-          return false if raw_signature != raw_signature.strip
+          if raw_signature != raw_signature.strip
+            log.warn("Auth::HMAC validation failed: Signature contains leading/trailing whitespace")
+            return false
+          end
 
           # Security: Reject signatures containing null bytes or other control characters
-          return false if raw_signature.match?(/[\u0000-\u001f\u007f-\u009f]/)
+          if raw_signature.match?(/[\u0000-\u001f\u007f-\u009f]/)
+            log.warn("Auth::HMAC validation failed: Signature contains control characters")
+            return false
+          end
 
           # Now we can safely normalize headers for the rest of the validation
           normalized_headers = normalize_headers(headers)
@@ -134,7 +140,13 @@ module Hooks
           )
 
           # Use secure comparison to prevent timing attacks
-          Rack::Utils.secure_compare(computed_signature, provided_signature)
+          result = Rack::Utils.secure_compare(computed_signature, provided_signature)
+          if result
+            log.debug("Auth::HMAC validation successful for header '#{signature_header}'")
+          else
+            log.warn("Auth::HMAC validation failed: Signature mismatch")
+          end
+          result
         rescue StandardError => e
           log.error("Auth::HMAC validation failed: #{e.message}")
           false
