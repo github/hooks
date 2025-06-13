@@ -234,6 +234,7 @@ describe Hooks::Plugins::Auth::Base do
 
       expect(described_class.find_header_value(headers, "Missing-Header")).to be_nil
       expect(described_class.find_header_value(headers, "")).to be_nil
+      expect(described_class.find_header_value(headers, "   ")).to be_nil
       expect(described_class.find_header_value(headers, nil)).to be_nil
     end
 

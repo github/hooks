@@ -390,6 +390,20 @@ describe Hooks::Plugins::Auth::SharedSecret do
         expect(result).to be false
         expect(Hooks::Log.instance).to have_received(:warn).with("Auth::SharedSecret validation failed: Signature mismatch")
       end
+
+      it "logs error and returns false on exception" do
+        # Force an exception by mocking fetch_secret to raise
+        allow(described_class).to receive(:fetch_secret).and_raise(StandardError, "Test error")
+
+        result = described_class.valid?(
+          payload: '{"data":"value"}',
+          headers: { "Authorization" => "test" },
+          config: test_config
+        )
+
+        expect(result).to be false
+        expect(Hooks::Log.instance).to have_received(:error).with("Auth::SharedSecret validation failed: Test error")
+      end
     end
   end
 end
