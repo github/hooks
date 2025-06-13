@@ -67,7 +67,7 @@ By default, the headers are normalized (lowercased and trimmed) but kept as stri
 
 For example, if the client sends the following headers:
 
-```
+```text
 Host: hooks.example.com
 User-Agent: foo-client/1.0
 Accept: application/json, text/plain, */*
