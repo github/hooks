@@ -20,7 +20,8 @@ describe Hooks::Core::ConfigLoader do
           endpoints_dir: "./config/endpoints",
           use_catchall_route: false,
           symbolize_payload: true,
-          normalize_headers: true
+          normalize_headers: true,
+          symbolize_headers: true
         )
       end
     end
@@ -189,6 +190,7 @@ describe Hooks::Core::ConfigLoader do
         ENV["HOOKS_USE_CATCHALL_ROUTE"] = "true"
         ENV["HOOKS_SYMBOLIZE_PAYLOAD"] = "1"
         ENV["HOOKS_NORMALIZE_HEADERS"] = "yes"
+        ENV["HOOKS_SYMBOLIZE_HEADERS"] = "on"
         # Add a non-boolean var to ensure it's not misinterpreted
         ENV["HOOKS_SOME_STRING_VAR"] = "test_value"
 
@@ -198,6 +200,7 @@ describe Hooks::Core::ConfigLoader do
         expect(config[:use_catchall_route]).to be true
         expect(config[:symbolize_payload]).to be true
         expect(config[:normalize_headers]).to be true
+        expect(config[:symbolize_headers]).to be true
         expect(config[:some_string_var]).to eq("test_value") # Check the string var
       end
     end
@@ -369,6 +372,13 @@ describe Hooks::Core::ConfigLoader do
           path: "/webhook/valid",
           handler: "ValidHandler"
         )
+      end
+      it "allows opt-out via environment variable" do
+        ENV["HOOKS_SYMBOLIZE_HEADERS"] = "false"
+
+        config = described_class.load
+
+        expect(config[:symbolize_headers]).to be false
       end
     end
   end

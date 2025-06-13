@@ -4,5 +4,5 @@
 module Hooks
   # Current version of the Hooks webhook framework
   # @return [String] The version string following semantic versioning
-  VERSION = "0.0.4".freeze
+  VERSION = "0.0.5".freeze
 end

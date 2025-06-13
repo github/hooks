@@ -117,4 +117,84 @@ describe Hooks::Utils::Normalize do
       end
     end
   end
+
+  describe ".symbolize_headers" do
+    context "when input is a hash of headers" do
+      it "converts header keys to symbols and replaces hyphens with underscores" do
+        headers = {
+          "content-type" => "application/json",
+          "x-github-event" => "push",
+          "user-agent" => "test-agent",
+          "authorization" => "Bearer token123"
+        }
+
+        symbolized = described_class.symbolize_headers(headers)
+
+        expect(symbolized).to eq({
+          content_type: "application/json",
+          x_github_event: "push",
+          user_agent: "test-agent",
+          authorization: "Bearer token123"
+        })
+      end
+
+      it "handles mixed case and already symbolized keys" do
+        headers = {
+          "Content-Type" => "application/json",
+          "X-GitHub-Event" => "push",
+          :already_symbol => "value"
+        }
+
+        symbolized = described_class.symbolize_headers(headers)
+
+        expect(symbolized).to eq({
+          Content_Type: "application/json",
+          X_GitHub_Event: "push",
+          already_symbol: "value"
+        })
+      end
+
+      it "handles nil keys by skipping them" do
+        headers = {
+          "valid-header" => "value",
+          nil => "should-be-skipped"
+        }
+
+        symbolized = described_class.symbolize_headers(headers)
+
+        expect(symbolized).to eq({
+          valid_header: "value"
+        })
+      end
+
+      it "handles nil input" do
+        expect(described_class.symbolize_headers(nil)).to eq(nil)
+      end
+
+      it "handles empty hash input" do
+        expect(described_class.symbolize_headers({})).to eq({})
+      end
+
+      it "handles non-enumerable input" do
+        expect(described_class.symbolize_headers(123)).to eq({})
+        expect(described_class.symbolize_headers(true)).to eq({})
+      end
+
+      it "preserves header values unchanged" do
+        headers = {
+          "x-custom-header" => ["array", "values"],
+          "numeric-header" => 123,
+          "boolean-header" => true
+        }
+
+        symbolized = described_class.symbolize_headers(headers)
+
+        expect(symbolized).to eq({
+          x_custom_header: ["array", "values"],
+          numeric_header: 123,
+          boolean_header: true
+        })
+      end
+    end
+  end
 end

@@ -15,8 +15,8 @@ Handler plugins are Ruby classes that extend the `Hooks::Plugins::Handlers::Base
 class Example < Hooks::Plugins::Handlers::Base
   # Process a webhook payload
   #
-  # @param payload [Hash, String] webhook payload
-  # @param headers [Hash<String, String>] HTTP headers
+  # @param payload [Hash, String] webhook payload (symbolized keys by default)
+  # @param headers [Hash] HTTP headers (symbolized keys by default)
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
   def call(payload:, headers:, config:)
@@ -61,27 +61,45 @@ It will be parsed and passed to the handler as:
 
 The `headers` parameter is a Hash that contains the HTTP headers that were sent with the webhook request. It includes standard headers like `host`, `user-agent`, `accept`, and any custom headers that the webhook sender may have included.
 
-Here is an example of what the `headers` parameter might look like:
+By default, the headers are normalized (lowercased and trimmed) and then symbolized. This means that the keys in the headers will be converted to symbols, and any hyphens (`-`) in header names are converted to underscores (`_`). You can disable header symbolization by setting the environment variable `HOOKS_SYMBOLIZE_HEADERS` to `false` or by setting the `symbolize_headers` option to `false` in the global configuration file.
+
+**TL;DR**: The headers are almost always a Hash with symbolized keys, with hyphens converted to underscores.
+
+For example, if the client sends the following headers:
+
+```
+Host: hooks.example.com
+User-Agent: foo-client/1.0
+Accept: application/json, text/plain, */*
+Accept-Encoding: gzip, compress, deflate, br
+Client-Name: foo
+X-Forwarded-For: <IP_ADDRESS>
+X-Forwarded-Host: hooks.example.com
+X-Forwarded-Proto: https
+Authorization: Bearer <TOKEN>
+```
+
+They will be normalized and symbolized and passed to the handler as:
 
 ```ruby
-# example headers as a Hash
 {
-  "host" => "<HOSTNAME>", # e.g., "hooks.example.com"
-  "user-agent" => "foo-client/1.0",
-  "accept" => "application/json, text/plain, */*",
-  "accept-encoding" => "gzip, compress, deflate, br",
-  "client-name" => "foo",
-  "x-forwarded-for" => "<IP_ADDRESS>",
-  "x-forwarded-host" => "<HOSTNAME>", # e.g., "hooks.example.com"
-  "x-forwarded-proto" => "https",
-  "version" => "HTTP/1.1",
-  "Authorization" => "Bearer <TOKEN>" # a careful reminder that headers *can* contain sensitive information!
+  host: "hooks.example.com",
+  user_agent: "foo-client/1.0",
+  accept: "application/json, text/plain, */*",
+  accept_encoding: "gzip, compress, deflate, br",
+  client_name: "foo",
+  x_forwarded_for: "<IP_ADDRESS>",
+  x_forwarded_host: "hooks.example.com",
+  x_forwarded_proto: "https",
+  authorization: "Bearer <TOKEN>" # a careful reminder that headers *can* contain sensitive information!
 }
 ```
 
-It should be noted that the `headers` parameter is a Hash with **String keys** (not symbols). They are also normalized (lowercased and trimmed) to ensure consistency.
+It should be noted that the `headers` parameter is a Hash with **symbolized keys** (not strings) by default. They are also normalized (lowercased and trimmed) to ensure consistency.
 
-You can disable this normalization by either setting the environment variable `HOOKS_NORMALIZE_HEADERS` to `false` or by setting the `normalize_headers` option to `false` in the global configuration file.
+You can disable header symbolization by either setting the environment variable `HOOKS_SYMBOLIZE_HEADERS` to `false` or by setting the `symbolize_headers` option to `false` in the global configuration file.
+
+You can disable header normalization by either setting the environment variable `HOOKS_NORMALIZE_HEADERS` to `false` or by setting the `normalize_headers` option to `false` in the global configuration file.
 
 ### `config` Parameter
 
