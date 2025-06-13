@@ -62,36 +62,55 @@ module Hooks
           validator_config = build_config(config)
 
           # Security: Check raw headers BEFORE normalization to detect tampering
-          return false unless headers.respond_to?(:each)
+          unless headers.respond_to?(:each)
+            log.warn("Auth::SharedSecret validation failed: Invalid headers object")
+            return false
+          end
 
           secret_header = validator_config[:header]
 
-          # Find the secret header with case-insensitive matching but preserve original value
-          raw_secret = nil
-          headers.each do |key, value|
-            if key.to_s.downcase == secret_header.downcase
-              raw_secret = value.to_s
-              break
-            end
-          end
+          # Find the secret header with case-insensitive matching
+          raw_secret = find_header_value(headers, secret_header)
 
-          return false if raw_secret.nil? || raw_secret.empty?
+          if raw_secret.nil? || raw_secret.empty?
+            log.warn("Auth::SharedSecret validation failed: Missing or empty secret header '#{secret_header}'")
+            return false
+          end
 
           stripped_secret = raw_secret.strip
 
           # Security: Reject secrets with leading/trailing whitespace
-          return false if raw_secret != stripped_secret
+          if raw_secret != stripped_secret
+            log.warn("Auth::SharedSecret validation failed: Secret contains leading/trailing whitespace")
+            return false
+          end
 
           # Security: Reject secrets containing null bytes or other control characters
-          return false if raw_secret.match?(/[\u0000-\u001f\u007f-\u009f]/)
+          if raw_secret.match?(/[\u0000-\u001f\u007f-\u009f]/)
+            log.warn("Auth::SharedSecret validation failed: Secret contains control characters")
+            return false
+          end
 
           # Use secure comparison to prevent timing attacks
-          Rack::Utils.secure_compare(secret, stripped_secret)
-        rescue StandardError => _e
+          result = Rack::Utils.secure_compare(secret, stripped_secret)
+          if result
+            log.debug("Auth::SharedSecret validation successful for header '#{secret_header}'")
+          else
+            log.warn("Auth::SharedSecret validation failed: Signature mismatch")
+          end
+          result
+        rescue StandardError => e
+          log.error("Auth::SharedSecret validation failed: #{e.message}")
           false
         end
 
         private
+
+        # Short logger accessor for auth module
+        # @return [Hooks::Log] Logger instance
+        def self.log
+          Hooks::Log.instance
+        end
 
         # Build final configuration by merging defaults with provided config
         #

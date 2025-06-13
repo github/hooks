@@ -282,6 +282,13 @@ describe Hooks::Plugins::Auth::HMAC do
         long_headers = { default_header => long_signature }
         expect(valid_with(payload: long_payload, headers: long_headers)).to be true
       end
+
+      it "returns false and logs for signature containing non-null control characters" do
+        control_char = "\x01"
+        headers_with_control = { default_header => signature + control_char }
+        expect(log).to receive(:warn).with(/control characters/)
+        expect(valid_with(headers: headers_with_control)).to be false
+      end
     end
 
     context "format mismatch attacks" do
@@ -648,6 +655,45 @@ describe Hooks::Plugins::Auth::HMAC do
       headers = { "x-timestamp" => Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ") }
 
       expect(described_class.send(:valid_timestamp?, headers, config)).to be true
+    end
+  end
+
+  describe "debug and warning logging" do
+    let(:secret) { "test-secret-123" }
+    let(:config) do
+      {
+        auth: {
+          header: "X-Signature",
+          secret_env_key: "TEST_SECRET"
+        }
+      }
+    end
+
+    before do
+      allow(ENV).to receive(:[]).with("TEST_SECRET").and_return(secret)
+      allow(Hooks::Log.instance).to receive(:debug)
+      allow(Hooks::Log.instance).to receive(:warn)
+    end
+
+    it "logs debug message on successful validation" do
+      payload = '{"data": "test"}'
+      signature = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload)
+      headers = { "X-Signature" => "sha256=#{signature}" }
+
+      result = described_class.valid?(payload: payload, headers: headers, config: config)
+
+      expect(result).to be true
+      expect(Hooks::Log.instance).to have_received(:debug).with("Auth::HMAC validation successful for header 'X-Signature'")
+    end
+
+    it "logs warning message on signature mismatch" do
+      payload = '{"data": "test"}'
+      headers = { "X-Signature" => "sha256=wrong_signature" }
+
+      result = described_class.valid?(payload: payload, headers: headers, config: config)
+
+      expect(result).to be false
+      expect(Hooks::Log.instance).to have_received(:warn).with("Auth::HMAC validation failed: Signature mismatch")
     end
   end
 end

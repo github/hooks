@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../../../../spec_helper"
+
 describe Hooks::Plugins::Auth::Base do
   describe ".valid?" do
     let(:payload) { '{"test": "data"}' }
@@ -206,7 +208,7 @@ describe Hooks::Plugins::Auth::Base do
 
   describe "documentation compliance" do
     it "has the expected public interface" do
-      expect(described_class.methods).to include(:valid?, :log, :stats, :failbot, :fetch_secret)
+      expect(described_class.methods).to include(:valid?, :log, :stats, :failbot, :fetch_secret, :find_header_value)
     end
 
     it "valid? method accepts the documented parameters" do
@@ -214,6 +216,46 @@ describe Hooks::Plugins::Auth::Base do
       expect(method.parameters).to include([:keyreq, :payload])
       expect(method.parameters).to include([:keyreq, :headers])
       expect(method.parameters).to include([:keyreq, :config])
+    end
+  end
+
+  describe ".find_header_value" do
+    it "finds header value with case-insensitive matching" do
+      headers = { "Content-Type" => "application/json", "X-Test" => "value" }
+
+      expect(described_class.find_header_value(headers, "content-type")).to eq("application/json")
+      expect(described_class.find_header_value(headers, "CONTENT-TYPE")).to eq("application/json")
+      expect(described_class.find_header_value(headers, "x-test")).to eq("value")
+      expect(described_class.find_header_value(headers, "X-TEST")).to eq("value")
+    end
+
+    it "returns nil for missing headers" do
+      headers = { "Content-Type" => "application/json" }
+
+      expect(described_class.find_header_value(headers, "Missing-Header")).to be_nil
+      expect(described_class.find_header_value(headers, "")).to be_nil
+      expect(described_class.find_header_value(headers, "   ")).to be_nil
+      expect(described_class.find_header_value(headers, nil)).to be_nil
+    end
+
+    it "handles invalid headers object" do
+      expect(described_class.find_header_value(nil, "Content-Type")).to be_nil
+      expect(described_class.find_header_value("not a hash", "Content-Type")).to be_nil
+      expect(described_class.find_header_value(123, "Content-Type")).to be_nil
+    end
+
+    it "converts non-string values to strings" do
+      headers = { "X-Count" => 42, "X-Boolean" => true }
+
+      expect(described_class.find_header_value(headers, "X-Count")).to eq("42")
+      expect(described_class.find_header_value(headers, "x-boolean")).to eq("true")
+    end
+
+    it "handles headers with symbol keys" do
+      headers = { :content_type => "application/json", "X-Test" => "value" }
+
+      expect(described_class.find_header_value(headers, "content_type")).to eq("application/json")
+      expect(described_class.find_header_value(headers, "x-test")).to eq("value")
     end
   end
 

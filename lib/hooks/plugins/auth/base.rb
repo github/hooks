@@ -43,10 +43,29 @@ module Hooks
           secret = ENV[secret_env_key]
 
           if secret.nil? || !secret.is_a?(String) || secret.strip.empty?
-            raise StandardError, "authentication configuration incomplete: missing secret value bound to #{secret_env_key_name}"
+            raise StandardError, "authentication configuration incomplete: missing secret value for environment variable"
           end
 
           return secret.strip
+        end
+
+        # Find a header value by name with case-insensitive matching
+        #
+        # @param headers [Hash] HTTP headers from the request
+        # @param header_name [String] Name of the header to find
+        # @return [String, nil] The header value if found, nil otherwise
+        # @note This method performs case-insensitive header matching
+        def self.find_header_value(headers, header_name)
+          return nil unless headers.respond_to?(:each)
+          return nil if header_name.nil? || header_name.strip.empty?
+
+          target_header = header_name.downcase
+          headers.each do |key, value|
+            if key.to_s.downcase == target_header
+              return value.to_s
+            end
+          end
+          nil
         end
       end
     end
