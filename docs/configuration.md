@@ -85,6 +85,10 @@ The path for the version endpoint. This endpoint returns the server's version in
 
 Specifies the runtime environment for the server. This can affect logging, error handling, and other behaviors. Warning - running in development mode will return full stack traces in error responses.
 
+If the `RACK_ENV` environment variable is set, it will override this value. It should be noted that using `RACK_ENV` is the **recommended** way to set the environment, as it is a standard convention in Rack-based applications. You should just omit the `environment` key in your `hooks.yaml` file if you want to use `RACK_ENV`. The `RACK_ENV` variable is automatically set to `production` if it is not defined. It also controls the environment for the puma server and the Hooks application so that they are consistent.
+
+**TL;DR**: If you want to use `RACK_ENV`, just don't set the `environment` key in your `hooks.yaml` file. Plus you should really just use `RACK_ENV` anyway, as it is the standard way to set the environment in Rack-based applications.
+
 **Default:** `production`  
 **Example:** `development`
 

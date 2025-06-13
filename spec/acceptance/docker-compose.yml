@@ -7,6 +7,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      RACK_ENV: development # controls both puma and hooks server environment setting
       LOG_LEVEL: DEBUG
       GITHUB_WEBHOOK_SECRET: "octoawesome-secret"
       ALT_WEBHOOK_SECRET: "octoawesome-2-secret"

@@ -16,7 +16,7 @@ module Hooks
         root_path: "/webhooks",
         health_path: "/health",
         version_path: "/version",
-        environment: "production",
+        environment: ENV.fetch("RACK_ENV", "production"),
         production: true,
         endpoints_dir: "./config/endpoints",
         use_catchall_route: false,
