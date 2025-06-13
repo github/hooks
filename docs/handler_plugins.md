@@ -16,7 +16,7 @@ class Example < Hooks::Plugins::Handlers::Base
   # Process a webhook payload
   #
   # @param payload [Hash, String] webhook payload (pure JSON with string keys)
-  # @param headers [Hash] HTTP headers (string keys, optionally normalized)
+  # @param headers [Hash] HTTP headers (string keys, optionally normalized - default is normalized)
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
   def call(payload:, headers:, config:)

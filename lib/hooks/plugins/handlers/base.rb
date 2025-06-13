@@ -15,7 +15,7 @@ module Hooks
         # Process a webhook request
         #
         # @param payload [Hash, String] Parsed request body (JSON Hash) or raw string
-        # @param headers [Hash] HTTP headers (symbolized keys by default)
+        # @param headers [Hash] HTTP headers (string keys, optionally normalized - default is normalized)
         # @param config [Hash] Merged endpoint configuration including opts section (symbolized keys)
         # @return [Hash, String, nil] Response body (will be auto-converted to JSON)
         # @raise [NotImplementedError] if not implemented by subclass
