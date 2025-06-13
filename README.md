@@ -42,7 +42,7 @@ Here is a very high-level overview of how Hooks works:
     health_path: /health
     version_path: /version
 
-    environment: development
+    environment: development # will be overridden by the RACK_ENV environment variable if set
     ```
 
 2. Then in your `config/endpoints` directory, you can define all your webhook endpoints in separate files. Here is an example of a simple endpoint configuration file:
@@ -196,7 +196,7 @@ health_path: /health
 version_path: /version
 
 # Runtime behavior
-environment: development # or production
+environment: development # or production (will be overridden by the RACK_ENV environment variable if set)
 ```
 
 #### 2. Create your endpoint configurations

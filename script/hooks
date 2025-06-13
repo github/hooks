@@ -22,8 +22,8 @@ class HooksCLI
       config_file: "hooks.yaml",
       port: 4567,
       host: "0.0.0.0",
-      environment: "development",
-      threads: "5:5"
+      environment: ENV.fetch("RACK_ENV", "development"),
+      threads: "0:16" # Default Puma thread pool size
     }
   end
 

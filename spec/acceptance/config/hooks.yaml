@@ -16,7 +16,7 @@ health_path: /health
 version_path: /version
 
 # Runtime behavior
-environment: development
+# environment: development # it is better to use the environment variable RACK_ENV to control the environment
 
 # Available endpoints
 # Each endpoint configuration file should be placed in the endpoints directory

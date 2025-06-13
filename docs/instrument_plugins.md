@@ -76,7 +76,7 @@ class Failbot < Hooks::Plugins::Instruments::FailbotBase
     # Initialize your error reporting client
     @client = MyErrorService.new(
       api_key: ENV["ERROR_REPORTING_API_KEY"],
-      environment: ENV["RAILS_ENV"] || "production"
+      environment: ENV["RACK_ENV"] || "production"
     )
   end
 
@@ -243,7 +243,7 @@ class SentryFailbot < Hooks::Plugins::Instruments::FailbotBase
     require "sentry-ruby"
     Sentry.init do |config|
       config.dsn = ENV["SENTRY_DSN"]
-      config.environment = ENV["RAILS_ENV"] || "production"
+      config.environment = ENV["RACK_ENV"] || "production"
     end
   end
 
