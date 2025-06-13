@@ -56,7 +56,7 @@ module Hooks
         #     headers: request.headers,
         #     config: { auth: { header: 'Authorization' } }
         #   )
-        def self.valid?(_payload:, headers:, config:)
+        def self.valid?(payload:, headers:, config:)
           secret = fetch_secret(config)
 
           validator_config = build_config(config)
