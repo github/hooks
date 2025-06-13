@@ -58,6 +58,39 @@ module Hooks
         normalized
       end
 
+      # Symbolize header keys in a hash
+      #
+      # @param headers [Hash, #each] Headers hash or hash-like object
+      # @return [Hash] Hash with symbolized keys (hyphens converted to underscores)
+      #
+      # @example Header symbolization
+      #   headers = { "content-type" => "application/json", "x-github-event" => "push" }
+      #   symbolized = Normalize.symbolize_headers(headers)
+      #   # => { content_type: "application/json", x_github_event: "push" }
+      #
+      # @example Handle various input types
+      #   Normalize.symbolize_headers(nil)  # => nil
+      #   Normalize.symbolize_headers({})   # => {}
+      def self.symbolize_headers(headers)
+        # Handle nil input
+        return nil if headers.nil?
+
+        # Fast path for non-enumerable inputs
+        return {} unless headers.respond_to?(:each)
+
+        symbolized = {}
+
+        headers.each do |key, value|
+          next if key.nil?
+
+          # Convert key to symbol, replacing hyphens with underscores
+          symbolized_key = key.to_s.tr("-", "_").to_sym
+          symbolized[symbolized_key] = value
+        end
+
+        symbolized
+      end
+
       # Normalize a single HTTP header name
       #
       # @param header [String] Header name to normalize

@@ -21,7 +21,8 @@ module Hooks
         endpoints_dir: "./config/endpoints",
         use_catchall_route: false,
         symbolize_payload: true,
-        normalize_headers: true
+        normalize_headers: true,
+        symbolize_headers: true
       }.freeze
 
       SILENCE_CONFIG_LOADER_MESSAGES = ENV.fetch(
@@ -143,6 +144,7 @@ module Hooks
           "HOOKS_USE_CATCHALL_ROUTE" => :use_catchall_route,
           "HOOKS_SYMBOLIZE_PAYLOAD" => :symbolize_payload,
           "HOOKS_NORMALIZE_HEADERS" => :normalize_headers,
+          "HOOKS_SYMBOLIZE_HEADERS" => :symbolize_headers,
           "HOOKS_SOME_STRING_VAR" => :some_string_var # Added for test
         }
 
@@ -154,7 +156,7 @@ module Hooks
           case config_key
           when :request_limit, :request_timeout
             env_config[config_key] = value.to_i
-          when :use_catchall_route, :symbolize_payload, :normalize_headers
+          when :use_catchall_route, :symbolize_payload, :normalize_headers, :symbolize_headers
             # Convert string to boolean
             env_config[config_key] = %w[true 1 yes on].include?(value.downcase)
           else

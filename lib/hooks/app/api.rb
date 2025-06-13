@@ -105,10 +105,11 @@ module Hooks
                   payload = parse_payload(raw_body, headers, symbolize: config[:symbolize_payload])
                   handler = load_handler(handler_class_name)
                   normalized_headers = config[:normalize_headers] ? Hooks::Utils::Normalize.headers(headers) : headers
+                  symbolized_headers = config[:symbolize_headers] ? Hooks::Utils::Normalize.symbolize_headers(normalized_headers) : normalized_headers
 
                   response = handler.call(
                     payload:,
-                    headers: normalized_headers,
+                    headers: symbolized_headers,
                     config: endpoint_config
                   )
 
