@@ -375,9 +375,9 @@ describe Hooks::Core::ConfigLoader do
       end
       it "allows opt-out via environment variable" do
         ENV["HOOKS_SYMBOLIZE_HEADERS"] = "false"
-        
+
         config = described_class.load
-        
+
         expect(config[:symbolize_headers]).to be false
       end
     end
