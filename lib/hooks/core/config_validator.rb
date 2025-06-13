@@ -26,7 +26,6 @@ module Hooks
         optional(:environment).filled(:string, included_in?: %w[development production])
         optional(:endpoints_dir).filled(:string)
         optional(:use_catchall_route).filled(:bool)
-        optional(:symbolize_payload).filled(:bool)
         optional(:normalize_headers).filled(:bool)
       end
 

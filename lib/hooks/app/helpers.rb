@@ -44,9 +44,9 @@ module Hooks
       #
       # @param raw_body [String] The raw request body
       # @param headers [Hash] The request headers
-      # @param symbolize [Boolean] Whether to symbolize keys in parsed JSON (default: true)
-      # @return [Hash, String] Parsed JSON as Hash (optionally symbolized), or raw body if not JSON
-      def parse_payload(raw_body, headers, symbolize: true)
+      # @param symbolize [Boolean] Whether to symbolize keys in parsed JSON (default: false)
+      # @return [Hash, String] Parsed JSON as Hash with string keys, or raw body if not JSON
+      def parse_payload(raw_body, headers, symbolize: false)
         # Optimized content type check - check most common header first
         content_type = headers["Content-Type"] || headers["CONTENT_TYPE"] || headers["content-type"] || headers["HTTP_CONTENT_TYPE"]
 
@@ -55,6 +55,7 @@ module Hooks
           begin
             # Security: Limit JSON parsing depth and complexity to prevent JSON bombs
             parsed_payload = safe_json_parse(raw_body)
+            # Note: symbolize parameter is kept for backward compatibility but defaults to false
             parsed_payload = parsed_payload.transform_keys(&:to_sym) if symbolize && parsed_payload.is_a?(Hash)
             return parsed_payload
           rescue JSON::ParserError, ArgumentError => e

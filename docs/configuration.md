@@ -95,6 +95,12 @@ When set to `true`, enables a catch-all route that will handle requests to unkno
 **Default:** `false`  
 **Example:** `false`
 
+### `normalize_headers`
+
+When set to `true`, normalizes incoming HTTP headers by lowercasing and trimming them. This ensures consistency in header names and values.
+
+**Default:** `true`  
+
 ## Endpoint Options
 
 ### `path`
