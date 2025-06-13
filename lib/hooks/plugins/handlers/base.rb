@@ -16,7 +16,7 @@ module Hooks
         #
         # @param payload [Hash, String] Parsed request body (JSON Hash) or raw string
         # @param headers [Hash<String, String>] HTTP headers
-        # @param config [Hash] Merged endpoint configuration including opts section
+        # @param config [Hash] Merged endpoint configuration including opts section (symbolized keys)
         # @return [Hash, String, nil] Response body (will be auto-converted to JSON)
         # @raise [NotImplementedError] if not implemented by subclass
         def call(payload:, headers:, config:)

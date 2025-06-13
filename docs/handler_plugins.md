@@ -27,6 +27,66 @@ class Example < Hooks::Plugins::Handlers::Base
 end
 ```
 
+### `payload` Parameter
+
+The `payload` parameter can be a Hash or a String. If the payload is a String, it will be parsed as JSON. If it is a Hash, it will be passed directly to the handler. The payload can contain any data that the webhook sender wants to send.
+
+By default, the payload is parsed as JSON (if it can be) and then symbolized. This means that the keys in the payload will be converted to symbols. You can disable this auto-symbolization of the payload by setting the environment variable `HOOKS_SYMBOLIZE_PAYLOAD` to `false` or by setting the `symbolize_payload` option to `false` in the global configuration file.
+
+**TL;DR**: The payload is almost always a Hash with symbolized keys, regardless of whether the original payload was a Hash or a JSON String.
+
+For example, if the client sends the following JSON payload:
+
+```json
+{
+  "hello": "world",
+  "foo": ["bar", "baz"],
+  "truthy": true,
+  "coffee": {"is": "good"}
+}
+```
+
+It will be parsed and passed to the handler as:
+
+```ruby
+{
+  hello: "world",
+  foo: ["bar", "baz"],
+  truthy: true,
+  coffee: {is: "good"}
+}
+```
+
+### `headers` Parameter
+
+The `headers` parameter is a Hash that contains the HTTP headers that were sent with the webhook request. It includes standard headers like `host`, `user-agent`, `accept`, and any custom headers that the webhook sender may have included.
+
+Here is an example of what the `headers` parameter might look like:
+
+```ruby
+# example headers as a Hash
+{
+  "host" => "<HOSTNAME>", # e.g., "hooks.example.com"
+  "user-agent" => "foo-client/1.0",
+  "accept" => "application/json, text/plain, */*",
+  "accept-encoding" => "gzip, compress, deflate, br",
+  "client-name" => "foo",
+  "x-forwarded-for" => "<IP_ADDRESS>",
+  "x-forwarded-host" => "<HOSTNAME>", # e.g., "hooks.example.com"
+  "x-forwarded-proto" => "https",
+  "version" => "HTTP/1.1",
+  "Authorization" => "Bearer <TOKEN>" # a careful reminder that headers *can* contain sensitive information!
+}
+```
+
+It should be noted that the `headers` parameter is a Hash with **String keys** (not symbols). They are also normalized (lowercased and trimmed) to ensure consistency.
+
+You can disable this normalization by either setting the environment variable `HOOKS_NORMALIZE_HEADERS` to `false` or by setting the `normalize_headers` option to `false` in the global configuration file.
+
+### `config` Parameter
+
+The `config` parameter is a Hash (symbolized) that contains the endpoint configuration. This can include any additional settings or parameters that you want to use in your handler. Most of the time, this won't be used, but sometimes endpoint configs add `opts` that can be useful for the handler.
+
 ## Built-in Features
 
 This section goes into details on the built-in features that exist in all handler plugins that extend the `Hooks::Plugins::Handlers::Base` class.
