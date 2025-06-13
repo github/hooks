@@ -282,6 +282,13 @@ describe Hooks::Plugins::Auth::HMAC do
         long_headers = { default_header => long_signature }
         expect(valid_with(payload: long_payload, headers: long_headers)).to be true
       end
+
+      it "returns false and logs for signature containing non-null control characters" do
+        control_char = "\x01"
+        headers_with_control = { default_header => signature + control_char }
+        expect(log).to receive(:warn).with(/control characters/)
+        expect(valid_with(headers: headers_with_control)).to be false
+      end
     end
 
     context "format mismatch attacks" do
