@@ -153,17 +153,22 @@ This example will assume the following directory structure:
 
 ```text
 ├── config/
-│   ├── hooks.yml                 # global hooks config
-│   ├── puma.rb                   # puma config
+│   ├── hooks.yml                    # global hooks config
+│   ├── puma.rb                      # puma config
 │   └── endpoints/
 │       ├── hello.yml
 │       └── goodbye.yml
 └── plugins/
-    ├── handlers/                 # custom handler plugins
+    ├── handlers/                    # custom handler plugins
     │   ├── hello_handler.rb
     │   └── goodbye_handler.rb
+    ├── lifecycle/                   # custom lifecycle plugins (optional)
+    │   └── my_lifecycle_plugin.rb   # custom lifecycle plugin (optional)
+    ├── instruments/                 # custom instrument plugins (optional)
+    │   ├── stats.rb                 # a custom stats instrument plugin (optional)
+    │   └── failbot.rb               # a custom error notifier instrument plugin (optional)
     └── auth/
-        └── goodbye_auth.rb       # custom auth plugin (optional)
+        └── goodbye_auth.rb          # custom auth plugin (optional)
 ```
 
 Let's go through each step in detail.
@@ -174,8 +179,10 @@ First, create a `hooks.yml` file in the `config` directory. This file will defin
 
 ```yaml
 # file: config/hooks.yml
-handler_plugin_dir: ./plugins/handlers
-auth_plugin_dir: ./plugins/auth
+handler_plugin_dir: ./plugins/handlers # Directory for handler plugins
+auth_plugin_dir: ./plugins/auth # Directory for authentication plugins (optional)
+lifecycle_plugin_dir: ./plugins/lifecycle # Directory for lifecycle plugins (optional)
+instruments_plugin_dir: ./plugins/instruments # Directory for instrument plugins (optional)
 
 # Available endpoints
 # Each endpoint configuration file should be placed in the endpoints directory
@@ -213,6 +220,10 @@ auth:
   type: Goodbye # This is a custom authentication plugin you would define in the plugins/auth
   secret_env_key: GOODBYE_API_KEY # the name of the environment variable containing the secret
   header: Authorization
+
+# Optional additional options for the endpoint (can be anything you want)
+opts:
+  foo: bar
 ```
 
 #### 3. Implement your handler plugins
@@ -251,6 +262,8 @@ class GoodbyeHandler < Hooks::Plugins::Handlers::Base
 end
 ```
 
+See the [Handler Plugins](docs/handler_plugins.md) documentation for more information on how to create your own custom handler plugins and what the values of `payload`, `headers`, and `config` are when the `call` method is invoked.
+
 #### 4. Implement authentication plugins (optional)
 
 If you want to secure your webhook endpoints, you can create custom authentication plugins in the `plugins/auth` directory. Here is an example of a simple authentication plugin for the `/goodbye` endpoint:
@@ -268,7 +281,7 @@ module Hooks
           secret = fetch_secret(config, secret_env_key_name: :secret_env_key)
 
           # check if the Authorization header matches the secret
-          auth_header = headers[config[:header]]
+          auth_header = headers[config[:auth][:header]]
           return false unless auth_header
 
           # compare the Authorization header with the secret
@@ -279,6 +292,8 @@ module Hooks
   end
 end
 ```
+
+To learn more about how you can create your own custom authentication plugins, see the [Auth Plugins](docs/auth_plugins.md) documentation.
 
 #### Summary
 
