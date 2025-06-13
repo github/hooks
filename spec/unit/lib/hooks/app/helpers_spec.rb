@@ -121,7 +121,7 @@ describe Hooks::App::Helpers do
 
         result = helper.parse_payload(body, headers)
 
-        expect(result).to eq({ key: "value" })
+        expect(result).to eq({ "key" => "value" })
       end
 
       it "parses JSON that looks like JSON without content type" do
@@ -130,7 +130,7 @@ describe Hooks::App::Helpers do
 
         result = helper.parse_payload(body, headers)
 
-        expect(result).to eq({ key: "value" })
+        expect(result).to eq({ "key" => "value" })
       end
 
       it "parses JSON arrays" do
@@ -142,15 +142,15 @@ describe Hooks::App::Helpers do
         expect(result).to eq([{ "key" => "value" }])
       end
 
-      it "symbolizes keys by default" do
+      it "does not symbolize keys by default" do
         headers = { "Content-Type" => "application/json" }
         body = '{"string_key": "value", "nested": {"inner_key": "inner_value"}}'
 
         result = helper.parse_payload(body, headers)
 
         expect(result).to eq({
-          string_key: "value",
-          nested: { "inner_key" => "inner_value" } # Only top level is symbolized
+          "string_key" => "value",
+          "nested" => { "inner_key" => "inner_value" }
         })
       end
 
@@ -171,7 +171,7 @@ describe Hooks::App::Helpers do
 
         result = helper.parse_payload(body, headers)
 
-        expect(result).to eq({ key: "value" })
+        expect(result).to eq({ "key" => "value" })
       end
 
       it "handles lowercase content-type" do
@@ -180,7 +180,7 @@ describe Hooks::App::Helpers do
 
         result = helper.parse_payload(body, headers)
 
-        expect(result).to eq({ key: "value" })
+        expect(result).to eq({ "key" => "value" })
       end
 
       it "handles HTTP_CONTENT_TYPE" do
@@ -189,7 +189,7 @@ describe Hooks::App::Helpers do
 
         result = helper.parse_payload(body, headers)
 
-        expect(result).to eq({ key: "value" })
+        expect(result).to eq({ "key" => "value" })
       end
     end
 
@@ -212,7 +212,7 @@ describe Hooks::App::Helpers do
 
         result = helper.parse_payload(nested_json, headers)
 
-        expect(result).to eq({ level1: { "level2" => { "level3" => { "value" => "test" } } } })
+        expect(result).to eq({ "level1" => { "level2" => { "level3" => { "value" => "test" } } } })
       end
 
       it "returns raw body when JSON exceeds size limits" do

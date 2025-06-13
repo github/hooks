@@ -102,14 +102,13 @@ module Hooks
                     validate_auth!(raw_body, headers, endpoint_config, config)
                   end
 
-                  payload = parse_payload(raw_body, headers, symbolize: config[:symbolize_payload])
+                  payload = parse_payload(raw_body, headers, symbolize: false)
                   handler = load_handler(handler_class_name)
-                  normalized_headers = config[:normalize_headers] ? Hooks::Utils::Normalize.headers(headers) : headers
-                  symbolized_headers = config[:symbolize_headers] ? Hooks::Utils::Normalize.symbolize_headers(normalized_headers) : normalized_headers
+                  processed_headers = config[:normalize_headers] ? Hooks::Utils::Normalize.headers(headers) : headers
 
                   response = handler.call(
                     payload:,
-                    headers: symbolized_headers,
+                    headers: processed_headers,
                     config: endpoint_config
                   )
 

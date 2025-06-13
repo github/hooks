@@ -15,7 +15,6 @@ describe Hooks::Core::ConfigValidator do
           environment: "development",
           endpoints_dir: "./custom/endpoints",
           use_catchall_route: true,
-          symbolize_payload: false,
           normalize_headers: false
         }
 
@@ -115,14 +114,12 @@ describe Hooks::Core::ConfigValidator do
       it "coerces boolean-like string values" do
         config = {
           use_catchall_route: "true",
-          symbolize_payload: "false",
           normalize_headers: "1"
         }
 
         result = described_class.validate_global_config(config)
 
         expect(result[:use_catchall_route]).to be true
-        expect(result[:symbolize_payload]).to be false
         expect(result[:normalize_headers]).to be true # "1" gets coerced to true
       end
 
