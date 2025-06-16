@@ -99,7 +99,7 @@ module Hooks
                   raw_body = request.body.read
 
                   if endpoint_config[:auth]
-                    validate_auth!(raw_body, headers, endpoint_config, config)
+                    validate_auth!(raw_body, headers, endpoint_config, config, request_context)
                   end
 
                   payload = parse_payload(raw_body, headers, symbolize: false)
