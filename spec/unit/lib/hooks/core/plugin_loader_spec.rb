@@ -68,7 +68,7 @@ describe Hooks::Core::PluginLoader do
       let(:custom_handler_content) do
         <<~RUBY
           class CustomHandler < Hooks::Plugins::Handlers::Base
-            def call(payload:, headers:, config:)
+            def call(payload:, headers:, env:, config:)
               { message: "custom handler executed", payload: payload }
             end
           end
@@ -114,7 +114,7 @@ describe Hooks::Core::PluginLoader do
         custom_handler_class = described_class.handler_plugins["CustomHandler"]
         expect(custom_handler_class).to be < Hooks::Plugins::Handlers::Base
         handler_instance = custom_handler_class.new
-        result = handler_instance.call(payload: "test", headers: {}, config: {})
+        result = handler_instance.call(payload: "test", headers: {}, env: {}, config: {})
         expect(result).to include(message: "custom handler executed", payload: "test")
       end
     end
@@ -288,7 +288,7 @@ describe Hooks::Core::PluginLoader do
         wrong_file = File.join(temp_handler_dir, "wrong_handler.rb")
         File.write(wrong_file, <<~RUBY)
           class WrongHandler
-            def call(payload:, headers:, config:)
+            def call(payload:, headers:, env:, config:)
               { message: "wrong handler" }
             end
           end

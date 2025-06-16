@@ -33,7 +33,7 @@ Note: The `hooks` gem name is already taken on RubyGems, so this project is name
 2. **Plugin Architecture**
 
    * **Team Handlers**: `class MyHandler < Hooks::Plugins::Handlers::Base`
-     * Must implement `#call(payload:, headers:, config:)` method
+     * Must implement `#call(payload:, headers:, env:, config:)` method
      * `payload`: parsed request body (JSON Hash or raw String)
      * `headers`: HTTP headers as Hash with string keys
      * `config`: merged endpoint configuration including `opts` section
@@ -230,7 +230,7 @@ endpoints_dir:   ./config/endpoints # directory containing endpoint configs
        * **Before**: enforce `request_limit`, `request_timeout`
        * **Signature**: call custom or default validator
        * **Hooks**: run `on_request` plugins
-     * **Handler**: invoke `MyHandler.new.call(payload:, headers:, config:)`
+     * **Handler**: invoke `MyHandler.new.call(payload:, headers:, env:, config:)`
      * **After**: run `on_response` plugins
      * **Rescue**: on exception, run `on_error`, rethrow or format JSON error
 
@@ -528,9 +528,10 @@ Base class for all webhook handlers.
 class MyHandler < Hooks::Plugins::Handlers::Base
   # @param payload [Hash, String] Parsed request body or raw string
   # @param headers [Hash<String, String>] HTTP headers
+  # @param env [Hash] Rack environment (includes request context)
   # @param config [Hash] Merged endpoint configuration
   # @return [Hash, String, nil] Response body (auto-converted to JSON)
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     # Handler implementation
     { status: "processed", id: generate_id }
   end

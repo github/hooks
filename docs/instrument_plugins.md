@@ -160,7 +160,7 @@ Once configured, your custom instruments are available throughout the applicatio
 
 ```ruby
 class MyHandler < Hooks::Plugins::Handlers::Base
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     # Use your custom stats methods
     stats.increment("handler.calls", { handler: "MyHandler" })
     

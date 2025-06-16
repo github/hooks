@@ -58,6 +58,10 @@ module Hooks
               response = handler.call(
                 payload:,
                 headers:,
+                env: { # a very limited Rack environment is present for catchall endpoints
+                  "REQUEST_METHOD" => request.request_method,
+                  "hooks.request_id" => request_id,
+                },
                 config: {}
               )
 

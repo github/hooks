@@ -17,9 +17,10 @@ class Example < Hooks::Plugins::Handlers::Base
   #
   # @param payload [Hash, String] webhook payload (pure JSON with string keys)
   # @param headers [Hash] HTTP headers (string keys, optionally normalized - default is normalized)
+  # @param env [Hash] A modifed Rack environment that contains a lot of context about the request
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     return {
       status: "success"
     }
@@ -123,9 +124,10 @@ class Example < Hooks::Plugins::Handlers::Base
   #
   # @param payload [Hash, String] Webhook payload
   # @param headers [Hash<String, String>] HTTP headers
+  # @param env [Hash] A modified Rack environment that contains a lot of context about the request
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     result = Retryable.with_context(:default) do
       some_operation_that_might_fail()
     end

@@ -8,7 +8,7 @@ class GithubHandler < Hooks::Plugins::Handlers::Base
   # @param headers [Hash<String, String>] HTTP headers
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     log.info("🚀 Processing GitHub webhook 🚀")
     return {
       status: "success"

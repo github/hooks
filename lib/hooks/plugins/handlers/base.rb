@@ -16,10 +16,11 @@ module Hooks
         #
         # @param payload [Hash, String] Parsed request body (JSON Hash) or raw string
         # @param headers [Hash] HTTP headers (string keys, optionally normalized - default is normalized)
+        # @param env [Hash] Rack environment (contains the request context, headers, etc - very rich context)
         # @param config [Hash] Merged endpoint configuration including opts section (symbolized keys)
         # @return [Hash, String, nil] Response body (will be auto-converted to JSON)
         # @raise [NotImplementedError] if not implemented by subclass
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           raise NotImplementedError, "Handler must implement #call method"
         end
       end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class TestHandler < Hooks::Plugins::Handlers::Base
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     {
       status: "test_success",
       handler: "TestHandler",

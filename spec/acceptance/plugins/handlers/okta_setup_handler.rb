@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 class OktaSetupHandler < Hooks::Plugins::Handlers::Base
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     # Handle Okta's one-time verification challenge
     # Okta sends a GET request with x-okta-verification-challenge header
     # We need to return the challenge value in a JSON response
+
+    log.info("The OktaSetupHandler has been called with the #{env['REQUEST_METHOD']} method")
 
     verification_challenge = extract_verification_challenge(headers)
 

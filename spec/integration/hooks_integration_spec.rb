@@ -43,7 +43,7 @@ RSpec.describe "Hooks Integration" do
       require_relative "../../../../lib/hooks/plugins/handlers/base"
 
       class TestHandler < Hooks::Plugins::Handlers::Base
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           {
             status: "test_success",
             payload_received: payload,

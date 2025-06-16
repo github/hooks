@@ -20,6 +20,7 @@ class DefaultHandler < Hooks::Plugins::Handlers::Base
   #
   # @param payload [Hash, String] The webhook payload (parsed JSON or raw string)
   # @param headers [Hash<String, String>] HTTP headers from the webhook request
+  # @param env [Hash] Rack environment (contains the request context, headers, config, etc - very rich context)
   # @param config [Hash] Endpoint configuration containing handler options
   # @return [Hash] Response indicating successful processing
   # @option config [Hash] :opts Additional handler-specific configuration options
@@ -29,16 +30,21 @@ class DefaultHandler < Hooks::Plugins::Handlers::Base
   #   response = handler.call(
   #     payload: { "event" => "push" },
   #     headers: { "Content-Type" => "application/json" },
+  #     env: { "REQUEST_METHOD" => "POST", "hooks.request_id" => "12345" },
   #     config: { opts: {} }
   #   )
   #   # => { message: "webhook processed successfully", handler: "DefaultHandler", timestamp: "..." }
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
 
     log.info("🔔 Default handler invoked for webhook 🔔")
 
     # do some basic processing
     if payload
       log.debug("received payload: #{payload.inspect}")
+    end
+
+    if env
+      log.debug("default handler got a request with the following request_id: #{env['hooks.request_id']}")
     end
 
     {

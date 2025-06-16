@@ -6,6 +6,12 @@ describe DefaultHandler do
   let(:headers) { { "X-GitHub-Event" => "pull_request" } }
   let(:config) { { environment: "test" } }
   let(:handler) { described_class.new }
+  let(:env) do
+    {
+      "REQUEST_METHOD" => "GET",
+      "hooks.request_id" => "fake-request-id",
+    }
+  end
 
   before do
     allow(handler).to receive(:log).and_return(log)
@@ -13,7 +19,7 @@ describe DefaultHandler do
 
   describe "#call" do
     context "with valid parameters" do
-      let(:result) { handler.call(payload:, headers:, config:) }
+      let(:result) { handler.call(payload:, headers:, env:, config:) }
 
       it "logs that the default handler was invoked" do
         result
@@ -41,9 +47,10 @@ describe DefaultHandler do
       end
     end
 
-    context "with nil payload" do
+    context "with nil payload and nil env" do
       let(:payload) { nil }
-      let(:result) { handler.call(payload:, headers:, config:) }
+      let(:env) { nil }
+      let(:result) { handler.call(payload:, headers:, env:, config:) }
 
       it "does not log payload debug information" do
         result
@@ -61,7 +68,7 @@ describe DefaultHandler do
 
     context "with empty payload" do
       let(:payload) { {} }
-      let(:result) { handler.call(payload:, headers:, config:) }
+      let(:result) { handler.call(payload:, headers:, env:, config:) }
 
       it "logs the empty payload" do
         result
@@ -81,7 +88,7 @@ describe DefaultHandler do
           }
         }
       end
-      let(:result) { handler.call(payload:, headers:, config:) }
+      let(:result) { handler.call(payload:, headers:, env:, config:) }
 
       it "logs the complex payload structure" do
         result

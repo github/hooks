@@ -109,6 +109,7 @@ module Hooks
                   response = handler.call(
                     payload:,
                     headers: processed_headers,
+                    env: rack_env,
                     config: endpoint_config
                   )
 

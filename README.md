@@ -58,7 +58,7 @@ Here is a very high-level overview of how Hooks works:
     ```ruby
     # file: plugins/handlers/my_custom_handler.rb
     class MyCustomHandler < Hooks::Plugins::Handlers::Base
-      def call(payload:, headers:, config:)
+      def call(payload:, headers:, env:, config:)
         # Process the incoming webhook - optionally use the payload and headers
         # to perform some action or validation
         # For this example, we will just return a success message
@@ -233,7 +233,7 @@ Create custom handler plugins in the `plugins/handlers` directory to process inc
 ```ruby
 # file: plugins/handlers/hello_handler.rb
 class HelloHandler < Hooks::Plugins::Handlers::Base
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     # Process the incoming webhook - optionally use the payload and headers
     # to perform some action or validation
     # For this example, we will just return a success message
@@ -251,7 +251,7 @@ And another handler plugin for the `/goodbye` endpoint:
 ```ruby
 # file: plugins/handlers/goodbye_handler.rb
 class GoodbyeHandler < Hooks::Plugins::Handlers::Base
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     # Ditto for the goodbye endpoint
     {
       message: "goodbye webhook processed successfully",
