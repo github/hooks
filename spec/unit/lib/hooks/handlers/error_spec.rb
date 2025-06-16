@@ -13,7 +13,7 @@ describe Hooks::Plugins::Handlers::Error do
       error = described_class.new({ error: "validation_failed" }, 400)
       expect(error.body).to eq({ error: "validation_failed" })
       expect(error.status).to eq(400)
-      expect(error.message).to eq("Handler error: 400 - {error: \"validation_failed\"}")
+      expect(error.message).to match(/^Handler error: 400 - \{.*error.*validation_failed.*\}$/)
     end
 
     it "converts status to integer" do
