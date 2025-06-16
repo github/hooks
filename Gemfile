@@ -6,6 +6,7 @@ gemspec
 
 group :development do
   gem "irb", "~> 1"
+  gem "ostruct", "~> 0.6.1"
   gem "rack-test", "~> 2.2"
   gem "rspec", "~> 3"
   gem "rubocop", "~> 1"

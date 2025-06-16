@@ -81,7 +81,7 @@ RSpec.describe "Global Lifecycle Hooks Integration" do
     # Create a test handler plugin that uses stats and failbot
     handler_plugin_content = <<~RUBY
       class IntegrationTestHandler < Hooks::Plugins::Handlers::Base
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           stats.increment("handler.called", { handler: "IntegrationTestHandler" })
 
           if payload&.dig("should_fail")

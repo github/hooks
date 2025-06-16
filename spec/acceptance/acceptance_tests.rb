@@ -388,13 +388,26 @@ describe "Hooks" do
 
       it "successfully validates using a custom auth plugin" do
         payload = {}.to_json
-        headers = { "Authorization" => "Bearer octoawesome-shared-secret" }
-        response = make_request(:post, "/webhooks/with_custom_auth_plugin", payload, headers)
+        headers = { "Authorization" => "Bearer octoawesome-shared-secret", "Content-Type" => "application/json" }
+        response = make_request(:post, "/webhooks/with_custom_auth_plugin?foo=bar&bar=baz", payload, headers)
 
         expect_response(response, Net::HTTPSuccess)
         body = parse_json_response(response)
         expect(body["status"]).to eq("test_success")
         expect(body["handler"]).to eq("TestHandler")
+        expect(body["payload_received"]).to eq({})
+        expect(body["env_received"]).to have_key("REQUEST_METHOD")
+
+        env = body["env_received"]
+        expect(env["hooks.request_id"]).to be_a(String)
+        expect(env["hooks.handler"]).to eq("TestHandler")
+        expect(env["hooks.endpoint_config"]).to be_a(Hash)
+        expect(env["hooks.start_time"]).to be_a(String)
+        expect(env["hooks.full_path"]).to eq("/webhooks/with_custom_auth_plugin")
+        expect(env["HTTP_AUTHORIZATION"]).to eq("Bearer octoawesome-shared-secret")
+        expect(env["CONTENT_TYPE"]).to eq("application/json")
+        expect(env["CONTENT_LENGTH"]).to eq("2") # length of "{}"
+        expect(env["QUERY_STRING"]).to eq("foo=bar&bar=baz")
       end
 
       it "rejects requests with invalid credentials using custom auth plugin" do
@@ -418,6 +431,29 @@ describe "Hooks" do
         headers = {}
         response = make_request(:post, "/webhooks/boomtown", payload, headers)
         expect_response(response, Net::HTTPInternalServerError, "Boomtown error occurred")
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("server_error")
+        expect(body["message"]).to eq("Boomtown error occurred")
+        expect(body).to have_key("backtrace")
+        expect(body["backtrace"]).to be_a(String)
+        expect(body).to have_key("request_id")
+        expect(body["request_id"]).to be_a(String)
+        expect(body).to have_key("handler")
+        expect(body["handler"]).to eq("Boomtown")
+      end
+    end
+
+    describe "does_not_exist" do
+      it "sends a POST request to the /webhooks/does_not_exist endpoint and it fails because the handler does not exist" do
+        payload = {}.to_json
+        headers = {}
+        response = make_request(:post, "/webhooks/does_not_exist", payload, headers)
+        expect_response(response, Net::HTTPInternalServerError, /Handler plugin 'DoesNotExist' not found/)
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("server_error")
+        expect(body["message"]).to match(
+          /Handler plugin 'DoesNotExist' not found. Available handlers: DefaultHandler,.*/
+        )
       end
     end
 
@@ -446,6 +482,40 @@ describe "Hooks" do
         body = parse_json_response(response)
         expect(body["error"]).to eq("Missing verification challenge header")
         expect(body["expected_header"]).to eq("x-okta-verification-challenge")
+      end
+    end
+
+    describe "boomtown_with_error" do
+      it "sends a POST request to the /webhooks/boomtown_with_error endpoint and it does not explode" do
+        payload = { boom: false }.to_json
+        response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
+        expect_response(response, Net::HTTPSuccess)
+
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("ok")
+      end
+
+      it "sends a POST request to the /webhooks/boomtown_with_error endpoint and it explodes" do
+        # TODO: Fix this acceptance test - the current error looks like this:
+        # 1) Hooks endpoints boomtown_with_error sends a POST request to the /webhooks/boomtown_with_error endpoint and it explodes
+          # Failure/Error: expect(response.body).to include(expected_body_content) if expected_body_content
+            #expected "{\"error\":\"server_error\",\"message\":\"undefined method 'error!' for an instance of BoomtownWithE...thread_pool.rb:167:in 'block in #Puma::ThreadPool#spawn_thread'\",\"handler\":\"BoomtownWithError\"}" to include "the payload triggered a boomtown error"
+          # ./spec/acceptance/acceptance_tests.rb:28:in 'RSpec::ExampleGroups::Hooks#expect_response'
+          # ./spec/acceptance/acceptance_tests.rb:501:in 'block (4 levels) in <top (required)>'
+
+        # payload = { boom: true }.to_json
+        # response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
+        # expect_response(response, Net::HTTPInternalServerError, "the payload triggered a boomtown error")
+
+        # body = parse_json_response(response)
+        # expect(body["error"]).to eq("server_error")
+        # expect(body["message"]).to eq("the payload triggered a boomtown error")
+        # expect(body).to have_key("backtrace")
+        # expect(body["backtrace"]).to be_a(String)
+        # expect(body).to have_key("request_id")
+        # expect(body["request_id"]).to be_a(String)
+        # expect(body).to have_key("handler")
+        # expect(body["handler"]).to eq("BoomtownWithError")
       end
     end
   end

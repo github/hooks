@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "tempfile"
+require "json"
 require_relative "../../../spec_helper"
 
 describe Hooks::App::Helpers do
@@ -23,7 +24,7 @@ describe Hooks::App::Helpers do
       end
 
       def error!(message, code)
-        raise StandardError, "#{code}: #{message}"
+        raise StandardError, "#{code}: #{message.to_json}"
       end
     end
   end
@@ -57,8 +58,20 @@ describe Hooks::App::Helpers do
 
       it "raises error when content length exceeds limit" do
         helper.headers["Content-Length"] = "1500"
+        request_context = { request_id: "test-request-id" }
 
-        expect { helper.enforce_request_limits(config) }.to raise_error(StandardError, /413.*too large/)
+        error = nil
+        begin
+          helper.enforce_request_limits(config, request_context)
+        rescue StandardError => e
+          error = e
+        end
+
+        expect(error).to be_a(StandardError)
+        expect(error.message).to start_with("413: ")
+        body = error.message.sub("413: ", "")
+        parsed = JSON.parse(body)
+        expect(parsed).to eq({ "error" => "request_body_too_large", "message" => "request body too large", "request_id" => "test-request-id" })
       end
     end
 
@@ -283,7 +296,7 @@ describe Hooks::App::Helpers do
       it "returns error indicating handler not found" do
         expect do
           helper.load_handler("NonexistentHandler")
-        end.to raise_error(StandardError, /failed to get handler.*not found/)
+        end.to raise_error(StandardError, /Handler plugin.*not found/)
       end
     end
 

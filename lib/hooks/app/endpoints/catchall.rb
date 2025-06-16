@@ -27,20 +27,36 @@ module Hooks
         # :nocov:
         proc do
           request_id = uuid
+          start_time = Time.now
 
           # Use captured values
           config = captured_config
           log = captured_logger
 
+          full_path = "#{config[:root_path]}/#{params[:path]}"
+
+          handler_class_name = "DefaultHandler"
+          http_method = "post"
+
           # Set request context for logging
           request_context = {
             request_id:,
-            path: "/#{params[:path]}",
-            handler: "DefaultHandler"
+            path: full_path,
+            handler: handler_class_name
           }
 
           Hooks::Core::LogContext.with(request_context) do
             begin
+              rack_env_builder = RackEnvBuilder.new(
+                request,
+                headers,
+                request_context,
+                config,
+                start_time,
+                full_path
+              )
+              rack_env = rack_env_builder.build
+
               # Enforce request limits
               enforce_request_limits(config)
 
@@ -58,32 +74,34 @@ module Hooks
               response = handler.call(
                 payload:,
                 headers:,
+                env: rack_env,
                 config: {}
               )
 
-              log.info "request processed successfully with default handler (id: #{request_id})"
-
-              # Return response as JSON string when using txt format
+              log.info("successfully processed webhook event with handler: #{handler_class_name}")
+              log.debug("processing duration: #{Time.now - start_time}s")
               status 200
               content_type "application/json"
-              (response || { status: "ok" }).to_json
-
+              response.to_json
             rescue StandardError => e
-              log.error "request failed: #{e.message} (id: #{request_id})"
+              err_msg = "Error processing webhook event with handler: #{handler_class_name} - #{e.message} " \
+                "- request_id: #{request_id} - path: #{full_path} - method: #{http_method} - " \
+                "backtrace: #{e.backtrace.join("\n")}"
+              log.error(err_msg)
 
-              # Return error response
+              # construct a standardized error response
               error_response = {
-                error: e.message,
-                code: determine_error_code(e),
-                request_id: request_id
+                error: "server_error",
+                message: "an unexpected error occurred while processing the request",
+                request_id:
               }
 
-              # Add backtrace in all environments except production
-              unless config[:production] == true
-                error_response[:backtrace] = e.backtrace
-              end
+              # enrich the error response with details if not in production
+              error_response[:backtrace] = e.backtrace.join("\n") unless config[:production]
+              error_response[:message] = e.message unless config[:production]
+              error_response[:handler] = handler_class_name unless config[:production]
 
-              status error_response[:code]
+              status determine_error_code(e)
               content_type "application/json"
               error_response.to_json
             end

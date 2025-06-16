@@ -38,7 +38,7 @@ describe "Handler Loading Tests" do
       it "returns error indicating handler not found" do
         expect do
           instance.load_handler("NonexistentHandler")
-        end.to raise_error(StandardError, /failed to get handler.*not found/)
+        end.to raise_error(StandardError, /Handler plugin.*not found/)
       end
 
       it "returns error for any handler class name when no plugins loaded" do
@@ -47,7 +47,7 @@ describe "Handler Loading Tests" do
         handler_names.each do |name|
           expect do
             instance.load_handler(name)
-          end.to raise_error(StandardError, /failed to get handler.*not found/)
+          end.to raise_error(StandardError, /Handler plugin.*not found/)
         end
       end
     end

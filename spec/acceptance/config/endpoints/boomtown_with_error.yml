@@ -1,0 +1,3 @@
+path: /boomtown_with_error
+handler: BoomtownWithError
+method: post

@@ -5,6 +5,7 @@ require "json"
 require "securerandom"
 require_relative "helpers"
 require_relative "auth/auth"
+require_relative "rack_env_builder"
 require_relative "../plugins/handlers/base"
 require_relative "../plugins/handlers/default"
 require_relative "../core/logger_factory"
@@ -65,41 +66,27 @@ module Hooks
               Core::LogContext.with(request_context) do
                 begin
                   # Build Rack environment for lifecycle hooks
-                  rack_env = {
-                    "REQUEST_METHOD" => request.request_method,
-                    "PATH_INFO" => request.path_info,
-                    "QUERY_STRING" => request.query_string,
-                    "HTTP_VERSION" => request.env["HTTP_VERSION"],
-                    "REQUEST_URI" => request.url,
-                    "SERVER_NAME" => request.env["SERVER_NAME"],
-                    "SERVER_PORT" => request.env["SERVER_PORT"],
-                    "CONTENT_TYPE" => request.content_type,
-                    "CONTENT_LENGTH" => request.content_length,
-                    "REMOTE_ADDR" => request.env["REMOTE_ADDR"],
-                    "hooks.request_id" => request_id,
-                    "hooks.handler" => handler_class_name,
-                    "hooks.endpoint_config" => endpoint_config,
-                    "hooks.start_time" => start_time.iso8601,
-                    "hooks.full_path" => full_path
-                  }
-
-                  # Add HTTP headers to environment
-                  headers.each do |key, value|
-                    env_key = "HTTP_#{key.upcase.tr('-', '_')}"
-                    rack_env[env_key] = value
-                  end
+                  rack_env_builder = RackEnvBuilder.new(
+                    request,
+                    headers,
+                    request_context,
+                    endpoint_config,
+                    start_time,
+                    full_path
+                  )
+                  rack_env = rack_env_builder.build
 
                   # Call lifecycle hooks: on_request
                   Core::PluginLoader.lifecycle_plugins.each do |plugin|
                     plugin.on_request(rack_env)
                   end
 
-                  enforce_request_limits(config)
+                  enforce_request_limits(config, request_context)
                   request.body.rewind
                   raw_body = request.body.read
 
                   if endpoint_config[:auth]
-                    validate_auth!(raw_body, headers, endpoint_config, config)
+                    validate_auth!(raw_body, headers, endpoint_config, config, request_context)
                   end
 
                   payload = parse_payload(raw_body, headers, symbolize: false)
@@ -109,6 +96,7 @@ module Hooks
                   response = handler.call(
                     payload:,
                     headers: processed_headers,
+                    env: rack_env,
                     config: endpoint_config
                   )
 
@@ -123,21 +111,32 @@ module Hooks
                   content_type "application/json"
                   response.to_json
                 rescue StandardError => e
-                  # Call lifecycle hooks: on_error
+                  err_msg = "Error processing webhook event with handler: #{handler_class_name} - #{e.message} " \
+                    "- request_id: #{request_id} - path: #{full_path} - method: #{http_method} - " \
+                    "backtrace: #{e.backtrace.join("\n")}"
+                  log.error(err_msg)
+
+                  # call lifecycle hooks: on_error if the rack_env is available
+                  # if the rack_env is not available, it means the error occurred before we could build it
                   if defined?(rack_env)
                     Core::PluginLoader.lifecycle_plugins.each do |plugin|
                       plugin.on_error(e, rack_env)
                     end
                   end
 
-                  log.error("an error occuring during the processing of a webhook event - #{e.message}")
+                  # construct a standardized error response
                   error_response = {
-                    error: e.message,
-                    code: determine_error_code(e),
+                    error: "server_error",
+                    message: "an unexpected error occurred while processing the request",
                     request_id:
                   }
-                  error_response[:backtrace] = e.backtrace unless config[:production]
-                  status error_response[:code]
+
+                  # enrich the error response with details if not in production
+                  error_response[:backtrace] = e.backtrace.join("\n") unless config[:production]
+                  error_response[:message] = e.message unless config[:production]
+                  error_response[:handler] = handler_class_name unless config[:production]
+
+                  status determine_error_code(e)
                   content_type "application/json"
                   error_response.to_json
                 end

@@ -27,9 +27,14 @@ describe Hooks::App::Auth do
       context "with missing auth configuration" do
         it "rejects request with no auth config" do
           endpoint_config = {}
+          global_config = {}
+          request_context = { request_id: "test-request-id" }
+          log_msg = "authentication configuration missing or invalid - request_id: #{request_context[:request_id]}"
+
+          expect(log).to receive(:error).with(log_msg)
 
           expect do
-            instance.validate_auth!(payload, headers, endpoint_config)
+            instance.validate_auth!(payload, headers, endpoint_config, global_config, request_context)
           end.to raise_error(StandardError, /authentication configuration missing or invalid/)
         end
 

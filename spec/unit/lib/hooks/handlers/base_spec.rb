@@ -6,16 +6,22 @@ describe Hooks::Plugins::Handlers::Base do
     let(:payload) { { "data" => "test" } }
     let(:headers) { { "Content-Type" => "application/json" } }
     let(:config) { { "endpoint" => "/test" } }
+    let(:env) do
+      {
+        "REQUEST_METHOD" => "GET",
+        "hooks.request_id" => "fake-request-id",
+      }
+    end
 
     it "raises NotImplementedError by default" do
       expect {
-        handler.call(payload: payload, headers: headers, config: config)
+        handler.call(payload: payload, headers: headers, env: env, config: config)
       }.to raise_error(NotImplementedError, "Handler must implement #call method")
     end
 
     it "can be subclassed and overridden" do
       test_handler_class = Class.new(described_class) do
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           {
             received_payload: payload,
             received_headers: headers,
@@ -26,7 +32,7 @@ describe Hooks::Plugins::Handlers::Base do
       end
 
       handler = test_handler_class.new
-      result = handler.call(payload: payload, headers: headers, config: config)
+      result = handler.call(payload: payload, headers: headers, env: env, config: config)
 
       expect(result).to eq({
         received_payload: payload,
@@ -38,7 +44,7 @@ describe Hooks::Plugins::Handlers::Base do
 
     it "accepts different payload types" do
       test_handler_class = Class.new(described_class) do
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           { payload_class: payload.class.name }
         end
       end
@@ -46,21 +52,21 @@ describe Hooks::Plugins::Handlers::Base do
       handler = test_handler_class.new
 
       # Test with hash
-      result = handler.call(payload: { "test" => "data" }, headers: headers, config: config)
+      result = handler.call(payload: { "test" => "data" }, headers: headers, env: env, config: config)
       expect(result[:payload_class]).to eq("Hash")
 
       # Test with string
-      result = handler.call(payload: "raw string", headers: headers, config: config)
+      result = handler.call(payload: "raw string", headers: headers, env: env, config: config)
       expect(result[:payload_class]).to eq("String")
 
       # Test with nil
-      result = handler.call(payload: nil, headers: headers, config: config)
+      result = handler.call(payload: nil, headers: headers, env: env, config: config)
       expect(result[:payload_class]).to eq("NilClass")
     end
 
     it "accepts different header types" do
       test_handler_class = Class.new(described_class) do
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           { headers_received: headers }
         end
       end
@@ -69,21 +75,21 @@ describe Hooks::Plugins::Handlers::Base do
 
       # Test with hash
       headers_hash = { "User-Agent" => "test", "X-Custom" => "value" }
-      result = handler.call(payload: payload, headers: headers_hash, config: config)
+      result = handler.call(payload: payload, headers: headers_hash, env: env, config: config)
       expect(result[:headers_received]).to eq(headers_hash)
 
       # Test with empty hash
-      result = handler.call(payload: payload, headers: {}, config: config)
+      result = handler.call(payload: payload, headers: {}, env: env, config: config)
       expect(result[:headers_received]).to eq({})
 
       # Test with nil
-      result = handler.call(payload: payload, headers: nil, config: config)
+      result = handler.call(payload: payload, headers: nil, env: env, config: config)
       expect(result[:headers_received]).to be_nil
     end
 
     it "accepts different config types" do
       test_handler_class = Class.new(described_class) do
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           { config_received: config }
         end
       end
@@ -96,25 +102,25 @@ describe Hooks::Plugins::Handlers::Base do
         "opts" => { "timeout" => 30 },
         "handler" => "TestHandler"
       }
-      result = handler.call(payload: payload, headers: headers, config: complex_config)
+      result = handler.call(payload: payload, headers: headers, env: env, config: complex_config)
       expect(result[:config_received]).to eq(complex_config)
 
       # Test with empty config
-      result = handler.call(payload: payload, headers: headers, config: {})
+      result = handler.call(payload: payload, headers: headers, env: env, config: {})
       expect(result[:config_received]).to eq({})
     end
 
     it "requires all keyword arguments" do
       expect {
-        handler.call(payload: payload, headers: headers)
+        handler.call(payload: payload, headers: headers, env: env)
       }.to raise_error(ArgumentError, /missing keyword.*config/)
 
       expect {
-        handler.call(payload: payload, config: config)
+        handler.call(payload: payload, env: env, config: config)
       }.to raise_error(ArgumentError, /missing keyword.*headers/)
 
       expect {
-        handler.call(headers: headers, config: config)
+        handler.call(headers: headers, env: env, config: config)
       }.to raise_error(ArgumentError, /missing keyword.*payload/)
     end
   end
@@ -127,7 +133,7 @@ describe Hooks::Plugins::Handlers::Base do
 
     it "maintains method signature in subclasses" do
       child_class = Class.new(described_class) do
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           "child implementation"
         end
       end
@@ -136,6 +142,7 @@ describe Hooks::Plugins::Handlers::Base do
       result = handler.call(
         payload: { "test" => "data" },
         headers: { "Content-Type" => "application/json" },
+        env: { "REQUEST_METHOD" => "POST", "hooks.request_id" => "test-id" },
         config: { "endpoint" => "/test" }
       )
 
@@ -181,7 +188,7 @@ describe Hooks::Plugins::Handlers::Base do
 
     it "allows stats and failbot usage in subclasses" do
       test_handler_class = Class.new(described_class) do
-        def call(payload:, headers:, config:)
+        def call(payload:, headers:, env:, config:)
           stats.increment("handler.called", { handler: "TestHandler" })
 
           if payload.nil?
@@ -225,14 +232,14 @@ describe Hooks::Plugins::Handlers::Base do
         handler = test_handler_class.new
 
         # Test with non-nil payload
-        handler.call(payload: { "test" => "data" }, headers: {}, config: {})
+        handler.call(payload: { "test" => "data" }, headers: {}, env: {}, config: {})
         expect(collected_data).to include(
           { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "TestHandler" } }
         )
 
         # Test with nil payload
         collected_data.clear
-        handler.call(payload: nil, headers: {}, config: {})
+        handler.call(payload: nil, headers: {}, env: {}, config: {})
         expect(collected_data).to match_array([
           { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "TestHandler" } },
           { type: :failbot, action: :report, message: "Payload is nil", context: { handler: "TestHandler" } }

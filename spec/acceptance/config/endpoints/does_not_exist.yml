@@ -1,0 +1,2 @@
+path: /does_not_exist
+handler: DoesNotExist

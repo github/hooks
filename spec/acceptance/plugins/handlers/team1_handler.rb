@@ -8,7 +8,7 @@ class Team1Handler < Hooks::Plugins::Handlers::Base
   # @param headers [Hash<String, String>] HTTP headers
   # @param config [Hash] Endpoint configuration
   # @return [Hash] Response data
-  def call(payload:, headers:, config:)
+  def call(payload:, headers:, env:, config:)
     log.debug("got a call to #{self.class.name} with payload: #{payload.inspect}")
 
     # demo the global retryable instance is a kinda silly way
