@@ -78,7 +78,12 @@ module Hooks
       # @return [Object] An instance of the loaded handler class
       # @raise [StandardError] If handler cannot be found
       def load_handler(handler_class_name)
-        # Get handler class from loaded plugins registry (boot-time loaded only)
+        # Get handler class from loaded plugins registry (the registry is populated at boot time)
+        # NOTE: We create a new instance per request (not reuse boot-time instances) because:
+        # - Security: Prevents state pollution and information leakage between requests
+        # - Thread Safety: Avoids race conditions from shared instance state
+        # - Performance: Handler instantiation is fast; reusing instances provides minimal gain
+        # - Memory: Allows garbage collection of short-lived objects (Ruby GC optimization)
         begin
           handler_class = Core::PluginLoader.get_handler_plugin(handler_class_name)
           return handler_class.new
