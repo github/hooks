@@ -140,6 +140,57 @@ This section goes into details on the built-in features that exist in all handle
 
 The `log.debug`, `log.info`, `log.warn`, and `log.error` methods are available in all handler plugins. They are used to log messages at different levels of severity.
 
+### `#error!`
+
+All handler plugins have access to the `error!` method, which is used to raise an error with a specific message and HTTP status code. This is useful for returning error responses to the webhook sender.
+
+```ruby
+class Example < Hooks::Plugins::Handlers::Base
+  # Example webhook handler
+  #
+  # @param payload [Hash, String] Webhook payload
+  # @param headers [Hash<String, String>] HTTP headers
+  # @param env [Hash] A modified Rack environment that contains a lot of context about the request
+  # @param config [Hash] Endpoint configuration
+  # @return [Hash] Response data
+  def call(payload:, headers:, env:, config:)
+
+    if payload.nil? || payload.empty?
+      log.error("Payload is empty or nil")
+      error!("Payload cannot be empty or nil", 400)
+    end
+
+    return {
+      status: "success"
+    }
+  end
+end
+```
+
+You can also use the `error!` method to return a JSON response as well:
+
+```ruby
+class Example < Hooks::Plugins::Handlers::Base
+  def call(payload:, headers:, env:, config:)
+
+    if payload.nil? || payload.empty?
+      log.error("Payload is empty or nil")
+      error!({
+        error: "payload_empty",
+        message: "the payload cannot be empty or nil",
+        success: false,
+        custom_value: "some_custom_value",
+        request_id: env["hooks.request_id"]
+      }, 500)
+    end
+
+    return {
+      status: "success"
+    }
+  end
+end
+```
+
 ### `#Retryable.with_context(:default)`
 
 This method uses a default `Retryable` context to handle retries. It is used to wrap the execution of a block of code that may need to be retried in case of failure.
