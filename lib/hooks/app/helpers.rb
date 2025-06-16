@@ -17,10 +17,11 @@ module Hooks
       # Enforce request size and timeout limits
       #
       # @param config [Hash] The configuration hash, must include :request_limit
+      # @param request_context [Hash] Context for the request, e.g. request ID (optional)
       # @raise [StandardError] Halts with error if request body is too large
       # @return [void]
       # @note Timeout enforcement should be handled at the server level (e.g., Puma)
-      def enforce_request_limits(config)
+      def enforce_request_limits(config, request_context = {})
         # Optimized content length check - check most common sources first
         content_length = request.content_length if respond_to?(:request) && request.respond_to?(:content_length)
 
@@ -34,7 +35,8 @@ module Hooks
         content_length = content_length&.to_i
 
         if content_length && content_length > config[:request_limit]
-          error!("request body too large", 413)
+          request_id = request_context&.dig(:request_id)
+          error!({ error: "request_body_too_large", message: "request body too large", request_id: }, 413)
         end
 
         # Note: Timeout enforcement would typically be handled at the server level (Puma, etc.)

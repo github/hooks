@@ -94,7 +94,7 @@ module Hooks
                     plugin.on_request(rack_env)
                   end
 
-                  enforce_request_limits(config)
+                  enforce_request_limits(config, request_context)
                   request.body.rewind
                   raw_body = request.body.read
 
