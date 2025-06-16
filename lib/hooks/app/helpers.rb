@@ -87,7 +87,7 @@ module Hooks
         begin
           handler_class = Core::PluginLoader.get_handler_plugin(handler_class_name)
           return handler_class.new
-        rescue => e
+        rescue StandardError => e
           error!("failed to get handler '#{handler_class_name}': #{e.message}", 500)
         end
       end
