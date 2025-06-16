@@ -10,6 +10,10 @@ class BoomtownWithError < Hooks::Plugins::Handlers::Base
       error!({
         error: "boomtown_with_error",
         message: "the payload triggered a boomtown error",
+        foo: "bar",
+        truthy: true,
+        payload:,
+        headers:,
         request_id: env["hooks.request_id"]
       }, 500)
     end

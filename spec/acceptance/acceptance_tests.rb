@@ -505,6 +505,8 @@ describe "Hooks" do
         expect(body["message"]).to eq("the payload triggered a boomtown error")
         expect(body).to have_key("request_id")
         expect(body["request_id"]).to be_a(String)
+        expect(body["foo"]).to eq("bar")
+        expect(body["truthy"]).to eq(true)
       end
     end
   end
