@@ -95,6 +95,7 @@ GEM
     net-http (0.6.0)
       uri
     nio4r (2.7.4)
+    ostruct (0.6.1)
     parallel (1.27.0)
     parser (3.3.8.0)
       ast (~> 2.4.1)
@@ -221,6 +222,7 @@ PLATFORMS
 DEPENDENCIES
   hooks-ruby!
   irb (~> 1)
+  ostruct (~> 0.6.1)
   rack-test (~> 2.2)
   rspec (~> 3)
   rubocop (~> 1)
