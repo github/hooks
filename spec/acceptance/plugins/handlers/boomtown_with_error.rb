@@ -6,7 +6,7 @@ class BoomtownWithError < Hooks::Plugins::Handlers::Base
     if payload["boom"] == true
       log.error("boomtown error triggered by payload: #{payload.inspect} - request_id: #{env["hooks.request_id"]}")
 
-      # TODO: Get Grape's `error!` method to work with this
+      # Use Grape's `error!` method to return a custom error response
       error!({
         error: "boomtown_with_error",
         message: "the payload triggered a boomtown error",
