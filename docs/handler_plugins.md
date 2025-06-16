@@ -100,6 +100,34 @@ It should be noted that the `headers` parameter is a Hash with **string keys** (
 
 You can disable header normalization by either setting the environment variable `HOOKS_NORMALIZE_HEADERS` to `false` or by setting the `normalize_headers` option to `false` in the global configuration file.
 
+### `env` Parameter
+
+The `env` parameter is a Hash that contains a modified Rack environment. It provides a lot of context about the request, including information about the request method, path, query parameters, and more. This can be useful for debugging or for accessing additional request information. It is considered *everything plus the kitchen sink* that you might need to know about the request.
+
+Here is a partial example of what the `env` parameter might look like:
+
+```ruby
+{
+  "REQUEST_METHOD" => "POST",
+  "PATH_INFO" => "/webhooks/example",
+  "QUERY_STRING" => "foo=bar&baz=123",
+  "HTTP_VERSION" => "HTTP/1.1",
+  "REQUEST_URI" => "https://hooks.example.com/webhooks/example?foo=bar&baz=qux",
+  "SERVER_NAME" => "hooks.example.com",
+  "SERVER_PORT" => 443,
+  "CONTENT_TYPE" => "application/json",
+  "CONTENT_LENGTH" => 123,
+  "REMOTE_ADDR" => "<IP_ADDRESS>",
+  "hooks.request_id" => "<REQUEST_ID>",
+  "hooks.handler" => "ExampleHandler"
+  "hooks.endpoint_config" => {}
+  "hooks.start_time" => "2023-10-01T12:34:56Z",
+  # etc...
+}
+```
+
+For the complete list of available keys in the `env` parameter, you can refer to the source code at [`lib/hooks/app/rack_env_builder.rb`](../lib/hooks/app/rack_env_builder.rb).
+
 ### `config` Parameter
 
 The `config` parameter is a Hash (symbolized) that contains the endpoint configuration. This can include any additional settings or parameters that you want to use in your handler. Most of the time, this won't be used, but sometimes endpoint configs add `opts` that can be useful for the handler.

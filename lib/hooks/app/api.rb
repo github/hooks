@@ -5,6 +5,7 @@ require "json"
 require "securerandom"
 require_relative "helpers"
 require_relative "auth/auth"
+require_relative "rack_env_builder"
 require_relative "../plugins/handlers/base"
 require_relative "../plugins/handlers/default"
 require_relative "../core/logger_factory"
@@ -65,29 +66,15 @@ module Hooks
               Core::LogContext.with(request_context) do
                 begin
                   # Build Rack environment for lifecycle hooks
-                  rack_env = {
-                    "REQUEST_METHOD" => request.request_method,
-                    "PATH_INFO" => request.path_info,
-                    "QUERY_STRING" => request.query_string,
-                    "HTTP_VERSION" => request.env["HTTP_VERSION"],
-                    "REQUEST_URI" => request.url,
-                    "SERVER_NAME" => request.env["SERVER_NAME"],
-                    "SERVER_PORT" => request.env["SERVER_PORT"],
-                    "CONTENT_TYPE" => request.content_type,
-                    "CONTENT_LENGTH" => request.content_length,
-                    "REMOTE_ADDR" => request.env["REMOTE_ADDR"],
-                    "hooks.request_id" => request_id,
-                    "hooks.handler" => handler_class_name,
-                    "hooks.endpoint_config" => endpoint_config,
-                    "hooks.start_time" => start_time.iso8601,
-                    "hooks.full_path" => full_path
-                  }
-
-                  # Add HTTP headers to environment
-                  headers.each do |key, value|
-                    env_key = "HTTP_#{key.upcase.tr('-', '_')}"
-                    rack_env[env_key] = value
-                  end
+                  rack_env_builder = RackEnvBuilder.new(
+                    request,
+                    headers,
+                    request_context,
+                    endpoint_config,
+                    start_time,
+                    full_path
+                  )
+                  rack_env = rack_env_builder.build
 
                   # Call lifecycle hooks: on_request
                   Core::PluginLoader.lifecycle_plugins.each do |plugin|
