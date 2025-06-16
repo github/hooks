@@ -25,7 +25,10 @@ module Hooks
         # Ensure auth type is present and valid
         auth_type = auth_config&.dig(:type)
         unless auth_type&.is_a?(String) && !auth_type.strip.empty?
-          error!("authentication configuration missing or invalid", 500)
+          error!({
+            error: "authentication_configuration_error",
+            message: "authentication configuration missing or invalid"
+          }, 500)
         end
 
         # Get auth plugin from loaded plugins registry (boot-time loaded only)
@@ -33,13 +36,19 @@ module Hooks
           auth_class = Core::PluginLoader.get_auth_plugin(auth_type)
         rescue => e
           log.error("failed to load auth plugin '#{auth_type}': #{e.message}")
-          error!("unsupported auth type '#{auth_type}'", 400)
+          error!({
+            error: "authentication_plugin_error",
+            message: "unsupported auth type '#{auth_type}'"
+          }, 400)
         end
 
         log.debug("validating auth for request with auth_class: #{auth_class.name}")
         unless auth_class.valid?(payload:, headers:, config: endpoint_config)
           log.warn("authentication failed for request with auth_class: #{auth_class.name}")
-          error!("authentication failed", 401)
+          error!({
+            error: "authentication_failed",
+            message: "authentication failed"
+          }, 401)
         end
       end
 
