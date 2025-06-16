@@ -388,13 +388,26 @@ describe "Hooks" do
 
       it "successfully validates using a custom auth plugin" do
         payload = {}.to_json
-        headers = { "Authorization" => "Bearer octoawesome-shared-secret" }
-        response = make_request(:post, "/webhooks/with_custom_auth_plugin", payload, headers)
+        headers = { "Authorization" => "Bearer octoawesome-shared-secret", "Content-Type" => "application/json" }
+        response = make_request(:post, "/webhooks/with_custom_auth_plugin?foo=bar&bar=baz", payload, headers)
 
         expect_response(response, Net::HTTPSuccess)
         body = parse_json_response(response)
         expect(body["status"]).to eq("test_success")
         expect(body["handler"]).to eq("TestHandler")
+        expect(body["payload_received"]).to eq({})
+        expect(body["env_received"]).to have_key("REQUEST_METHOD")
+
+        env = body["env_received"]
+        expect(env["hooks.request_id"]).to be_a(String)
+        expect(env["hooks.handler"]).to eq("TestHandler")
+        expect(env["hooks.endpoint_config"]).to be_a(Hash)
+        expect(env["hooks.start_time"]).to be_a(String)
+        expect(env["hooks.full_path"]).to eq("/webhooks/with_custom_auth_plugin")
+        expect(env["HTTP_AUTHORIZATION"]).to eq("Bearer octoawesome-shared-secret")
+        expect(env["CONTENT_TYPE"]).to eq("application/json")
+        expect(env["CONTENT_LENGTH"]).to eq("2") # length of "{}"
+        expect(env["QUERY_STRING"]).to eq("foo=bar&bar=baz")
       end
 
       it "rejects requests with invalid credentials using custom auth plugin" do
