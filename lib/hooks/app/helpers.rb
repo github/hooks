@@ -84,12 +84,8 @@ module Hooks
         # - Thread Safety: Avoids race conditions from shared instance state
         # - Performance: Handler instantiation is fast; reusing instances provides minimal gain
         # - Memory: Allows garbage collection of short-lived objects (Ruby GC optimization)
-        begin
-          handler_class = Core::PluginLoader.get_handler_plugin(handler_class_name)
-          return handler_class.new
-        rescue StandardError => e
-          error!("failed to get handler '#{handler_class_name}': #{e.message}", 500)
-        end
+        handler_class = Core::PluginLoader.get_handler_plugin(handler_class_name)
+        return handler_class.new
       end
 
       private

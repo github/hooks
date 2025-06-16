@@ -430,6 +430,20 @@ describe "Hooks" do
       end
     end
 
+    describe "does_not_exist" do
+      it "sends a POST request to the /webhooks/does_not_exist endpoint and it fails because the handler does not exist" do
+        payload = {}.to_json
+        headers = {}
+        response = make_request(:post, "/webhooks/does_not_exist", payload, headers)
+        expect_response(response, Net::HTTPInternalServerError, /Handler plugin 'DoesNotExist' not found/)
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("server_error")
+        expect(body["message"]).to match(
+          /Handler plugin 'DoesNotExist' not found. Available handlers: DefaultHandler,.*/
+        )
+      end
+    end
+
     describe "okta setup" do
       it "sends a POST request to the /webhooks/okta_webhook_setup endpoint and it fails because it is not a GET" do
         payload = {}.to_json

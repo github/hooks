@@ -296,7 +296,7 @@ describe Hooks::App::Helpers do
       it "returns error indicating handler not found" do
         expect do
           helper.load_handler("NonexistentHandler")
-        end.to raise_error(StandardError, /failed to get handler.*not found/)
+        end.to raise_error(StandardError, /Handler plugin.*not found/)
       end
     end
 
