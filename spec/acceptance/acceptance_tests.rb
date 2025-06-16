@@ -508,6 +508,17 @@ describe "Hooks" do
         expect(body["foo"]).to eq("bar")
         expect(body["truthy"]).to eq(true)
       end
+
+      it "sends a POST request to the /webhooks/boomtown_with_error endpoint and it explodes with a simple text error" do
+        payload = { boom_simple_text: true }.to_json
+        response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
+        expect_response(response, Net::HTTPInternalServerError, "boomtown_with_error: the payload triggered a simple text boomtown error")
+
+        body = response.body
+        expect(body).to eq("boomtown_with_error: the payload triggered a simple text boomtown error")
+        expect(response.content_type).to eq("text/plain")
+        expect(response.code).to eq("500")
+      end
     end
   end
 end

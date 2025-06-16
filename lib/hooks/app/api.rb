@@ -112,24 +112,22 @@ module Hooks
                   content_type "application/json"
                   response.to_json
                 rescue Hooks::Plugins::Handlers::Error => e
-                  # Handler called error! method - return the specified error response
-                  log.info("handler returned error response: #{handler_class_name} - status: #{e.status} - body: #{e.body}")
+                  # Handler called error! method - immediately return error response and exit the request
+                  log.debug("handler #{handler_class_name} called `error!` method")
 
-                  # Call lifecycle hooks: on_response (treating error! as a valid response)
-                  if defined?(rack_env)
-                    Core::PluginLoader.lifecycle_plugins.each do |plugin|
-                      plugin.on_response(rack_env, e.body)
-                    end
-                  end
+                  error_response = nil
 
                   status e.status
-                  content_type "application/json"
                   case e.body
                   when String
-                    e.body
+                    content_type "text/plain"
+                    error_response = e.body
                   else
-                    e.body.to_json
+                    content_type "application/json"
+                    error_response = e.body.to_json
                   end
+
+                  return error_response
                 rescue StandardError => e
                   err_msg = "Error processing webhook event with handler: #{handler_class_name} - #{e.message} " \
                     "- request_id: #{request_id} - path: #{full_path} - method: #{http_method} - " \
