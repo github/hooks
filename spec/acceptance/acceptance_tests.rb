@@ -418,6 +418,15 @@ describe "Hooks" do
         headers = {}
         response = make_request(:post, "/webhooks/boomtown", payload, headers)
         expect_response(response, Net::HTTPInternalServerError, "Boomtown error occurred")
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("server_error")
+        expect(body["message"]).to eq("Boomtown error occurred")
+        expect(body).to have_key("backtrace")
+        expect(body["backtrace"]).to be_a(String)
+        expect(body).to have_key("request_id")
+        expect(body["request_id"]).to be_a(String)
+        expect(body).to have_key("handler")
+        expect(body["handler"]).to eq("Boomtown")
       end
     end
 

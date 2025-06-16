@@ -123,21 +123,32 @@ module Hooks
                   content_type "application/json"
                   response.to_json
                 rescue StandardError => e
-                  # Call lifecycle hooks: on_error
+                  err_msg = "Error processing webhook event with handler: #{handler_class_name} - #{e.message} " \
+                    "- request_id: #{request_id} - path: #{full_path} - method: #{http_method} - " \
+                    "backtrace: #{e.backtrace.join("\n")}"
+                  log.error(err_msg)
+
+                  # call lifecycle hooks: on_error if the rack_env is available
+                  # if the rack_env is not available, it means the error occurred before we could build it
                   if defined?(rack_env)
                     Core::PluginLoader.lifecycle_plugins.each do |plugin|
                       plugin.on_error(e, rack_env)
                     end
                   end
 
-                  log.error("an error occuring during the processing of a webhook event - #{e.message}")
+                  # construct a standardized error response
                   error_response = {
-                    error: e.message,
-                    code: determine_error_code(e),
+                    error: "server_error",
+                    message: "an unexpected error occurred while processing the request",
                     request_id:
                   }
-                  error_response[:backtrace] = e.backtrace unless config[:production]
-                  status error_response[:code]
+
+                  # enrich the error response with details if not in production
+                  error_response[:backtrace] = e.backtrace.join("\n") unless config[:production]
+                  error_response[:message] = e.message unless config[:production]
+                  error_response[:handler] = handler_class_name unless config[:production]
+
+                  status determine_error_code(e)
                   content_type "application/json"
                   error_response.to_json
                 end
