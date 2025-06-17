@@ -48,7 +48,6 @@ module Hooks
       class HMAC < Base
         # Security constants
         MAX_SIGNATURE_LENGTH = ENV.fetch("HOOKS_MAX_SIGNATURE_LENGTH", 1024).to_i # Prevent DoS attacks via large signatures
-        MAX_PAYLOAD_SIZE = ENV.fetch("MAX_PAYLOAD_SIZE", 10 * 1024 * 1024).to_i # 10MB limit for payload validation
 
         # Default configuration values for HMAC validation
         #
@@ -114,43 +113,22 @@ module Hooks
 
           validator_config = build_config(config)
 
-          # Security: Check raw headers BEFORE normalization to detect tampering
-          unless headers.respond_to?(:each)
-            log.warn("Auth::HMAC validation failed: Invalid headers object")
-            return false
-          end
+          # Security: Check raw headers and payload BEFORE processing
+          return false unless valid_headers?(headers)
+          return false unless valid_payload_size?(payload)
 
           signature_header = validator_config[:header]
 
           # Find the signature header with case-insensitive matching
           raw_signature = find_header_value(headers, signature_header)
 
-          if payload && payload.bytesize > MAX_PAYLOAD_SIZE
-            log.warn("Auth::HMAC validation failed: Payload size exceeds maximum limit of #{MAX_PAYLOAD_SIZE} bytes")
-            return false
-          end
-
           if raw_signature.nil? || raw_signature.empty?
             log.warn("Auth::HMAC validation failed: Missing or empty signature header '#{signature_header}'")
             return false
           end
 
-          # Security: Reject signatures with leading/trailing whitespace
-          if raw_signature != raw_signature.strip
-            log.warn("Auth::HMAC validation failed: Signature contains leading/trailing whitespace")
-            return false
-          end
-
-          if raw_signature.length > MAX_SIGNATURE_LENGTH
-            log.warn("Auth::HMAC validation failed: Signature length exceeds maximum limit of #{MAX_SIGNATURE_LENGTH} characters")
-            return false
-          end
-
-          # Security: Reject signatures containing null bytes or other control characters
-          if raw_signature.match?(/[\u0000-\u001f\u007f-\u009f]/)
-            log.warn("Auth::HMAC validation failed: Signature contains control characters")
-            return false
-          end
+          # Validate signature format using shared validation but with HMAC-specific length limit
+          return false unless validate_signature_format(raw_signature)
 
           # Now we can safely normalize headers for the rest of the validation
           normalized_headers = normalize_headers(headers)
@@ -209,6 +187,22 @@ module Hooks
         end
 
         private
+
+        # Validate signature format for HMAC (uses HMAC-specific length limit)
+        #
+        # @param signature [String] Raw signature to validate
+        # @return [Boolean] true if signature is valid
+        # @api private
+        def self.validate_signature_format(signature)
+          # Check signature length with HMAC-specific limit
+          if signature.length > MAX_SIGNATURE_LENGTH
+            log.warn("Auth::HMAC validation failed: Signature length exceeds maximum limit of #{MAX_SIGNATURE_LENGTH} characters")
+            return false
+          end
+
+          # Use shared validation for other checks
+          valid_header_value?(signature, "Signature")
+        end
 
         # Build final configuration by merging defaults with provided config
         #

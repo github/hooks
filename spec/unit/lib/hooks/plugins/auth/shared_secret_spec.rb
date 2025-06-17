@@ -26,6 +26,7 @@ describe Hooks::Plugins::Auth::SharedSecret do
   end
 
   before do
+    allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return(secret)
   end
 
@@ -98,6 +99,22 @@ describe Hooks::Plugins::Auth::SharedSecret do
 
         nil_headers = { default_header => nil }
         expect(valid_with(headers: nil_headers)).to be false
+      end
+
+      it "returns false for secrets exceeding maximum length limit" do
+        # Create secret larger than MAX_HEADER_VALUE_LENGTH (1024 + 1 characters)
+        oversized_secret = "a" * (1024 + 1)
+        oversized_headers = { default_header => oversized_secret }
+        expect(log).to receive(:warn).with(/exceeds maximum length/)
+        expect(valid_with(headers: oversized_headers)).to be false
+      end
+
+      it "returns false for payloads exceeding maximum size limit" do
+        # Create payload larger than MAX_PAYLOAD_SIZE (10MB + 1 byte)
+        oversized_payload = "a" * (10 * 1024 * 1024 + 1)
+        headers = { default_header => secret }
+        expect(log).to receive(:warn).with(/Payload size exceeds maximum limit/)
+        expect(valid_with(payload: oversized_payload, headers: headers)).to be false
       end
     end
 
