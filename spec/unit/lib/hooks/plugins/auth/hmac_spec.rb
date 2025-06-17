@@ -699,7 +699,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
   describe ".parse_structured_header" do
     it "parses valid structured header with timestamp and signature" do
-      config = { signature_key: "v1", timestamp_key: "t" }
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
       header_value = "t=1663781880,v1=0123456789abcdef"
 
       result = described_class.send(:parse_structured_header, header_value, config)
@@ -710,8 +710,20 @@ describe Hooks::Plugins::Auth::HMAC do
       })
     end
 
+    it "parses valid structured header with timestamp and signature using different separators" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: ":", structured_header_separator: "." }
+      header_value = "t:1663781880.v1:0123456789abcdef"
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to eq({
+        signature: "0123456789abcdef",
+        timestamp: "1663781880"
+      })
+    end
+
     it "parses structured header with only signature" do
-      config = { signature_key: "v1", timestamp_key: "t" }
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
       header_value = "v1=abcdef123456"
 
       result = described_class.send(:parse_structured_header, header_value, config)
@@ -722,7 +734,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     it "handles extra whitespace in key-value pairs" do
-      config = { signature_key: "v1", timestamp_key: "t" }
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
       header_value = "t = 1663781880 , v1 = 0123456789abcdef "
 
       result = described_class.send(:parse_structured_header, header_value, config)
@@ -734,7 +746,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     it "returns nil for malformed header (missing equals)" do
-      config = { signature_key: "v1", timestamp_key: "t" }
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
       header_value = "t,v1=abcdef"
 
       result = described_class.send(:parse_structured_header, header_value, config)
@@ -743,7 +755,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     it "returns nil when signature key is missing" do
-      config = { signature_key: "v1", timestamp_key: "t" }
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
       header_value = "t=1663781880,other=value"
 
       result = described_class.send(:parse_structured_header, header_value, config)
@@ -752,7 +764,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     it "returns nil when signature value is empty" do
-      config = { signature_key: "v1", timestamp_key: "t" }
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
       header_value = "t=1663781880,v1="
 
       result = described_class.send(:parse_structured_header, header_value, config)
@@ -761,7 +773,7 @@ describe Hooks::Plugins::Auth::HMAC do
     end
 
     it "ignores extra key-value pairs not in config" do
-      config = { signature_key: "v1", timestamp_key: "t" }
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
       header_value = "t=1663781880,v1=abcdef,extra=ignored,another=also_ignored"
 
       result = described_class.send(:parse_structured_header, header_value, config)

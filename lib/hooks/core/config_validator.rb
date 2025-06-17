@@ -45,6 +45,11 @@ module Hooks
           optional(:format).filled(:string)
           optional(:version_prefix).filled(:string)
           optional(:payload_template).filled(:string)
+          optional(:header_format).filled(:string)
+          optional(:signature_key).filled(:string)
+          optional(:timestamp_key).filled(:string)
+          optional(:structured_header_separator).filled(:string)
+          optional(:key_value_separator).filled(:string)
         end
 
         optional(:opts).hash

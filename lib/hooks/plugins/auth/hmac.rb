@@ -92,6 +92,8 @@ module Hooks
         # @option config [String] :header_format ('simple') Header format: 'simple' or 'structured'
         # @option config [String] :signature_key ('v1') Key for signature in structured headers
         # @option config [String] :timestamp_key ('t') Key for timestamp in structured headers
+        # @option config [String] :structured_header_separator (',') Separator for structured headers
+        # @option config [String] :key_value_separator ('=') Separator for key-value pairs in structured headers
         # @return [Boolean] true if signature is valid, false otherwise
         # @raise [StandardError] Rescued internally, returns false on any error
         # @note This method is designed to be safe and will never raise exceptions
@@ -219,7 +221,9 @@ module Hooks
             payload_template: validator_config[:payload_template],
             header_format: validator_config[:header_format] || DEFAULT_CONFIG[:header_format],
             signature_key: validator_config[:signature_key] || "v1",
-            timestamp_key: validator_config[:timestamp_key] || "t"
+            timestamp_key: validator_config[:timestamp_key] || "t",
+            structured_header_separator: validator_config[:structured_header_separator] || ",",
+            key_value_separator: validator_config[:key_value_separator] || "="
           })
         end
 
@@ -378,11 +382,13 @@ module Hooks
         def self.parse_structured_header(header_value, config)
           signature_key = config[:signature_key]
           timestamp_key = config[:timestamp_key]
+          separator = config[:structured_header_separator]
+          key_value_separator = config[:key_value_separator]
 
           # Parse comma-separated key-value pairs
           pairs = {}
-          header_value.split(",").each do |pair|
-            key, value = pair.split("=", 2)
+          header_value.split(separator).each do |pair|
+            key, value = pair.split(key_value_separator, 2)
             return nil if key.nil? || value.nil?
 
             pairs[key.strip] = value.strip

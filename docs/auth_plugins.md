@@ -90,6 +90,7 @@ The format of the signature header content. Use "structured" for headers contain
 
 **Default:** `simple`  
 **Valid values:**
+
 - `simple` - Standard single-value headers like "sha256=abc123..." or "abc123..."
 - `structured` - Comma-separated key-value pairs like "t=1663781880,v1=abc123..."
 
