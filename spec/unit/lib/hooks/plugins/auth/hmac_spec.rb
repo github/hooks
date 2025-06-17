@@ -23,6 +23,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
   before(:each) do
     Hooks::Log.instance = log
+    allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with("HMAC_TEST_SECRET").and_return(secret)
   end
 
@@ -273,7 +274,16 @@ describe Hooks::Plugins::Auth::HMAC do
       it "handles very long signatures gracefully" do
         long_signature = "sha256=" + ("a" * 10000)
         long_headers = { default_header => long_signature }
+        expect(log).to receive(:warn).with(/Signature length exceeds maximum limit/)
         expect(valid_with(headers: long_headers)).to be false
+      end
+
+      it "returns false for signatures exceeding maximum length limit" do
+        # Create signature larger than MAX_SIGNATURE_LENGTH (1024 + 1 characters)
+        oversized_signature = "sha256=" + ("a" * (1024 - 7 + 1)) # -7 for "sha256=" prefix
+        oversized_headers = { default_header => oversized_signature }
+        expect(log).to receive(:warn).with(/Signature length exceeds maximum limit/)
+        expect(valid_with(headers: oversized_headers)).to be false
       end
 
       it "handles very long payloads" do
@@ -281,6 +291,15 @@ describe Hooks::Plugins::Auth::HMAC do
         long_signature = create_algorithm_prefixed_signature(long_payload)
         long_headers = { default_header => long_signature }
         expect(valid_with(payload: long_payload, headers: long_headers)).to be true
+      end
+
+      it "returns false for payloads exceeding maximum size limit" do
+        # Create payload larger than MAX_PAYLOAD_SIZE (10MB + 1 byte)
+        oversized_payload = "a" * (10 * 1024 * 1024 + 1)
+        signature = create_algorithm_prefixed_signature(payload) # Use regular payload for signature
+        headers_with_signature = { default_header => signature }
+        expect(log).to receive(:warn).with(/Payload size exceeds maximum limit/)
+        expect(valid_with(payload: oversized_payload, headers: headers_with_signature)).to be false
       end
 
       it "returns false and logs for signature containing non-null control characters" do
@@ -694,6 +713,176 @@ describe Hooks::Plugins::Auth::HMAC do
 
       expect(result).to be false
       expect(Hooks::Log.instance).to have_received(:warn).with("Auth::HMAC validation failed: Signature mismatch")
+    end
+  end
+
+  describe ".parse_structured_header" do
+    it "parses valid structured header with timestamp and signature" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
+      header_value = "t=1663781880,v1=0123456789abcdef"
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to eq({
+        signature: "0123456789abcdef",
+        timestamp: "1663781880"
+      })
+    end
+
+    it "parses valid structured header with timestamp and signature using different separators" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: ":", structured_header_separator: "." }
+      header_value = "t:1663781880.v1:0123456789abcdef"
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to eq({
+        signature: "0123456789abcdef",
+        timestamp: "1663781880"
+      })
+    end
+
+    it "parses structured header with only signature" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
+      header_value = "v1=abcdef123456"
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to eq({
+        signature: "abcdef123456"
+      })
+    end
+
+    it "handles extra whitespace in key-value pairs" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
+      header_value = "t = 1663781880 , v1 = 0123456789abcdef "
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to eq({
+        signature: "0123456789abcdef",
+        timestamp: "1663781880"
+      })
+    end
+
+    it "returns nil for malformed header (missing equals)" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
+      header_value = "t,v1=abcdef"
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to be_nil
+    end
+
+    it "returns nil when signature key is missing" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
+      header_value = "t=1663781880,other=value"
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to be_nil
+    end
+
+    it "returns nil when signature value is empty" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
+      header_value = "t=1663781880,v1="
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to be_nil
+    end
+
+    it "ignores extra key-value pairs not in config" do
+      config = { signature_key: "v1", timestamp_key: "t", key_value_separator: "=", structured_header_separator: "," }
+      header_value = "t=1663781880,v1=abcdef,extra=ignored,another=also_ignored"
+
+      result = described_class.send(:parse_structured_header, header_value, config)
+
+      expect(result).to eq({
+        signature: "abcdef",
+        timestamp: "1663781880"
+      })
+    end
+  end
+
+  describe "structured header format validation" do
+    let(:secret) { "supersecret" }
+    let(:payload) { '{"event":"test"}' }
+    let(:timestamp) { Time.now.to_i.to_s }
+
+    def create_tailscale_signature(payload, timestamp, secret)
+      signing_payload = "#{timestamp}.#{payload}"
+      signature = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
+      "t=#{timestamp},v1=#{signature}"
+    end
+
+    context "with structured header format" do
+      let(:config) do
+        {
+          auth: {
+            header: "Tailscale-Webhook-Signature",
+            algorithm: "sha256",
+            format: "signature_only",
+            header_format: "structured",
+            signature_key: "v1",
+            timestamp_key: "t",
+            payload_template: "{timestamp}.{body}",
+            timestamp_tolerance: 300,
+            secret_env_key: "HMAC_TEST_SECRET"
+          }
+        }
+      end
+
+      it "validates Tailscale-style structured signatures" do
+        signature_header_value = create_tailscale_signature(payload, timestamp, secret)
+        headers = { "Tailscale-Webhook-Signature" => signature_header_value }
+
+        expect(valid_with(payload:, headers:, config:)).to be true
+      end
+
+      it "fails with invalid structured signature" do
+        headers = { "Tailscale-Webhook-Signature" => "t=#{timestamp},v1=invalid_signature" }
+
+        expect(valid_with(payload:, headers:, config:)).to be false
+      end
+
+      it "fails with malformed structured header" do
+        headers = { "Tailscale-Webhook-Signature" => "malformed_header" }
+
+        expect(valid_with(payload:, headers:, config:)).to be false
+      end
+
+      it "fails when signature key is missing from structured header" do
+        headers = { "Tailscale-Webhook-Signature" => "t=#{timestamp},other=value" }
+
+        expect(valid_with(payload:, headers:, config:)).to be false
+      end
+
+      it "validates with timestamp tolerance" do
+        old_timestamp = (Time.now.to_i - 250).to_s  # Within 300s tolerance
+        signature_header_value = create_tailscale_signature(payload, old_timestamp, secret)
+        headers = { "Tailscale-Webhook-Signature" => signature_header_value }
+
+        expect(valid_with(payload:, headers:, config:)).to be true
+      end
+
+      it "fails when timestamp is too old" do
+        old_timestamp = (Time.now.to_i - 400).to_s  # Beyond 300s tolerance
+        signature_header_value = create_tailscale_signature(payload, old_timestamp, secret)
+        headers = { "Tailscale-Webhook-Signature" => signature_header_value }
+
+        expect(valid_with(payload:, headers:, config:)).to be false
+      end
+
+      it "works without timestamp when not required" do
+        config_no_timestamp = config[:auth].dup
+        config_no_timestamp.delete(:payload_template)
+        config_with_no_timestamp = { auth: config_no_timestamp }
+
+        signature = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload)
+        headers = { "Tailscale-Webhook-Signature" => "v1=#{signature}" }
+
+        expect(valid_with(payload:, headers:, config: config_with_no_timestamp)).to be true
+      end
     end
   end
 end

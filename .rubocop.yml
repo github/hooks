@@ -15,6 +15,7 @@ AllCops:
 GitHub/InsecureHashAlgorithm:
   Exclude:
     - "spec/unit/lib/hooks/plugins/auth/hmac_spec.rb"
+    - "spec/acceptance/acceptance_tests.rb"
 
 GitHub/AvoidObjectSendWithDynamicMethod:
   Exclude:

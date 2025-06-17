@@ -82,7 +82,49 @@ The maximum age (in seconds) allowed for timestamped requests. Only used when `t
 
 A template for constructing the payload used in signature generation when timestamp validation is enabled. Use placeholders like `{version}`, `{timestamp}`, and `{body}`.
 
-**Example:** `{version}:{timestamp}:{body}`
+**Example:** `{version}:{timestamp}:{body}` (Slack-style), `{timestamp}.{body}` (Tailscale-style)
+
+##### `header_format` (optional)
+
+The format of the signature header content. Use "structured" for headers containing comma-separated key-value pairs.
+
+**Default:** `simple`  
+**Valid values:**
+
+- `simple` - Standard single-value headers like "sha256=abc123..." or "abc123..."
+- `structured` - Comma-separated key-value pairs like "t=1663781880,v1=abc123..."
+
+##### `signature_key` (optional)
+
+When `header_format` is "structured", this specifies the key name for the signature value in the header.
+
+**Default:** `v1`  
+**Example:** `signature`
+
+##### `timestamp_key` (optional)
+
+When `header_format` is "structured", this specifies the key name for the timestamp value in the header.
+
+**Default:** `t`  
+**Example:** `timestamp`
+
+##### `structured_header_separator` (optional)
+
+When `header_format` is "structured", this specifies the separator used between the unique keys in the structured header.
+
+For example, if the header is `t=1663781880,v1=abc123`, the `structured_header_separator` would be `,`. It defaults to `,` but can be changed if needed.
+
+**Example:** `.`
+**Default:** `,`
+
+##### `key_value_separator` (optional)
+
+When `header_format` is "structured", this specifies the separator used between the key and value in the structured header.
+
+For example, in the header `t=1663781880,v1=abc123`, the `key_value_separator` would be `=`. It defaults to `=` but can be changed if needed.
+
+**Example:** `:`
+**Default:** `=`
 
 #### HMAC Examples
 
@@ -217,6 +259,59 @@ curl -X POST "$WEBHOOK_URL" \
 ```
 
 This approach provides strong security through timestamp validation while using a simpler format than the Slack-style implementation. The signing payload becomes `1609459200:{"event":"deployment","status":"success"}` and the resulting signature format is `sha256=computed_hmac_hash`.
+
+**Tailscale-style HMAC with structured headers:**
+
+This configuration supports providers like Tailscale that include both timestamp and signature in a single header using comma-separated key-value pairs.
+
+```yaml
+auth:
+  type: hmac
+  secret_env_key: TAILSCALE_WEBHOOK_SECRET
+  header: Tailscale-Webhook-Signature
+  algorithm: sha256
+  format: "signature_only"  # produces "abc123..." (no prefix)
+  header_format: "structured"  # enables parsing of "t=123,v1=abc" format
+  signature_key: "v1"  # key for signature in structured header
+  timestamp_key: "t"   # key for timestamp in structured header
+  payload_template: "{timestamp}.{body}"  # dot-separated format
+  timestamp_tolerance: 300  # 5 minutes
+```
+
+**How it works:**
+
+1. The signature header contains both timestamp and signature: `Tailscale-Webhook-Signature: t=1663781880,v1=0123456789abcdef`
+2. The timestamp and signature are extracted from the structured header
+3. The HMAC is calculated over the payload using the template: `{timestamp}.{body}`
+4. For example, if timestamp is "1663781880" and body is `{"event":"test"}`, the signed payload becomes: `1663781880.{"event":"test"}`
+5. The signature is validated as a raw hex string (no prefix)
+
+**Example curl request:**
+
+```bash
+#!/bin/bash
+
+# Configuration
+WEBHOOK_URL="https://your-hooks-server.com/webhooks/tailscale"
+SECRET="your_tailscale_webhook_secret"
+TIMESTAMP=$(date +%s)
+PAYLOAD='{"nodeId":"n123","event":"nodeCreated"}'
+
+# Construct the signing payload (timestamp.body format)
+SIGNING_PAYLOAD="${TIMESTAMP}.${PAYLOAD}"
+
+# Generate HMAC signature
+SIGNATURE=$(echo -n "$SIGNING_PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" -hex | cut -d' ' -f2)
+STRUCTURED_SIGNATURE="t=${TIMESTAMP},v1=${SIGNATURE}"
+
+# Send the request
+curl -X POST "$WEBHOOK_URL" \
+  -H "Content-Type: application/json" \
+  -H "Tailscale-Webhook-Signature: $STRUCTURED_SIGNATURE" \
+  -d "$PAYLOAD"
+```
+
+This format is particularly useful for providers that want to include multiple pieces of metadata in a single header while maintaining strong security through timestamp validation.
 
 ### Shared Secret Authentication
 

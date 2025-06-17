@@ -1,0 +1,14 @@
+path: /tailscale
+handler: Hello
+
+auth:
+  type: hmac
+  secret_env_key: ALT_WEBHOOK_SECRET
+  header: Tailscale-Webhook-Signature
+  algorithm: sha256
+  format: "signature_only"  # produces "abc123..." (no prefix)
+  header_format: "structured"  # enables parsing of "t=123,v1=abc" format, this is what tailscale uses
+  signature_key: "v1"  # key for signature in structured header
+  timestamp_key: "t"   # key for timestamp in structured header
+  payload_template: "{timestamp}.{body}"  # dot-separated format
+  timestamp_tolerance: 300  # 5 minutes

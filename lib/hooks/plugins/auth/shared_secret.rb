@@ -61,11 +61,9 @@ module Hooks
 
           validator_config = build_config(config)
 
-          # Security: Check raw headers BEFORE normalization to detect tampering
-          unless headers.respond_to?(:each)
-            log.warn("Auth::SharedSecret validation failed: Invalid headers object")
-            return false
-          end
+          # Security: Check raw headers and payload BEFORE processing
+          return false unless valid_headers?(headers)
+          return false unless valid_payload_size?(payload)
 
           secret_header = validator_config[:header]
 
@@ -77,19 +75,13 @@ module Hooks
             return false
           end
 
+          # Validate secret format using shared validation
+          unless valid_header_value?(raw_secret, "Secret")
+            log.warn("Auth::SharedSecret validation failed: Invalid secret format")
+            return false
+          end
+
           stripped_secret = raw_secret.strip
-
-          # Security: Reject secrets with leading/trailing whitespace
-          if raw_secret != stripped_secret
-            log.warn("Auth::SharedSecret validation failed: Secret contains leading/trailing whitespace")
-            return false
-          end
-
-          # Security: Reject secrets containing null bytes or other control characters
-          if raw_secret.match?(/[\u0000-\u001f\u007f-\u009f]/)
-            log.warn("Auth::SharedSecret validation failed: Secret contains control characters")
-            return false
-          end
 
           # Use secure comparison to prevent timing attacks
           result = Rack::Utils.secure_compare(secret, stripped_secret)
@@ -105,12 +97,6 @@ module Hooks
         end
 
         private
-
-        # Short logger accessor for auth module
-        # @return [Hooks::Log] Logger instance
-        def self.log
-          Hooks::Log.instance
-        end
 
         # Build final configuration by merging defaults with provided config
         #
