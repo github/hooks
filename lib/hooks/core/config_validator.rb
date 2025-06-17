@@ -125,11 +125,12 @@ module Hooks
         # Must not be empty or only whitespace
         return false if handler_name.strip.empty?
 
-        # Must match a safe pattern: alphanumeric + underscore, starting with uppercase
-        return false unless handler_name.match?(/\A[A-Z][a-zA-Z0-9_]*\z/)
+        # Must match a safe pattern: alphanumeric + underscore, starting with lowercase
+        return false unless handler_name.match?(/\A[a-z][a-z0-9_]*\z/)
 
-        # Must not be a system/built-in class name
-        return false if Hooks::Security::DANGEROUS_CLASSES.include?(handler_name)
+        # Convert to PascalCase for security check (since DANGEROUS_CLASSES uses PascalCase)
+        pascal_case_name = handler_name.split("_").map(&:capitalize).join("")
+        return false if Hooks::Security::DANGEROUS_CLASSES.include?(pascal_case_name)
 
         true
       end

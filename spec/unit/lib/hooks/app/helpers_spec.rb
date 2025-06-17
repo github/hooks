@@ -307,7 +307,7 @@ describe Hooks::App::Helpers do
       end
 
       it "successfully loads DefaultHandler" do
-        handler = helper.load_handler("DefaultHandler")
+        handler = helper.load_handler("default_handler")
         expect(handler).to be_an_instance_of(DefaultHandler)
       end
     end

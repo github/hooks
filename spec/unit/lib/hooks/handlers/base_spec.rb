@@ -100,7 +100,7 @@ describe Hooks::Plugins::Handlers::Base do
       complex_config = {
         "endpoint" => "/test",
         "opts" => { "timeout" => 30 },
-        "handler" => "TestHandler"
+        "handler" => "test_handler"
       }
       result = handler.call(payload: payload, headers: headers, env: env, config: complex_config)
       expect(result[:config_received]).to eq(complex_config)
@@ -189,10 +189,10 @@ describe Hooks::Plugins::Handlers::Base do
     it "allows stats and failbot usage in subclasses" do
       test_handler_class = Class.new(described_class) do
         def call(payload:, headers:, env:, config:)
-          stats.increment("handler.called", { handler: "TestHandler" })
+          stats.increment("handler.called", { handler: "test_handler" })
 
           if payload.nil?
-            failbot.report("Payload is nil", { handler: "TestHandler" })
+            failbot.report("Payload is nil", { handler: "test_handler" })
           end
 
           { status: "processed" }
@@ -234,15 +234,15 @@ describe Hooks::Plugins::Handlers::Base do
         # Test with non-nil payload
         handler.call(payload: { "test" => "data" }, headers: {}, env: {}, config: {})
         expect(collected_data).to include(
-          { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "TestHandler" } }
+          { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "test_handler" } }
         )
 
         # Test with nil payload
         collected_data.clear
         handler.call(payload: nil, headers: {}, env: {}, config: {})
         expect(collected_data).to match_array([
-          { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "TestHandler" } },
-          { type: :failbot, action: :report, message: "Payload is nil", context: { handler: "TestHandler" } }
+          { type: :stats, action: :increment, metric: "handler.called", tags: { handler: "test_handler" } },
+          { type: :failbot, action: :report, message: "Payload is nil", context: { handler: "test_handler" } }
         ])
       ensure
         Hooks::Core::GlobalComponents.stats = original_stats

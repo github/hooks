@@ -281,14 +281,14 @@ describe Hooks::Core::ConfigLoader do
       let(:endpoint1_config) do
         {
           "path" => "/webhook/test1",
-          "handler" => "TestHandler1",
+          "handler" => "test_handler_1",
           "method" => "POST"
         }
       end
       let(:endpoint2_config) do
         {
           "path" => "/webhook/test2",
-          "handler" => "TestHandler2",
+          "handler" => "test_handler_2",
           "method" => "PUT"
         }
       end
@@ -304,12 +304,12 @@ describe Hooks::Core::ConfigLoader do
         expect(endpoints).to have_attributes(size: 2)
         expect(endpoints).to include(
           path: "/webhook/test1",
-          handler: "TestHandler1",
+          handler: "test_handler_1",
           method: "POST"
         )
         expect(endpoints).to include(
           path: "/webhook/test2",
-          handler: "TestHandler2",
+          handler: "test_handler_2",
           method: "PUT"
         )
       end
@@ -320,7 +320,7 @@ describe Hooks::Core::ConfigLoader do
       let(:endpoint_config) do
         {
           "path" => "/webhook/json",
-          "handler" => "JsonHandler",
+          "handler" => "json_handler",
           "method" => "POST"
         }
       end
@@ -335,7 +335,7 @@ describe Hooks::Core::ConfigLoader do
         expect(endpoints).to have_attributes(size: 1)
         expect(endpoints.first).to eq(
           path: "/webhook/json",
-          handler: "JsonHandler",
+          handler: "json_handler",
           method: "POST"
         )
       end
@@ -348,7 +348,7 @@ describe Hooks::Core::ConfigLoader do
       let(:valid_config) do
         {
           "path" => "/webhook/valid",
-          "handler" => "ValidHandler"
+          "handler" => "valid_handler"
         }
       end
 
@@ -364,7 +364,7 @@ describe Hooks::Core::ConfigLoader do
         expect(endpoints).to have_attributes(size: 1)
         expect(endpoints.first).to eq(
           path: "/webhook/valid",
-          handler: "ValidHandler"
+          handler: "valid_handler"
         )
       end
       it "allows environment variable setup" do
