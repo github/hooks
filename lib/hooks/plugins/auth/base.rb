@@ -58,7 +58,7 @@ module Hooks
         #
         # @return [TimestampValidator] Singleton timestamp validator instance
         def self.timestamp_validator
-          @timestamp_validator ||= TimestampValidator.new
+          TimestampValidator.new
         end
 
         # Find a header value by name with case-insensitive matching
