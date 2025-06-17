@@ -23,6 +23,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
   before(:each) do
     Hooks::Log.instance = log
+    allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with("HMAC_TEST_SECRET").and_return(secret)
   end
 
@@ -273,7 +274,16 @@ describe Hooks::Plugins::Auth::HMAC do
       it "handles very long signatures gracefully" do
         long_signature = "sha256=" + ("a" * 10000)
         long_headers = { default_header => long_signature }
+        expect(log).to receive(:warn).with(/Signature length exceeds maximum limit/)
         expect(valid_with(headers: long_headers)).to be false
+      end
+
+      it "returns false for signatures exceeding maximum length limit" do
+        # Create signature larger than MAX_SIGNATURE_LENGTH (1024 + 1 characters)
+        oversized_signature = "sha256=" + ("a" * (1024 - 7 + 1)) # -7 for "sha256=" prefix
+        oversized_headers = { default_header => oversized_signature }
+        expect(log).to receive(:warn).with(/Signature length exceeds maximum limit/)
+        expect(valid_with(headers: oversized_headers)).to be false
       end
 
       it "handles very long payloads" do
@@ -281,6 +291,15 @@ describe Hooks::Plugins::Auth::HMAC do
         long_signature = create_algorithm_prefixed_signature(long_payload)
         long_headers = { default_header => long_signature }
         expect(valid_with(payload: long_payload, headers: long_headers)).to be true
+      end
+
+      it "returns false for payloads exceeding maximum size limit" do
+        # Create payload larger than MAX_PAYLOAD_SIZE (10MB + 1 byte)
+        oversized_payload = "a" * (10 * 1024 * 1024 + 1)
+        signature = create_algorithm_prefixed_signature(payload) # Use regular payload for signature
+        headers_with_signature = { default_header => signature }
+        expect(log).to receive(:warn).with(/Payload size exceeds maximum limit/)
+        expect(valid_with(payload: oversized_payload, headers: headers_with_signature)).to be false
       end
 
       it "returns false and logs for signature containing non-null control characters" do

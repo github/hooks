@@ -100,7 +100,7 @@ Core configuration options can be provided via environment variables:
 export HOOKS_CONFIG=./config/config.yaml
 
 # Runtime settings (override config file)
-export HOOKS_REQUEST_LIMIT=1048576
+export HOOKS_REQUEST_LIMIT=1048576 # 1 MB
 export HOOKS_REQUEST_TIMEOUT=15
 export HOOKS_GRACEFUL_SHUTDOWN_TIMEOUT=30
 export HOOKS_ROOT_PATH="/webhooks"

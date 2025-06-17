@@ -46,6 +46,10 @@ module Hooks
       #     payload_template: "{timestamp}.{body}"
       #     timestamp_tolerance: 300  # 5 minutes
       class HMAC < Base
+        # Security constants
+        MAX_SIGNATURE_LENGTH = ENV.fetch("HOOKS_MAX_SIGNATURE_LENGTH", 1024).to_i # Prevent DoS attacks via large signatures
+        MAX_PAYLOAD_SIZE = ENV.fetch("MAX_PAYLOAD_SIZE", 10 * 1024 * 1024).to_i # 10MB limit for payload validation
+
         # Default configuration values for HMAC validation
         #
         # @return [Hash<Symbol, String|Integer>] Default configuration settings
@@ -121,6 +125,11 @@ module Hooks
           # Find the signature header with case-insensitive matching
           raw_signature = find_header_value(headers, signature_header)
 
+          if payload && payload.bytesize > MAX_PAYLOAD_SIZE
+            log.warn("Auth::HMAC validation failed: Payload size exceeds maximum limit of #{MAX_PAYLOAD_SIZE} bytes")
+            return false
+          end
+
           if raw_signature.nil? || raw_signature.empty?
             log.warn("Auth::HMAC validation failed: Missing or empty signature header '#{signature_header}'")
             return false
@@ -129,6 +138,11 @@ module Hooks
           # Security: Reject signatures with leading/trailing whitespace
           if raw_signature != raw_signature.strip
             log.warn("Auth::HMAC validation failed: Signature contains leading/trailing whitespace")
+            return false
+          end
+
+          if raw_signature.length > MAX_SIGNATURE_LENGTH
+            log.warn("Auth::HMAC validation failed: Signature length exceeds maximum limit of #{MAX_SIGNATURE_LENGTH} characters")
             return false
           end
 
