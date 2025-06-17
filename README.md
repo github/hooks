@@ -50,8 +50,10 @@ Here is a very high-level overview of how Hooks works:
     ```yaml
     # file: config/endpoints/hello.yml
     path: /hello
-    handler: MyCustomHandler # This is a custom handler plugin you would define in the plugins/handlers directory
+    handler: my_custom_handler # This is a custom handler plugin you would define in the plugins/handlers directory (snake_case)
     ```
+
+    > Note: If your handler's class name is `MyCustomHandler`, you would define it in the `plugins/handlers/my_custom_handler.rb` file. The `handler` field in the endpoint configuration file should be the snake_case version of the class name. So if your handler class is `MyCustomHandler`, you would use `my_custom_handler` in the endpoint configuration file.
 
 3. Now create a corresponding handler plugin in the `plugins/handlers` directory. Here is an example of a simple handler plugin:
 
@@ -64,7 +66,7 @@ Here is a very high-level overview of how Hooks works:
         # For this example, we will just return a success message
         {
           status: "success",
-          handler: "MyCustomHandler",
+          handler: "my_custom_handler",
           payload_received: payload,
           timestamp: Time.now.utc.iso8601
         }
@@ -208,16 +210,16 @@ Endpoint configurations are defined in the `config/endpoints` directory. Each en
 ```yaml
 # file: config/endpoints/hello.yml
 path: /hello # becomes /webhooks/hello based on the root_path in hooks.yml
-handler: HelloHandler # This is a custom handler plugin you would define in the plugins/handlers
+handler: hello_handler # This is a custom handler plugin you would define in the plugins/handlers
 ```
 
 ```yaml
 # file: config/endpoints/goodbye.yml
 path: /goodbye # becomes /webhooks/goodbye based on the root_path in hooks.yml
-handler: GoodbyeHandler # This is another custom handler plugin you would define in the plugins/handlers
+handler: goodbye_handler # This is another custom handler plugin you would define in the plugins/handlers
 
 auth:
-  type: Goodbye # This is a custom authentication plugin you would define in the plugins/auth
+  type: goodbye # This is a custom authentication plugin you would define in the plugins/auth
   secret_env_key: GOODBYE_API_KEY # the name of the environment variable containing the secret
   header: Authorization
 
@@ -255,7 +257,7 @@ class GoodbyeHandler < Hooks::Plugins::Handlers::Base
     # Ditto for the goodbye endpoint
     {
       message: "goodbye webhook processed successfully",
-      handler: "GoodbyeHandler",
+      handler: "goodbye_handler",
       timestamp: Time.now.utc.iso8601
     }
   end
