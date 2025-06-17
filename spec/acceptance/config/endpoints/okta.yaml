@@ -1,5 +1,5 @@
 path: /okta
-handler: OktaHandler
+handler: okta_handler
 
 auth:
   type: shared_secret

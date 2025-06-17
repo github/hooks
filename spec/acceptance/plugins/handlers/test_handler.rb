@@ -4,7 +4,7 @@ class TestHandler < Hooks::Plugins::Handlers::Base
   def call(payload:, headers:, env:, config:)
     {
       status: "test_success",
-      handler: "TestHandler",
+      handler: "test_handler",
       payload_received: payload,
       env_received: env,
       config_opts: config[:opts],

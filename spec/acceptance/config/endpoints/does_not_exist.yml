@@ -1,2 +1,2 @@
 path: /does_not_exist
-handler: DoesNotExist
+handler: does_not_exist

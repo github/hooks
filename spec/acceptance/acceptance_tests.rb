@@ -400,13 +400,13 @@ describe "Hooks" do
         expect_response(response, Net::HTTPSuccess)
         body = parse_json_response(response)
         expect(body["status"]).to eq("test_success")
-        expect(body["handler"]).to eq("TestHandler")
+        expect(body["handler"]).to eq("test_handler")
         expect(body["payload_received"]).to eq({})
         expect(body["env_received"]).to have_key("REQUEST_METHOD")
 
         env = body["env_received"]
         expect(env["hooks.request_id"]).to be_a(String)
-        expect(env["hooks.handler"]).to eq("TestHandler")
+        expect(env["hooks.handler"]).to eq("test_handler")
         expect(env["hooks.endpoint_config"]).to be_a(Hash)
         expect(env["hooks.start_time"]).to be_a(String)
         expect(env["hooks.full_path"]).to eq("/webhooks/with_custom_auth_plugin")
@@ -445,7 +445,7 @@ describe "Hooks" do
         expect(body).to have_key("request_id")
         expect(body["request_id"]).to be_a(String)
         expect(body).to have_key("handler")
-        expect(body["handler"]).to eq("Boomtown")
+        expect(body["handler"]).to eq("boomtown")
       end
     end
 
@@ -454,11 +454,11 @@ describe "Hooks" do
         payload = {}.to_json
         headers = {}
         response = make_request(:post, "/webhooks/does_not_exist", payload, headers)
-        expect_response(response, Net::HTTPInternalServerError, /Handler plugin 'DoesNotExist' not found/)
+        expect_response(response, Net::HTTPInternalServerError, /Handler plugin 'does_not_exist' not found/)
         body = parse_json_response(response)
         expect(body["error"]).to eq("server_error")
         expect(body["message"]).to match(
-          /Handler plugin 'DoesNotExist' not found. Available handlers: DefaultHandler,.*/
+          /Handler plugin 'does_not_exist' not found. Available handlers: DefaultHandler,.*/
         )
       end
     end

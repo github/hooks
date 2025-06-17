@@ -1,5 +1,5 @@
 path: /with_custom_auth_plugin
-handler: TestHandler
+handler: test_handler
 
 auth:
   type: example

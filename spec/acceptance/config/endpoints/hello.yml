@@ -1,2 +1,2 @@
 path: /hello
-handler: Hello
+handler: hello

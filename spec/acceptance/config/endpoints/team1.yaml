@@ -1,6 +1,6 @@
 # Sample endpoint configuration for Team 1
 path: /team1
-handler: Team1Handler
+handler: team_1_handler
 
 # Signature validation (optional)
 # auth:
