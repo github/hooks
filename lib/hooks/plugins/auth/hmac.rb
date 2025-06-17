@@ -32,6 +32,19 @@ module Hooks
       #     format: "version=signature"
       #     version_prefix: "v0"
       #     payload_template: "{version}:{timestamp}:{body}"
+      #
+      # @example Configuration for Tailscale-style structured headers
+      #   auth:
+      #     type: HMAC
+      #     secret_env_key: WEBHOOK_SECRET
+      #     header: Tailscale-Webhook-Signature
+      #     algorithm: sha256
+      #     format: "signature_only"
+      #     header_format: "structured"
+      #     signature_key: "v1"
+      #     timestamp_key: "t"
+      #     payload_template: "{timestamp}.{body}"
+      #     timestamp_tolerance: 300  # 5 minutes
       class HMAC < Base
         # Default configuration values for HMAC validation
         #
