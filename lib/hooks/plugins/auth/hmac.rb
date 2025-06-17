@@ -3,7 +3,6 @@
 require "openssl"
 require "time"
 require_relative "base"
-require_relative "timestamp_validator"
 
 module Hooks
   module Plugins
@@ -269,14 +268,6 @@ module Hooks
           return false unless timestamp_value
 
           timestamp_validator.valid?(timestamp_value, tolerance)
-        end
-
-        # Get timestamp validator instance
-        #
-        # @return [TimestampValidator] Singleton timestamp validator instance
-        # @api private
-        def self.timestamp_validator
-          @timestamp_validator ||= TimestampValidator.new
         end
 
         # Compute HMAC signature based on configuration requirements
