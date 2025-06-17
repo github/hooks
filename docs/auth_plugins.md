@@ -108,6 +108,24 @@ When `header_format` is "structured", this specifies the key name for the timest
 **Default:** `t`  
 **Example:** `timestamp`
 
+##### `structured_header_separator` (optional)
+
+When `header_format` is "structured", this specifies the separator used between the unique keys in the structured header.
+
+For example, if the header is `t=1663781880,v1=abc123`, the `structured_header_separator` would be `,`. It defaults to `,` but can be changed if needed.
+
+**Example:** `.`
+**Default:** `,`
+
+##### `key_value_separator` (optional)
+
+When `header_format` is "structured", this specifies the separator used between the key and value in the structured header.
+
+For example, in the header `t=1663781880,v1=abc123`, the `key_value_separator` would be `=`. It defaults to `=` but can be changed if needed.
+
+**Example:** `:`
+**Default:** `=`
+
 #### HMAC Examples
 
 **Basic GitHub-style HMAC:**
