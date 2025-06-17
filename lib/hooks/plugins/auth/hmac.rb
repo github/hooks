@@ -42,7 +42,8 @@ module Hooks
           format: "algorithm=signature",  # Format: algorithm=hash
           header: "X-Signature",         # Default header containing the signature
           timestamp_tolerance: 300,       # 5 minutes tolerance for timestamp validation
-          version_prefix: "v0"           # Default version prefix for versioned signatures
+          version_prefix: "v0",          # Default version prefix for versioned signatures
+          header_format: "simple"        # Header format: "simple" or "structured"
         }.freeze
 
         # Mapping of signature format strings to internal format symbols
@@ -75,6 +76,9 @@ module Hooks
         # @option config [String] :format ('algorithm=signature') Signature format
         # @option config [String] :version_prefix ('v0') Version prefix for versioned signatures
         # @option config [String] :payload_template Template for payload construction
+        # @option config [String] :header_format ('simple') Header format: 'simple' or 'structured'
+        # @option config [String] :signature_key ('v1') Key for signature in structured headers
+        # @option config [String] :timestamp_key ('t') Key for timestamp in structured headers
         # @return [Boolean] true if signature is valid, false otherwise
         # @raise [StandardError] Rescued internally, returns false on any error
         # @note This method is designed to be safe and will never raise exceptions
@@ -121,7 +125,28 @@ module Hooks
 
           # Now we can safely normalize headers for the rest of the validation
           normalized_headers = normalize_headers(headers)
-          provided_signature = normalized_headers[signature_header.downcase]
+
+          # Handle structured headers (e.g., Tailscale format: "t=123,v1=abc")
+          if validator_config[:header_format] == "structured"
+            parsed_signature_data = parse_structured_header(raw_signature, validator_config)
+            if parsed_signature_data.nil?
+              log.warn("Auth::HMAC validation failed: Could not parse structured signature header")
+              return false
+            end
+
+            provided_signature = parsed_signature_data[:signature]
+
+            # For structured headers, timestamp comes from the signature header itself
+            if parsed_signature_data[:timestamp]
+              normalized_headers = normalized_headers.merge(
+                "extracted_timestamp" => parsed_signature_data[:timestamp]
+              )
+              # Override timestamp_header to use our extracted timestamp
+              validator_config = validator_config.merge(timestamp_header: "extracted_timestamp")
+            end
+          else
+            provided_signature = normalized_headers[signature_header.downcase]
+          end
 
           # Validate timestamp if required (for services that include timestamp validation)
           if validator_config[:timestamp_header]
@@ -176,7 +201,10 @@ module Hooks
             algorithm: algorithm,
             format: validator_config[:format] || DEFAULT_CONFIG[:format],
             version_prefix: validator_config[:version_prefix] || DEFAULT_CONFIG[:version_prefix],
-            payload_template: validator_config[:payload_template]
+            payload_template: validator_config[:payload_template],
+            header_format: validator_config[:header_format] || DEFAULT_CONFIG[:header_format],
+            signature_key: validator_config[:signature_key] || "v1",
+            timestamp_key: validator_config[:timestamp_key] || "t"
           })
         end
 
@@ -320,6 +348,42 @@ module Hooks
             # Default to algorithm-prefixed format
             "#{config[:algorithm]}=#{hash}"
           end
+        end
+
+        # Parse structured signature header containing comma-separated key-value pairs
+        #
+        # Parses signature headers like "t=1663781880,v1=0123456789abcdef..." used by
+        # providers like Tailscale that include multiple values in a single header.
+        #
+        # @param header_value [String] Raw signature header value
+        # @param config [Hash<Symbol, Object>] Validator configuration
+        # @return [Hash<Symbol, String>, nil] Parsed data with :signature and :timestamp keys, or nil if parsing fails
+        # @note Returns nil if the header format is invalid or required keys are missing
+        # @api private
+        def self.parse_structured_header(header_value, config)
+          signature_key = config[:signature_key]
+          timestamp_key = config[:timestamp_key]
+
+          # Parse comma-separated key-value pairs
+          pairs = {}
+          header_value.split(",").each do |pair|
+            key, value = pair.split("=", 2)
+            return nil if key.nil? || value.nil?
+
+            pairs[key.strip] = value.strip
+          end
+
+          # Extract required signature
+          signature = pairs[signature_key]
+          return nil if signature.nil? || signature.empty?
+
+          result = { signature: signature }
+
+          # Extract optional timestamp
+          timestamp = pairs[timestamp_key]
+          result[:timestamp] = timestamp if timestamp && !timestamp.empty?
+
+          result
         end
       end
     end
