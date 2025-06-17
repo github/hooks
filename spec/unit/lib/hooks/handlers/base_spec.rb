@@ -250,4 +250,42 @@ describe Hooks::Plugins::Handlers::Base do
       end
     end
   end
+
+  describe "#error!" do
+    let(:handler) { described_class.new }
+
+    it "raises a handler error with default status 500" do
+      expect {
+        handler.error!("Something went wrong")
+      }.to raise_error(Hooks::Plugins::Handlers::Error) do |error|
+        expect(error.body).to eq("Something went wrong")
+        expect(error.status).to eq(500)
+      end
+    end
+
+    it "raises a handler error with custom status" do
+      expect {
+        handler.error!({ error: "validation_failed", message: "Invalid input" }, 400)
+      }.to raise_error(Hooks::Plugins::Handlers::Error) do |error|
+        expect(error.body).to eq({ error: "validation_failed", message: "Invalid input" })
+        expect(error.status).to eq(400)
+      end
+    end
+
+    it "can be called from subclasses" do
+      test_handler = Class.new(described_class) do
+        def call(payload:, headers:, env:, config:)
+          error!("Custom error from subclass", 422)
+        end
+      end
+
+      handler = test_handler.new
+      expect {
+        handler.call(payload: {}, headers: {}, env: {}, config: {})
+      }.to raise_error(Hooks::Plugins::Handlers::Error) do |error|
+        expect(error.body).to eq("Custom error from subclass")
+        expect(error.status).to eq(422)
+      end
+    end
+  end
 end

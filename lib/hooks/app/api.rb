@@ -7,6 +7,7 @@ require_relative "helpers"
 require_relative "auth/auth"
 require_relative "rack_env_builder"
 require_relative "../plugins/handlers/base"
+require_relative "../plugins/handlers/error"
 require_relative "../plugins/handlers/default"
 require_relative "../core/logger_factory"
 require_relative "../core/log"
@@ -110,6 +111,23 @@ module Hooks
                   status 200
                   content_type "application/json"
                   response.to_json
+                rescue Hooks::Plugins::Handlers::Error => e
+                  # Handler called error! method - immediately return error response and exit the request
+                  log.debug("handler #{handler_class_name} called `error!` method")
+
+                  error_response = nil
+
+                  status e.status
+                  case e.body
+                  when String
+                    content_type "text/plain"
+                    error_response = e.body
+                  else
+                    content_type "application/json"
+                    error_response = e.body.to_json
+                  end
+
+                  return error_response
                 rescue StandardError => e
                   err_msg = "Error processing webhook event with handler: #{handler_class_name} - #{e.message} " \
                     "- request_id: #{request_id} - path: #{full_path} - method: #{http_method} - " \

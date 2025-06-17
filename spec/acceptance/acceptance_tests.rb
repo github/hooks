@@ -496,26 +496,28 @@ describe "Hooks" do
       end
 
       it "sends a POST request to the /webhooks/boomtown_with_error endpoint and it explodes" do
-        # TODO: Fix this acceptance test - the current error looks like this:
-        # 1) Hooks endpoints boomtown_with_error sends a POST request to the /webhooks/boomtown_with_error endpoint and it explodes
-          # Failure/Error: expect(response.body).to include(expected_body_content) if expected_body_content
-            #expected "{\"error\":\"server_error\",\"message\":\"undefined method 'error!' for an instance of BoomtownWithE...thread_pool.rb:167:in 'block in #Puma::ThreadPool#spawn_thread'\",\"handler\":\"BoomtownWithError\"}" to include "the payload triggered a boomtown error"
-          # ./spec/acceptance/acceptance_tests.rb:28:in 'RSpec::ExampleGroups::Hooks#expect_response'
-          # ./spec/acceptance/acceptance_tests.rb:501:in 'block (4 levels) in <top (required)>'
+        payload = { boom: true }.to_json
+        response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
+        expect_response(response, Net::HTTPInternalServerError, "the payload triggered a boomtown error")
 
-        # payload = { boom: true }.to_json
-        # response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
-        # expect_response(response, Net::HTTPInternalServerError, "the payload triggered a boomtown error")
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("boomtown_with_error")
+        expect(body["message"]).to eq("the payload triggered a boomtown error")
+        expect(body).to have_key("request_id")
+        expect(body["request_id"]).to be_a(String)
+        expect(body["foo"]).to eq("bar")
+        expect(body["truthy"]).to eq(true)
+      end
 
-        # body = parse_json_response(response)
-        # expect(body["error"]).to eq("server_error")
-        # expect(body["message"]).to eq("the payload triggered a boomtown error")
-        # expect(body).to have_key("backtrace")
-        # expect(body["backtrace"]).to be_a(String)
-        # expect(body).to have_key("request_id")
-        # expect(body["request_id"]).to be_a(String)
-        # expect(body).to have_key("handler")
-        # expect(body["handler"]).to eq("BoomtownWithError")
+      it "sends a POST request to the /webhooks/boomtown_with_error endpoint and it explodes with a simple text error" do
+        payload = { boom_simple_text: true }.to_json
+        response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
+        expect_response(response, Net::HTTPInternalServerError, "boomtown_with_error: the payload triggered a simple text boomtown error")
+
+        body = response.body
+        expect(body).to eq("boomtown_with_error: the payload triggered a simple text boomtown error")
+        expect(response.content_type).to eq("text/plain")
+        expect(response.code).to eq("500")
       end
     end
   end
