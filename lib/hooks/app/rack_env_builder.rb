@@ -72,6 +72,8 @@ module Hooks
       end
 
       # Add HTTP headers to the environment with proper Rack naming convention
+      # Note: This will generally add headers like HTTP_X_CUSTOM_HEADER. For example, the HTTP_X_FORWARDED_FOR
+      # is a common header that is used to pass the original client IP address through proxies.
       #
       # @param rack_env [Hash] Environment hash to modify
       def add_http_headers(rack_env)
