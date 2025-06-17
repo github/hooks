@@ -162,6 +162,8 @@ module Hooks
           end
 
           # Validate timestamp if required (for services that include timestamp validation)
+          # It should be noted that not all HMAC implementations require timestamp validation,
+          # so this is optional based on configuration.
           if validator_config[:timestamp_header]
             unless valid_timestamp?(normalized_headers, validator_config)
               log.warn("Auth::HMAC validation failed: Invalid timestamp")
