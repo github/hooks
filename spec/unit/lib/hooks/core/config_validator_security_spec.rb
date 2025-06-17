@@ -27,7 +27,7 @@ describe "Configuration Validator Security Tests" do
         it "rejects dangerous system class names" do
           dangerous_configs = Hooks::Security::DANGEROUS_CLASSES.map do |class_name|
             # Convert PascalCase to snake_case for config
-            snake_case_name = class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
+            snake_case_name = class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, "")
             { path: "/webhook", handler: snake_case_name }
           end
 
