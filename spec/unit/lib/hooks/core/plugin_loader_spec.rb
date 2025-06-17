@@ -163,12 +163,12 @@ describe Hooks::Core::PluginLoader do
     end
 
     it "returns built-in handler plugins" do
-      expect(described_class.get_handler_plugin("DefaultHandler")).to eq(DefaultHandler)
+      expect(described_class.get_handler_plugin("default_handler")).to eq(DefaultHandler)
     end
 
     it "raises error for non-existent plugin" do
-      expect { described_class.get_handler_plugin("NonExistentHandler") }.to raise_error(
-        StandardError, /Handler plugin 'NonExistentHandler' not found/
+      expect { described_class.get_handler_plugin("non_existent_handler") }.to raise_error(
+        StandardError, /Handler plugin 'non_existent_handler' not found/
       )
     end
   end

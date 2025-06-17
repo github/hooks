@@ -61,11 +61,13 @@ module Hooks
 
         # Get handler plugin class by name
         #
-        # @param handler_name [String] Name of the handler (e.g., "DefaultHandler", "Team1Handler")
+        # @param handler_name [String] Name of the handler in snake_case (e.g., "github_handler", "team_1_handler")
         # @return [Class] The handler plugin class
         # @raise [StandardError] if handler not found
         def get_handler_plugin(handler_name)
-          plugin_class = @handler_plugins[handler_name]
+          # Convert snake_case to PascalCase for registry lookup
+          pascal_case_name = handler_name.split("_").map(&:capitalize).join("")
+          plugin_class = @handler_plugins[pascal_case_name]
 
           unless plugin_class
             raise StandardError, "Handler plugin '#{handler_name}' not found. Available handlers: #{@handler_plugins.keys.join(', ')}"

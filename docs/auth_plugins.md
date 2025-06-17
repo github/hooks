@@ -448,3 +448,20 @@ module Hooks
   end
 end
 ```
+
+The configuration for this IP filtering plugin would look like this:
+
+```yaml
+path: /example
+handler: CoolNewHandler # could be any handler you want to use
+
+auth:
+  type: ip_filtering_plugin # using the custom IP filtering plugin (remember IpFilteringPlugin becomes ip_filtering_plugin)
+
+# You can specify additional options in the `opts` section but the `allowed_ips` option is required for this plugin demo to work
+opts:
+  allowed_ips: # list of allowed IPs
+    - "<ALLOWED_IP_1>"
+    - "<ALLOWED_IP_2>"
+    - "<ALLOWED_IP_3>"
+```

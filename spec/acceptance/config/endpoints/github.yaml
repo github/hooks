@@ -1,6 +1,6 @@
 # Sample endpoint configuration for GitHub webhooks
 path: /github
-handler: GithubHandler
+handler: github_handler
 
 # GitHub uses HMAC SHA256 signature validation
 auth:

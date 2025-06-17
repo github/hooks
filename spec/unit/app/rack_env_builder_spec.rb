@@ -16,7 +16,7 @@ describe Hooks::App::RackEnvBuilder do
   let(:request_context) do
     {
       request_id: "req-123",
-      handler: "TestHandler"
+      handler: "test_handler"
     }
   end
   let(:endpoint_config) do
@@ -86,7 +86,7 @@ describe Hooks::App::RackEnvBuilder do
 
     it "includes Hooks-specific environment variables" do
       expect(result["hooks.request_id"]).to eq("req-123")
-      expect(result["hooks.handler"]).to eq("TestHandler")
+      expect(result["hooks.handler"]).to eq("test_handler")
       expect(result["hooks.endpoint_config"]).to eq(endpoint_config)
       expect(result["hooks.start_time"]).to eq("2025-06-16T10:30:45Z")
       expect(result["hooks.full_path"]).to eq("/api/v1/test")
@@ -280,7 +280,7 @@ describe Hooks::App::RackEnvBuilder do
         described_class.new(
           mock_request,
           { "Accept" => "application/vnd.api+json" },
-          { request_id: "mock-123", handler: "MockHandler" },
+          { request_id: "mock-123", handler: "mock_handler" },
           { path: "/resource", method: "patch" },
           Time.parse("2025-06-16T15:45:30Z"),
           "/api/v2/resource"

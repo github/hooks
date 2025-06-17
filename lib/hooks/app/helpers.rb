@@ -74,7 +74,7 @@ module Hooks
 
       # Load handler class
       #
-      # @param handler_class_name [String] The name of the handler class to load
+      # @param handler_class_name [String] The name of the handler in snake_case (e.g., "github_handler")
       # @return [Object] An instance of the loaded handler class
       # @raise [StandardError] If handler cannot be found
       def load_handler(handler_class_name)

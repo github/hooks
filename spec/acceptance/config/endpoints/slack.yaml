@@ -1,5 +1,5 @@
 path: /slack
-handler: SlackHandler
+handler: slack_handler
 
 auth:
   type: hmac

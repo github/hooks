@@ -103,7 +103,7 @@ RSpec.describe "Global Lifecycle Hooks Integration" do
     # Create an endpoint configuration
     endpoint_config_content = <<~YAML
       path: /integration-test
-      handler: IntegrationTestHandler
+      handler: integration_test_handler
     YAML
     File.write(File.join(temp_endpoints_dir, "integration_test.yml"), endpoint_config_content)
   end

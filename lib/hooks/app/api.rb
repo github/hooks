@@ -4,6 +4,7 @@ require "grape"
 require "json"
 require "securerandom"
 require_relative "helpers"
+#require_relative "network/ip_filtering"
 require_relative "auth/auth"
 require_relative "rack_env_builder"
 require_relative "../plugins/handlers/base"
@@ -81,6 +82,13 @@ module Hooks
                   Core::PluginLoader.lifecycle_plugins.each do |plugin|
                     plugin.on_request(rack_env)
                   end
+
+                  # TODO: IP filtering before processing the request if defined
+                  # If IP filtering is enabled at either global or endpoint level, run the filtering rules
+                  # before processing the request
+                  #if config[:ip_filtering] || endpoint_config[:ip_filtering]
+                    #ip_filtering!(headers, endpoint_config, config, request_context, rack_env)
+                  #end
 
                   enforce_request_limits(config, request_context)
                   request.body.rewind

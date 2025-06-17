@@ -4,6 +4,7 @@ require "rack/utils"
 require_relative "../../core/log"
 require_relative "../../core/global_components"
 require_relative "../../core/component_access"
+require_relative "timestamp_validator"
 
 module Hooks
   module Plugins
@@ -51,6 +52,13 @@ module Hooks
           end
 
           return secret.strip
+        end
+
+        # Get timestamp validator instance
+        #
+        # @return [TimestampValidator] Singleton timestamp validator instance
+        def self.timestamp_validator
+          TimestampValidator.new
         end
 
         # Find a header value by name with case-insensitive matching

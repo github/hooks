@@ -59,7 +59,7 @@ describe "Handler Loading Tests" do
       end
 
       it "successfully loads DefaultHandler" do
-        handler = instance.load_handler("DefaultHandler")
+        handler = instance.load_handler("default_handler")
         expect(handler).to be_an_instance_of(DefaultHandler)
       end
     end

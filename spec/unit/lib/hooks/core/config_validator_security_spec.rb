@@ -8,13 +8,13 @@ describe "Configuration Validator Security Tests" do
       context "with secure handler names" do
         it "accepts valid handler names" do
           valid_configs = [
-            { path: "/webhook", handler: "MyHandler" },
-            { path: "/webhook", handler: "GitHubHandler" },
-            { path: "/webhook", handler: "Team1Handler" },
-            { path: "/webhook", handler: "WebhookHandler" },
-            { path: "/webhook", handler: "CustomWebhookHandler" },
-            { path: "/webhook", handler: "Handler123" },
-            { path: "/webhook", handler: "My_Handler" }
+            { path: "/webhook", handler: "my_handler" },
+            { path: "/webhook", handler: "github_handler" },
+            { path: "/webhook", handler: "team_1_handler" },
+            { path: "/webhook", handler: "webhook_handler" },
+            { path: "/webhook", handler: "custom_webhook_handler" },
+            { path: "/webhook", handler: "handler_123" },
+            { path: "/webhook", handler: "my_handler" }
           ]
 
           valid_configs.each do |config|
@@ -26,7 +26,9 @@ describe "Configuration Validator Security Tests" do
 
         it "rejects dangerous system class names" do
           dangerous_configs = Hooks::Security::DANGEROUS_CLASSES.map do |class_name|
-            { path: "/webhook", handler: class_name }
+            # Convert PascalCase to snake_case for config
+            snake_case_name = class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, "")
+            { path: "/webhook", handler: snake_case_name }
           end
 
           dangerous_configs.each do |config|
@@ -38,14 +40,19 @@ describe "Configuration Validator Security Tests" do
 
         it "rejects handler names with invalid format" do
           invalid_configs = [
-            { path: "/webhook", handler: "handler" },           # lowercase start
-            { path: "/webhook", handler: "123Handler" },        # number start
-            { path: "/webhook", handler: "_Handler" },          # underscore start
-            { path: "/webhook", handler: "Handler$Test" },      # special characters
-            { path: "/webhook", handler: "Handler.Test" },      # dots
-            { path: "/webhook", handler: "Handler/Test" },      # slashes
-            { path: "/webhook", handler: "Handler Test" },      # spaces
-            { path: "/webhook", handler: "Handler\nTest" }      # newlines
+            { path: "/webhook", handler: "Handler" },           # uppercase start
+            { path: "/webhook", handler: "123handler" },        # number start
+            { path: "/webhook", handler: "_handler" },          # underscore start
+            { path: "/webhook", handler: "handler$test" },      # special characters
+            { path: "/webhook", handler: "handler.test" },      # dots
+            { path: "/webhook", handler: "handler/test" },      # slashes
+            { path: "/webhook", handler: "handler test" },      # spaces
+            { path: "/webhook", handler: "handler\ntest" },     # newlines
+            { path: "/webhook", handler: "handlerTest" },       # camelCase
+            { path: "/webhook", handler: "HandlerTest" },       # PascalCase
+            { path: "/webhook", handler: "handler_" },          # trailing underscore
+            { path: "/webhook", handler: "my__handler" },       # consecutive underscores
+            { path: "/webhook", handler: "handler__test" }      # consecutive underscores in middle
           ]
 
           invalid_configs.each do |config|
@@ -88,9 +95,9 @@ describe "Configuration Validator Security Tests" do
       context "with endpoint arrays" do
         it "validates all endpoints in an array and reports the problematic one" do
           endpoints = [
-            { path: "/webhook1", handler: "ValidHandler" },
-            { path: "/webhook2", handler: "File" },  # This should fail
-            { path: "/webhook3", handler: "AnotherValidHandler" }
+            { path: "/webhook1", handler: "valid_handler" },
+            { path: "/webhook2", handler: "File" },  # This should fail (PascalCase)
+            { path: "/webhook3", handler: "another_valid_handler" }
           ]
 
           expect do

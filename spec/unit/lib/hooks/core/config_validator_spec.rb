@@ -178,7 +178,7 @@ describe Hooks::Core::ConfigValidator do
       it "returns validated configuration with required fields only" do
         config = {
           path: "/webhook/simple",
-          handler: "SimpleHandler"
+          handler: "simple_handler"
         }
 
         result = described_class.validate_endpoint_config(config)
@@ -189,7 +189,7 @@ describe Hooks::Core::ConfigValidator do
       it "returns validated configuration with request validator" do
         config = {
           path: "/webhook/secure",
-          handler: "SecureHandler",
+          handler: "secure_handler",
           auth: {
             type: "hmac",
             secret_env_key: "WEBHOOK_SECRET",
@@ -211,7 +211,7 @@ describe Hooks::Core::ConfigValidator do
       it "returns validated configuration with opts hash" do
         config = {
           path: "/webhook/custom",
-          handler: "CustomHandler",
+          handler: "custom_handler",
           opts: {
             custom_option: "value",
             another_option: 123
@@ -226,7 +226,7 @@ describe Hooks::Core::ConfigValidator do
       it "returns validated configuration with all optional fields" do
         config = {
           path: "/webhook/full",
-          handler: "FullHandler",
+          handler: "full_handler",
           auth: {
             type: "custom_validator",
             secret_env_key: "SECRET",
@@ -245,7 +245,7 @@ describe Hooks::Core::ConfigValidator do
       it "returns validated configuration with method specified" do
         config = {
           path: "/webhook/put",
-          handler: "PutHandler",
+          handler: "put_handler",
           method: "put"
         }
 
@@ -260,7 +260,7 @@ describe Hooks::Core::ConfigValidator do
         valid_methods.each do |method|
           config = {
             path: "/webhook/test",
-            handler: "TestHandler",
+            handler: "test_handler",
             method: method
           }
 
@@ -272,7 +272,7 @@ describe Hooks::Core::ConfigValidator do
 
     context "with invalid configuration" do
       it "raises ValidationError for missing path" do
-        config = { handler: "TestHandler" }
+        config = { handler: "test_handler" }
 
         expect {
           described_class.validate_endpoint_config(config)
@@ -290,7 +290,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for empty path" do
         config = {
           path: "",
-          handler: "TestHandler"
+          handler: "test_handler"
         }
 
         expect {
@@ -312,7 +312,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for non-string path" do
         config = {
           path: 123,
-          handler: "TestHandler"
+          handler: "test_handler"
         }
 
         expect {
@@ -334,7 +334,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for auth missing required type" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           auth: {
             header: "X-Signature"
           }
@@ -348,7 +348,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for auth with empty type" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           auth: {
             type: ""
           }
@@ -362,7 +362,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for non-hash auth" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           auth: "hmac"
         }
 
@@ -374,7 +374,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for non-hash opts" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           opts: "invalid"
         }
 
@@ -386,7 +386,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for zero timestamp_tolerance" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           auth: {
             type: "hmac",
             timestamp_tolerance: 0
@@ -401,7 +401,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for negative timestamp_tolerance" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           auth: {
             type: "hmac",
             timestamp_tolerance: -100
@@ -416,7 +416,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for empty string fields in auth" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           auth: {
             type: "hmac",
             secret_env_key: "",
@@ -433,7 +433,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for invalid HTTP method" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           method: "invalid"
         }
 
@@ -445,7 +445,7 @@ describe Hooks::Core::ConfigValidator do
       it "raises ValidationError for non-string method" do
         config = {
           path: "/webhook/test",
-          handler: "TestHandler",
+          handler: "test_handler",
           method: 123
         }
 
@@ -470,7 +470,7 @@ describe Hooks::Core::ConfigValidator do
         endpoints = [
           {
             path: "/webhook/test",
-            handler: "TestHandler"
+            handler: "test_handler"
           }
         ]
 
@@ -483,11 +483,11 @@ describe Hooks::Core::ConfigValidator do
         endpoints = [
           {
             path: "/webhook/test1",
-            handler: "TestHandler1"
+            handler: "test_handler1"
           },
           {
             path: "/webhook/test2",
-            handler: "TestHandler2",
+            handler: "test_handler2",
             auth: {
               type: "hmac",
               header: "X-Hub-Signature"
@@ -506,7 +506,7 @@ describe Hooks::Core::ConfigValidator do
         endpoints = [
           {
             path: "/webhook/valid",
-            handler: "ValidHandler"
+            handler: "valid_handler"
           },
           {
             path: "/webhook/invalid",
@@ -514,7 +514,7 @@ describe Hooks::Core::ConfigValidator do
           },
           {
             path: "/webhook/another",
-            handler: "AnotherHandler"
+            handler: "another_handler"
           }
         ]
 
@@ -527,14 +527,14 @@ describe Hooks::Core::ConfigValidator do
         endpoints = [
           {
             path: "/webhook/valid1",
-            handler: "ValidHandler1"
+            handler: "valid_handler1"
           },
           {
             path: "/webhook/valid2",
-            handler: "ValidHandler2"
+            handler: "valid_handler2"
           },
           {
-            handler: "InvalidHandler"
+            handler: "invalid_handler"
             # missing path
           }
         ]
@@ -548,7 +548,7 @@ describe Hooks::Core::ConfigValidator do
         endpoints = [
           {
             path: "/webhook/test",
-            handler: "TestHandler",
+            handler: "test_handler",
             auth: {
               # missing required type
               header: "X-Signature"

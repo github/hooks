@@ -33,7 +33,7 @@ RSpec.describe "Hooks Integration" do
     FileUtils.mkdir_p("./spec/integration/tmp/endpoints")
     File.write("./spec/integration/tmp/endpoints/test.yaml", {
       path: "/test",
-      handler: "TestHandler",
+      handler: "test_handler",
       opts: { test_mode: true }
     }.to_yaml)
 

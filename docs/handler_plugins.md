@@ -8,6 +8,7 @@ Handler plugins are Ruby classes that extend the `Hooks::Plugins::Handlers::Base
 
 - `payload`: The webhook payload, which can be a Hash or a String. This is the data that the webhook sender sends to your endpoint.
 - `headers`: A Hash of HTTP headers that were sent with the webhook request.
+- `env`: A modified Rack environment that contains a lot of context about the request. This includes information about the request method, path, query parameters, and more. See [`rack_env_builder.rb`](../lib/hooks/app/rack_env_builder.rb) for the complete list of available keys.
 - `config`: A Hash containing the endpoint configuration. This can include any additional settings or parameters that you want to use in your handler. Most of the time, this won't be used but sometimes endpoint configs add `opts` that can be useful for the handler.
 
 ```ruby
@@ -27,6 +28,20 @@ class Example < Hooks::Plugins::Handlers::Base
   end
 end
 ```
+
+After you write your own handler, it can be referenced in endpoint configuration files like so:
+
+```yaml
+# example file path: config/endpoints/example.yml
+path: /example_webhook
+handler: example # this is the name of the handler plugin class
+```
+
+It should be noted that the `handler:` key in the endpoint configuration file should match the name of the handler plugin class, but in lowercase and snake case. For example, if your handler plugin class is named `ExampleHandler`, the `handler:` key in the endpoint configuration file should be `example_handler`. Here are some more examples:
+
+- `ExampleHandler` -> `example_handler`
+- `MyCustomHandler` -> `my_custom_handler`
+- `Cool2Handler` -> `cool_2_handler`
 
 ### `payload` Parameter
 

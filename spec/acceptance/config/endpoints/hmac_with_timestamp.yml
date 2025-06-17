@@ -1,5 +1,5 @@
 path: /hmac_with_timestamp
-handler: Hello
+handler: hello
 
 auth:
   type: hmac
