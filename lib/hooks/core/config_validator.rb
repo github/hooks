@@ -125,8 +125,8 @@ module Hooks
         # Must not be empty or only whitespace
         return false if handler_name.strip.empty?
 
-        # Must match a safe pattern: alphanumeric + underscore, starting with lowercase
-        return false unless handler_name.match?(/\A[a-z][a-z0-9_]*\z/)
+        # Must match strict snake_case pattern: starts with lowercase, no trailing/consecutive underscores
+        return false unless handler_name.match?(/\A[a-z][a-z0-9]*(?:_[a-z0-9]+)*\z/)
 
         # Convert to PascalCase for security check (since DANGEROUS_CLASSES uses PascalCase)
         pascal_case_name = handler_name.split("_").map(&:capitalize).join("")

@@ -49,7 +49,10 @@ describe "Configuration Validator Security Tests" do
             { path: "/webhook", handler: "handler test" },      # spaces
             { path: "/webhook", handler: "handler\ntest" },     # newlines
             { path: "/webhook", handler: "handlerTest" },       # camelCase
-            { path: "/webhook", handler: "HandlerTest" }        # PascalCase
+            { path: "/webhook", handler: "HandlerTest" },       # PascalCase
+            { path: "/webhook", handler: "handler_" },          # trailing underscore
+            { path: "/webhook", handler: "my__handler" },       # consecutive underscores
+            { path: "/webhook", handler: "handler__test" }      # consecutive underscores in middle
           ]
 
           invalid_configs.each do |config|
