@@ -52,6 +52,12 @@ describe "Hooks" do
     "v0=#{digest}"
   end
 
+  def generate_tailscale_signature(payload, secret, timestamp = unix_timestamp)
+    signing_payload = "#{timestamp}.#{payload}"
+    signature = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, signing_payload)
+    "t=#{timestamp},v1=#{signature}"
+  end
+
   def current_timestamp
     Time.now.utc.iso8601
   end
@@ -518,6 +524,48 @@ describe "Hooks" do
         expect(body).to eq("boomtown_with_error: the payload triggered a simple text boomtown error")
         expect(response.content_type).to eq("text/plain")
         expect(response.code).to eq("500")
+      end
+    end
+
+    describe "tailscale" do
+      it "successfully processes a valid POST request from a tailscale style webhook" do
+        payload = { event: "user.login", user: { id: "12345" } }
+        json_payload = payload.to_json
+        timestamp = unix_timestamp
+        signature = generate_tailscale_signature(json_payload, FAKE_ALT_HMAC_SECRET, timestamp)
+        headers = json_headers("Tailscale-Webhook-Signature" => signature)
+        response = make_request(:post, "/webhooks/tailscale", json_payload, headers)
+        expect_response(response, Net::HTTPSuccess)
+
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("success")
+      end
+
+      it "rejects request with invalid signature" do
+        payload = { event: "user.login", user: { id: "12345" } }
+        json_payload = payload.to_json
+        headers = json_headers("Tailscale-Webhook-Signature" => "t=1663781880,v1=invalidsignature")
+        response = make_request(:post, "/webhooks/tailscale", json_payload, headers)
+        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+      end
+
+      it "rejects request with missing signature header" do
+        payload = { event: "user.login", user: { id: "12345" } }
+        json_payload = payload.to_json
+        response = make_request(:post, "/webhooks/tailscale", json_payload, json_headers)
+        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+      end
+
+      it "rejects request with wrong signature algorithm" do
+        payload = { event: "user.login", user: { id: "12345" } }
+        json_payload = payload.to_json
+        timestamp = unix_timestamp
+        # Generate with sha1 instead of sha256
+        signing_payload = "#{timestamp}.#{json_payload}"
+        wrong_signature = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha1"), FAKE_ALT_HMAC_SECRET, signing_payload)
+        headers = json_headers("Tailscale-Webhook-Signature" => "t=#{timestamp},v1=#{wrong_signature}")
+        response = make_request(:post, "/webhooks/tailscale", json_payload, headers)
+        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
       end
     end
   end
