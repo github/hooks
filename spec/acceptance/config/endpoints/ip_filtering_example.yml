@@ -1,0 +1,10 @@
+path: /ip_filtering_example
+handler: Hello
+
+auth:
+  type: ip_filtering_example
+
+opts:
+  allowed_ips:
+    - "999.999.999.999" # intentionally invalid IP
+    - "888.888.888.888" # intentionally invalid IP

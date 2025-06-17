@@ -568,5 +568,24 @@ describe "Hooks" do
         expect_response(response, Net::HTTPUnauthorized, "authentication failed")
       end
     end
+
+    describe "custom ip filtering auth plugin" do
+      it "successfully validates using a custom IP filtering auth plugin" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "999.999.999.999" }
+        response = make_request(:post, "/webhooks/ip_filtering_example", payload, headers)
+
+        expect_response(response, Net::HTTPSuccess)
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("success")
+      end
+
+      it "rejects requests with invalid IP using custom IP filtering auth plugin" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "123.456.789.000" }
+        response = make_request(:post, "/webhooks/ip_filtering_example", payload, headers)
+        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+      end
+    end
   end
 end
