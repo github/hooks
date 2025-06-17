@@ -223,3 +223,7 @@ end
 > If `Retryable.with_context(:default)` fails after all retries, it will re-raise the last exception encountered.
 
 See the source code at `lib/hooks/utils/retry.rb` for more details on how `Retryable.with_context(:default)` works.
+
+### `#failbot` and `#stats`
+
+The `failbot` and `stats` methods are available in all handler plugins. They are used to report errors and send statistics, respectively. These are custom methods and you can learn more about them in the [Instrumentation Plugins](instrument_plugins.md) documentation.
