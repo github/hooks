@@ -27,6 +27,12 @@ module Hooks
         optional(:endpoints_dir).filled(:string)
         optional(:use_catchall_route).filled(:bool)
         optional(:normalize_headers).filled(:bool)
+
+        optional(:ip_filtering).hash do
+          optional(:ip_header).filled(:string)
+          optional(:allowlist).array(:string)
+          optional(:blocklist).array(:string)
+        end
       end
 
       # Endpoint configuration schema
@@ -50,6 +56,12 @@ module Hooks
           optional(:timestamp_key).filled(:string)
           optional(:structured_header_separator).filled(:string)
           optional(:key_value_separator).filled(:string)
+        end
+
+        optional(:ip_filtering).hash do
+          optional(:ip_header).filled(:string)
+          optional(:allowlist).array(:string)
+          optional(:blocklist).array(:string)
         end
 
         optional(:opts).hash

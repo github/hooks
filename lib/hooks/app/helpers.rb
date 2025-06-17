@@ -3,6 +3,7 @@
 require "securerandom"
 require_relative "../security"
 require_relative "../core/plugin_loader"
+require_relative "network/ip_filtering"
 
 module Hooks
   module App
@@ -86,6 +87,28 @@ module Hooks
         # - Memory: Allows garbage collection of short-lived objects (Ruby GC optimization)
         handler_class = Core::PluginLoader.get_handler_plugin(handler_class_name)
         return handler_class.new
+      end
+
+      # Verifies the incoming request passes the configured IP filtering rules.
+      #
+      # This method assumes that the client IP address is available in the request headers (e.g., `X-Forwarded-For`).
+      # The headers that is used is configurable via the endpoint configuration.
+      # It checks the IP address against the allowed and denied lists defined in the endpoint configuration.
+      # If the IP address is not allowed, it instantly returns an error response via the `error!` method.
+      # If the IP filtering configuration is missing or invalid, it raises an error.
+      # If IP filtering is configured at the global level, it will also check against the global configuration first,
+      # and then against the endpoint-specific configuration.
+      #
+      # @param headers [Hash] The request headers.
+      # @param endpoint_config [Hash] The endpoint configuration, must include :ip_filtering key.
+      # @param global_config [Hash] The global configuration (optional, for compatibility).
+      # @param request_context [Hash] Context for the request, e.g. request ID, path, handler (optional).
+      # @param env [Hash] The Rack environment
+      # @raise [StandardError] Raises error if IP filtering fails or is misconfigured.
+      # @return [void]
+      # @note This method will halt execution with an error if IP filtering rules fail.
+      def ip_filtering!(headers, endpoint_config, global_config, request_context, env)
+        Network::IpFiltering.ip_filtering!(headers, endpoint_config, global_config, request_context, env)
       end
 
       private
