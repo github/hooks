@@ -101,12 +101,10 @@ describe Hooks::Core::ConfigLoader do
       context "when file does not exist" do
         let(:config_file) { File.join(temp_dir, "nonexistent.yml") }
 
-        it "returns default configuration" do
-          config = described_class.load(config_path: config_file)
-
-          expect(config[:log_level]).to eq("info")
-          expect(config[:environment]).to eq("production")
-          expect(config[:production]).to be true
+        it "raises ArgumentError" do
+          expect {
+            described_class.load(config_path: config_file)
+          }.to raise_error(ArgumentError, "Configuration file not found: #{config_file}")
         end
       end
 
@@ -117,11 +115,10 @@ describe Hooks::Core::ConfigLoader do
           File.write(config_file, "invalid: yaml: content: [")
         end
 
-        it "returns default configuration" do
-          config = described_class.load(config_path: config_file)
-
-          expect(config[:log_level]).to eq("info")
-          expect(config[:environment]).to eq("production")
+        it "raises RuntimeError" do
+          expect {
+            described_class.load(config_path: config_file)
+          }.to raise_error(RuntimeError, "Failed to load configuration from file: #{config_file}")
         end
       end
 
@@ -132,11 +129,10 @@ describe Hooks::Core::ConfigLoader do
           File.write(config_file, "log_level: debug")
         end
 
-        it "returns default configuration" do
-          config = described_class.load(config_path: config_file)
-
-          expect(config[:log_level]).to eq("info")
-          expect(config[:environment]).to eq("production")
+        it "raises RuntimeError" do
+          expect {
+            described_class.load(config_path: config_file)
+          }.to raise_error(RuntimeError, "Failed to load configuration from file: #{config_file}")
         end
       end
     end
