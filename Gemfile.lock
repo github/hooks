@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hooks-ruby (0.4.0)
+    hooks-ruby (0.5.0)
       dry-schema (~> 1.14, >= 1.14.1)
       grape (~> 2.3)
       puma (~> 6.6)
