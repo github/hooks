@@ -123,12 +123,11 @@ module Hooks
                   # Handler called error! method - immediately return error response and exit the request
                   log.debug("handler #{handler_class_name} called `error!` method")
 
-                  error_response = nil
-
                   status e.status
                   case e.body
                   when String
-                    content_type "text/plain"
+                    # Even string errors are now JSON-encoded with the default JSON format
+                    content_type "application/json"
                     error_response = e.body
                   else
                     # Let Grape handle JSON conversion with the default format

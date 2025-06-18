@@ -8,7 +8,7 @@ module Hooks
     class HealthEndpoint < Grape::API
       # Set up content types and default format to JSON
       content_type :json, "application/json"
-      content_type :txt, "text/plain" 
+      content_type :txt, "text/plain"
       content_type :xml, "application/xml"
       content_type :any, "*/*"
       format :json

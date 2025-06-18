@@ -103,7 +103,23 @@ When set to `true`, enables a catch-all route that will handle requests to unkno
 
 When set to `true`, normalizes incoming HTTP headers by lowercasing and trimming them. This ensures consistency in header names and values.
 
-**Default:** `true`  
+**Default:** `true`
+
+### `format`
+
+Sets the request/response format for the webhook server. This determines how incoming requests are parsed and how responses are formatted.
+
+**Default:** `json`  
+**Valid values:** `json`, `txt`, `xml`, `any`  
+**Example:** `json`
+
+### `default_format`
+
+Sets the default response format when no specific format is requested. This works in conjunction with the `format` setting to determine response formatting.
+
+**Default:** `json`  
+**Valid values:** `json`, `txt`, `xml`, `any`  
+**Example:** `json`
 
 ## Endpoint Options
 

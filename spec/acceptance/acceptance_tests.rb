@@ -28,6 +28,18 @@ describe "Hooks" do
     expect(response.body).to include(expected_body_content) if expected_body_content
   end
 
+  def expect_json_auth_failure(response, expected_request_id: nil)
+    expect(response).to be_a(Net::HTTPUnauthorized)
+    expect(response.content_type).to eq("application/json")
+
+    body = parse_json_response(response)
+    expect(body["error"]).to eq("authentication_failed")
+    expect(body["message"]).to eq("authentication failed")
+    expect(body).to have_key("request_id")
+    expect(body["request_id"]).to be_a(String)
+    expect(body["request_id"]).to eq(expected_request_id) if expected_request_id
+  end
+
   def parse_json_response(response)
     JSON.parse(response.body)
   end
@@ -140,13 +152,13 @@ describe "Hooks" do
         headers = json_headers("X-Hub-Signature-256" => "sha256=invalidsignature")
         response = make_request(:post, "/webhooks/github", payload.to_json, headers)
 
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "receives a POST request but there is no HMAC related header" do
         payload = { action: "push", repository: { name: "test-repo" } }
         response = make_request(:post, "/webhooks/github", payload.to_json, json_headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "receives a POST request but it uses the wrong algo" do
@@ -155,7 +167,7 @@ describe "Hooks" do
         signature = generate_hmac_signature(json_payload, FAKE_HMAC_SECRET, "sha512", "sha512=")
         headers = json_headers("X-Hub-Signature-256" => signature)
         response = make_request(:post, "/webhooks/github", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "successfully processes a valid POST request with HMAC signature" do
@@ -212,7 +224,7 @@ describe "Hooks" do
         signature = generate_hmac_with_timestamp(json_payload, "bad-hmac-secret", timestamp)
         headers = json_headers("X-HMAC-Signature" => signature, "X-HMAC-Timestamp" => timestamp)
         response = make_request(:post, "/webhooks/hmac_with_timestamp", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "fails due to missing timestamp header" do
@@ -221,7 +233,7 @@ describe "Hooks" do
         signature = generate_hmac_with_timestamp(json_payload, FAKE_ALT_HMAC_SECRET, current_timestamp)
         headers = json_headers("X-HMAC-Signature" => signature)
         response = make_request(:post, "/webhooks/hmac_with_timestamp", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "fails due to invalid timestamp format" do
@@ -231,7 +243,7 @@ describe "Hooks" do
         signature = generate_hmac_with_timestamp(json_payload, FAKE_ALT_HMAC_SECRET, invalid_timestamp)
         headers = json_headers("X-HMAC-Signature" => signature, "X-HMAC-Timestamp" => invalid_timestamp)
         response = make_request(:post, "/webhooks/hmac_with_timestamp", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "rejects request with timestamp manipulation attack" do
@@ -244,7 +256,7 @@ describe "Hooks" do
         signature = generate_hmac_with_timestamp(json_payload, FAKE_ALT_HMAC_SECRET, original_timestamp)
         headers = json_headers("X-HMAC-Signature" => signature, "X-HMAC-Timestamp" => manipulated_timestamp)
         response = make_request(:post, "/webhooks/hmac_with_timestamp", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "fails because the timestamp is too old" do
@@ -254,7 +266,7 @@ describe "Hooks" do
         signature = generate_hmac_with_timestamp(json_payload, FAKE_ALT_HMAC_SECRET, expired_ts)
         headers = json_headers("X-HMAC-Signature" => signature, "X-HMAC-Timestamp" => expired_ts)
         response = make_request(:post, "/webhooks/hmac_with_timestamp", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "fails because the wrong HMAC algorithm is used" do
@@ -265,7 +277,7 @@ describe "Hooks" do
         signature = signature.gsub("sha256=", "sha512=")
         headers = json_headers("X-HMAC-Signature" => signature, "X-HMAC-Timestamp" => timestamp)
         response = make_request(:post, "/webhooks/hmac_with_timestamp", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
     end
 
@@ -289,7 +301,7 @@ describe "Hooks" do
         signature = generate_slack_signature(json_payload, FAKE_ALT_HMAC_SECRET, expired_ts)
         headers = json_headers("Signature-256" => signature, "X-Timestamp" => expired_ts)
         response = make_request(:post, "/webhooks/slack", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "rejects request with missing timestamp header" do
@@ -299,7 +311,7 @@ describe "Hooks" do
         signature = generate_slack_signature(json_payload, FAKE_ALT_HMAC_SECRET, timestamp)
         headers = json_headers("Signature-256" => signature)
         response = make_request(:post, "/webhooks/slack", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "rejects request with invalid timestamp format" do
@@ -309,7 +321,7 @@ describe "Hooks" do
         signature = generate_slack_signature(json_payload, FAKE_ALT_HMAC_SECRET, invalid_timestamp)
         headers = json_headers("Signature-256" => signature, "X-Timestamp" => invalid_timestamp)
         response = make_request(:post, "/webhooks/slack", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "successfully processes request with ISO 8601 UTC timestamp" do
@@ -355,7 +367,7 @@ describe "Hooks" do
         signature = generate_slack_signature(json_payload, FAKE_ALT_HMAC_SECRET, non_utc_timestamp)
         headers = json_headers("Signature-256" => signature, "X-Timestamp" => non_utc_timestamp)
         response = make_request(:post, "/webhooks/slack", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "rejects request with timestamp manipulation attack" do
@@ -368,7 +380,7 @@ describe "Hooks" do
         signature = generate_slack_signature(json_payload, FAKE_ALT_HMAC_SECRET, original_timestamp)
         headers = json_headers("Signature-256" => signature, "X-Timestamp" => manipulated_timestamp)
         response = make_request(:post, "/webhooks/slack", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
     end
 
@@ -377,7 +389,7 @@ describe "Hooks" do
         payload = { event: "user.login", user: { id: "12345" } }
         headers = json_headers("Authorization" => "badvalue")
         response = make_request(:post, "/webhooks/okta", payload.to_json, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "successfully processes a valid POST request with shared secret" do
@@ -420,14 +432,14 @@ describe "Hooks" do
         payload = {}.to_json
         headers = { "Authorization" => "Bearer wrong-secret" }
         response = make_request(:post, "/webhooks/with_custom_auth_plugin", payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "rejects requests with missing credentials using custom auth plugin" do
         payload = {}.to_json
         headers = {}
         response = make_request(:post, "/webhooks/with_custom_auth_plugin", payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
     end
 
@@ -518,12 +530,15 @@ describe "Hooks" do
       it "sends a POST request to the /webhooks/boomtown_with_error endpoint and it explodes with a simple text error" do
         payload = { boom_simple_text: true }.to_json
         response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
-        expect_response(response, Net::HTTPInternalServerError, "boomtown_with_error: the payload triggered a simple text boomtown error")
+        expect_response(response, Net::HTTPInternalServerError)
 
-        body = response.body
-        expect(body).to eq("boomtown_with_error: the payload triggered a simple text boomtown error")
-        expect(response.content_type).to eq("text/plain")
+        # With JSON default format, even string errors are JSON-encoded
+        expect(response.content_type).to eq("application/json")
         expect(response.code).to eq("500")
+
+        # The error body should be the JSON-encoded string
+        body = parse_json_response(response)
+        expect(body).to eq("boomtown_with_error: the payload triggered a simple text boomtown error")
       end
     end
 
@@ -546,14 +561,14 @@ describe "Hooks" do
         json_payload = payload.to_json
         headers = json_headers("Tailscale-Webhook-Signature" => "t=1663781880,v1=invalidsignature")
         response = make_request(:post, "/webhooks/tailscale", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "rejects request with missing signature header" do
         payload = { event: "user.login", user: { id: "12345" } }
         json_payload = payload.to_json
         response = make_request(:post, "/webhooks/tailscale", json_payload, json_headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
 
       it "rejects request with wrong signature algorithm" do
@@ -565,7 +580,7 @@ describe "Hooks" do
         wrong_signature = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha1"), FAKE_ALT_HMAC_SECRET, signing_payload)
         headers = json_headers("Tailscale-Webhook-Signature" => "t=#{timestamp},v1=#{wrong_signature}")
         response = make_request(:post, "/webhooks/tailscale", json_payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
     end
 
@@ -584,7 +599,7 @@ describe "Hooks" do
         payload = {}.to_json
         headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "123.456.789.000" }
         response = make_request(:post, "/webhooks/ip_filtering_example", payload, headers)
-        expect_response(response, Net::HTTPUnauthorized, "authentication failed")
+        expect_json_auth_failure(response)
       end
     end
 
