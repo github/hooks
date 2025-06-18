@@ -24,15 +24,18 @@ describe Hooks::Core::ConfigValidator do
       end
 
       it "returns validated configuration with minimal fields" do
-        config = {}
+        config = { handler_plugin_dir: "/path/to/handlers" }
 
         result = described_class.validate_global_config(config)
 
-        expect(result).to eq({})
+        expect(result).to eq({ handler_plugin_dir: "/path/to/handlers" })
       end
 
       it "accepts production environment" do
-        config = { environment: "production" }
+        config = {
+          environment: "production",
+          handler_plugin_dir: "/path/to/handlers"
+        }
 
         result = described_class.validate_global_config(config)
 
@@ -41,7 +44,10 @@ describe Hooks::Core::ConfigValidator do
 
       it "accepts valid log levels" do
         %w[debug info warn error].each do |log_level|
-          config = { log_level: log_level }
+          config = {
+            log_level: log_level,
+            handler_plugin_dir: "/path/to/handlers"
+          }
 
           result = described_class.validate_global_config(config)
 
@@ -114,7 +120,8 @@ describe Hooks::Core::ConfigValidator do
       it "coerces boolean-like string values" do
         config = {
           use_catchall_route: "true",
-          normalize_headers: "1"
+          normalize_headers: "1",
+          handler_plugin_dir: "/path/to/handlers"
         }
 
         result = described_class.validate_global_config(config)
@@ -138,7 +145,8 @@ describe Hooks::Core::ConfigValidator do
       it "coerces string numeric values" do
         config = {
           request_limit: "1024",
-          request_timeout: "30"
+          request_timeout: "30",
+          handler_plugin_dir: "/path/to/handlers"
         }
 
         result = described_class.validate_global_config(config)
@@ -164,7 +172,10 @@ describe Hooks::Core::ConfigValidator do
       end
 
       it "coerces float values to integers by truncating" do
-        config = { request_timeout: 30.5 }
+        config = {
+          request_timeout: 30.5,
+          handler_plugin_dir: "/path/to/handlers"
+        }
 
         result = described_class.validate_global_config(config)
 

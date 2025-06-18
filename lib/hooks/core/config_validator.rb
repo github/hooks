@@ -12,7 +12,7 @@ module Hooks
 
       # Global configuration schema
       GLOBAL_CONFIG_SCHEMA = Dry::Schema.Params do
-        optional(:handler_plugin_dir).filled(:string)
+        required(:handler_plugin_dir).filled(:string)
         optional(:auth_plugin_dir).maybe(:string)
         optional(:lifecycle_plugin_dir).maybe(:string)
         optional(:instruments_plugin_dir).maybe(:string)
