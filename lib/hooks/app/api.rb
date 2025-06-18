@@ -126,8 +126,9 @@ module Hooks
                   status e.status
                   case e.body
                   when String
-                    # Even string errors are now JSON-encoded with the default JSON format
-                    content_type "application/json"
+                    # if error! was called with a string, we assume it's a simple text error
+                    # example: error!("simple text error", 400) -> should return a plain text response
+                    content_type "text/plain"
                     error_response = e.body
                   else
                     # Let Grape handle JSON conversion with the default format
