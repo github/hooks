@@ -4,12 +4,16 @@ This document provides in-depth information about handler plugins and how you ca
 
 ## Writing a Handler Plugin
 
-Handler plugins are Ruby classes that extend the `Hooks::Plugins::Handlers::Base` class. They are used to process webhook payloads and can do anything you want. They follow a very simple interface that allows you to define a `call` method that takes three parameters: `payload`, `headers`, and `config`. The `call` method should return a hash with the response data. The hash that this method returns will be sent back to the webhook sender as a JSON response.
+Handler plugins are Ruby classes that extend the `Hooks::Plugins::Handlers::Base` class. They are used to process webhook payloads and can do anything you want. They follow a very simple interface that allows you to define a `call` method that takes four parameters: `payload`, `headers`, `env`, and `config`. 
+
+**Important:** The `call` method should return a hash by default. Since the server now defaults to JSON format, any hash returned by the handler will be automatically converted to JSON with the correct `Content-Type: application/json` headers set by Grape. This ensures consistent API responses and proper JSON serialization.
 
 - `payload`: The webhook payload, which can be a Hash or a String. This is the data that the webhook sender sends to your endpoint.
 - `headers`: A Hash of HTTP headers that were sent with the webhook request.
 - `env`: A modified Rack environment that contains a lot of context about the request. This includes information about the request method, path, query parameters, and more. See [`rack_env_builder.rb`](../lib/hooks/app/rack_env_builder.rb) for the complete list of available keys.
 - `config`: A Hash containing the endpoint configuration. This can include any additional settings or parameters that you want to use in your handler. Most of the time, this won't be used but sometimes endpoint configs add `opts` that can be useful for the handler.
+
+The method should return a **hash** that will be automatically serialized to JSON format with appropriate headers. The server defaults to JSON format for both input and output processing.
 
 ```ruby
 # example file path: plugins/handlers/example.rb
@@ -18,12 +22,15 @@ class Example < Hooks::Plugins::Handlers::Base
   #
   # @param payload [Hash, String] webhook payload (pure JSON with string keys)
   # @param headers [Hash] HTTP headers (string keys, optionally normalized - default is normalized)
-  # @param env [Hash] A modifed Rack environment that contains a lot of context about the request
+  # @param env [Hash] A modified Rack environment that contains a lot of context about the request
   # @param config [Hash] Endpoint configuration
-  # @return [Hash] Response data
+  # @return [Hash] Response data (automatically converted to JSON)
   def call(payload:, headers:, env:, config:)
+    # Return a hash - it will be automatically converted to JSON with proper headers
     return {
-      status: "success"
+      status: "success",
+      message: "webhook processed successfully",
+      timestamp: Time.now.iso8601
     }
   end
 end
@@ -42,6 +49,30 @@ It should be noted that the `handler:` key in the endpoint configuration file sh
 - `ExampleHandler` -> `example_handler`
 - `MyCustomHandler` -> `my_custom_handler`
 - `Cool2Handler` -> `cool_2_handler`
+
+## Default JSON Format
+
+By default, the Hooks server uses JSON format for both input and output processing. This means:
+
+- **Input**: Webhook payloads are parsed as JSON and passed to handlers as Ruby hashes
+- **Output**: Handler return values (hashes) are automatically converted to JSON responses with `Content-Type: application/json` headers
+- **Error Responses**: Authentication failures and handler errors return structured JSON responses
+
+**Best Practice**: Always return a hash from your handler's `call` method. The hash will be automatically serialized to JSON and sent to the webhook sender with proper headers. This ensures consistent API responses and proper JSON formatting.
+
+Example response format:
+```json
+{
+  "status": "success",
+  "message": "webhook processed successfully", 
+  "data": {
+    "processed_at": "2023-10-01T12:34:56Z",
+    "items_processed": 5
+  }
+}
+```
+
+> **Note**: The JSON format behavior can be configured using the `format` and `default_format` options in your global configuration. See the [Configuration documentation](./configuration.md) for more details.
 
 ### `payload` Parameter
 
@@ -159,6 +190,8 @@ The `log.debug`, `log.info`, `log.warn`, and `log.error` methods are available i
 
 All handler plugins have access to the `error!` method, which is used to raise an error with a specific message and HTTP status code. This is useful for returning error responses to the webhook sender.
 
+When using `error!` with the default JSON format, both hash and string responses are handled appropriately:
+
 ```ruby
 class Example < Hooks::Plugins::Handlers::Base
   # Example webhook handler
@@ -167,11 +200,12 @@ class Example < Hooks::Plugins::Handlers::Base
   # @param headers [Hash<String, String>] HTTP headers
   # @param env [Hash] A modified Rack environment that contains a lot of context about the request
   # @param config [Hash] Endpoint configuration
-  # @return [Hash] Response data
+  # @return [Hash] Response data (automatically converted to JSON)
   def call(payload:, headers:, env:, config:)
 
     if payload.nil? || payload.empty?
       log.error("Payload is empty or nil")
+      # String errors are JSON-encoded with default format
       error!("Payload cannot be empty or nil", 400)
     end
 
@@ -182,7 +216,7 @@ class Example < Hooks::Plugins::Handlers::Base
 end
 ```
 
-You can also use the `error!` method to return a JSON response as well:
+**Recommended approach**: Use hash-based error responses for consistent JSON structure:
 
 ```ruby
 class Example < Hooks::Plugins::Handlers::Base
@@ -190,13 +224,14 @@ class Example < Hooks::Plugins::Handlers::Base
 
     if payload.nil? || payload.empty?
       log.error("Payload is empty or nil")
+      # Hash errors are automatically converted to JSON
       error!({
         error: "payload_empty",
         message: "the payload cannot be empty or nil",
         success: false,
         custom_value: "some_custom_value",
         request_id: env["hooks.request_id"]
-      }, 500)
+      }, 400)
     end
 
     return {
@@ -204,6 +239,17 @@ class Example < Hooks::Plugins::Handlers::Base
     }
   end
 end
+```
+
+This will return a properly formatted JSON error response:
+```json
+{
+  "error": "payload_empty",
+  "message": "the payload cannot be empty or nil",
+  "success": false,
+  "custom_value": "some_custom_value",
+  "request_id": "uuid-here"
+}
 ```
 
 ### `#Retryable.with_context(:default)`
@@ -220,7 +266,7 @@ class Example < Hooks::Plugins::Handlers::Base
   # @param headers [Hash<String, String>] HTTP headers
   # @param env [Hash] A modified Rack environment that contains a lot of context about the request
   # @param config [Hash] Endpoint configuration
-  # @return [Hash] Response data
+  # @return [Hash] Response data (automatically converted to JSON)
   def call(payload:, headers:, env:, config:)
     result = Retryable.with_context(:default) do
       some_operation_that_might_fail()
@@ -229,7 +275,9 @@ class Example < Hooks::Plugins::Handlers::Base
     log.debug("operation result: #{result}")
 
     return {
-      status: "success"
+      status: "success",
+      operation_result: result,
+      processed_at: Time.now.iso8601
     }
   end
 end
