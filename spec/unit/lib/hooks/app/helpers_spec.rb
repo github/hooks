@@ -345,4 +345,24 @@ describe Hooks::App::Helpers do
       expect(helper.send(:determine_error_code, error)).to eq(500)
     end
   end
+
+  describe "#ip_filtering!" do
+    let(:headers) { { "X-Forwarded-For" => "192.168.1.1" } }
+    let(:endpoint_config) { {} }
+    let(:global_config) { {} }
+    let(:request_context) { { request_id: "test-request-id" } }
+    let(:env) { {} }
+
+    it "delegates to Network::IpFiltering.ip_filtering!" do
+      expect(Hooks::App::Network::IpFiltering).to receive(:ip_filtering!).with(
+        headers,
+        endpoint_config,
+        global_config,
+        request_context,
+        env
+      )
+
+      helper.ip_filtering!(headers, endpoint_config, global_config, request_context, env)
+    end
+  end
 end
