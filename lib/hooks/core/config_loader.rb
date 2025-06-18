@@ -20,7 +20,9 @@ module Hooks
         production: true,
         endpoints_dir: "./config/endpoints",
         use_catchall_route: false,
-        normalize_headers: true
+        normalize_headers: true,
+        format: :json,
+        default_format: :json
       }.freeze
 
       SILENCE_CONFIG_LOADER_MESSAGES = ENV.fetch(
@@ -141,6 +143,8 @@ module Hooks
           "HOOKS_ENDPOINTS_DIR" => :endpoints_dir,
           "HOOKS_USE_CATCHALL_ROUTE" => :use_catchall_route,
           "HOOKS_NORMALIZE_HEADERS" => :normalize_headers,
+          "HOOKS_FORMAT" => :format,
+          "HOOKS_DEFAULT_FORMAT" => :default_format,
           "HOOKS_SOME_STRING_VAR" => :some_string_var # Added for test
         }
 
@@ -155,6 +159,9 @@ module Hooks
           when :use_catchall_route, :normalize_headers
             # Convert string to boolean
             env_config[config_key] = %w[true 1 yes on].include?(value.downcase)
+          when :format, :default_format
+            # Convert string to symbol
+            env_config[config_key] = value.to_sym
           else
             env_config[config_key] = value
           end
