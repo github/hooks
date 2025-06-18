@@ -68,21 +68,21 @@ module Hooks
           secret_header = validator_config[:header]
 
           # Find the secret header with case-insensitive matching
-          raw_secret = find_header_value(headers, secret_header)
+          provided_secret = find_header_value(headers, secret_header)
 
-          if raw_secret.nil? || raw_secret.empty?
+          if provided_secret.nil? || provided_secret.empty?
             log.warn("Auth::SharedSecret validation failed: Missing or empty secret header '#{secret_header}'")
             return false
           end
 
           # Validate secret format using shared validation
-          unless valid_header_value?(raw_secret, "Secret")
+          unless valid_header_value?(provided_secret, "Secret")
             log.warn("Auth::SharedSecret validation failed: Invalid secret format")
             return false
           end
 
           # Use secure comparison to prevent timing attacks
-          result = Rack::Utils.secure_compare(secret, raw_secret)
+          result = Rack::Utils.secure_compare(secret, provided_secret)
           if result
             log.debug("Auth::SharedSecret validation successful for header '#{secret_header}'")
           else
