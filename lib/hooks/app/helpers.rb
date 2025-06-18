@@ -122,9 +122,19 @@ module Hooks
       def safe_json_parse(json_string)
         # Security limits for JSON parsing
         max_nesting = ENV.fetch("JSON_MAX_NESTING", "20").to_i
+        max_size = ENV.fetch("JSON_MAX_SIZE", "10485760").to_i # 10MB default
+
+        # Validate security limits
+        if max_nesting <= 0 || max_nesting > 100
+          raise ArgumentError, "Invalid JSON_MAX_NESTING value: must be between 1 and 100"
+        end
+
+        if max_size <= 0 || max_size > 100 * 1024 * 1024 # 100MB max
+          raise ArgumentError, "Invalid JSON_MAX_SIZE value: must be between 1 and 104857600 bytes"
+        end
 
         # Additional size check before parsing
-        if json_string.length > ENV.fetch("JSON_MAX_SIZE", "10485760").to_i # 10MB default
+        if json_string.length > max_size
           raise ArgumentError, "JSON payload too large for parsing"
         end
 

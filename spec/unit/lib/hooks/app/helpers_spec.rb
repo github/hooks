@@ -324,6 +324,45 @@ describe Hooks::App::Helpers do
         helper.send(:safe_json_parse, large_json)
       }.to raise_error(ArgumentError, "JSON payload too large for parsing")
     end
+
+    it "raises ArgumentError when JSON_MAX_NESTING is invalid (too low)" do
+      stub_const("ENV", ENV.to_h.merge("JSON_MAX_NESTING" => "0"))
+
+      expect {
+        helper.send(:safe_json_parse, '{"test": "data"}')
+      }.to raise_error(ArgumentError, "Invalid JSON_MAX_NESTING value: must be between 1 and 100")
+    end
+
+    it "raises ArgumentError when JSON_MAX_NESTING is invalid (too high)" do
+      stub_const("ENV", ENV.to_h.merge("JSON_MAX_NESTING" => "101"))
+
+      expect {
+        helper.send(:safe_json_parse, '{"test": "data"}')
+      }.to raise_error(ArgumentError, "Invalid JSON_MAX_NESTING value: must be between 1 and 100")
+    end
+
+    it "raises ArgumentError when JSON_MAX_SIZE is invalid (too low)" do
+      stub_const("ENV", ENV.to_h.merge("JSON_MAX_SIZE" => "0"))
+
+      expect {
+        helper.send(:safe_json_parse, '{"test": "data"}')
+      }.to raise_error(ArgumentError, "Invalid JSON_MAX_SIZE value: must be between 1 and 104857600 bytes")
+    end
+
+    it "raises ArgumentError when JSON_MAX_SIZE is invalid (too high)" do
+      stub_const("ENV", ENV.to_h.merge("JSON_MAX_SIZE" => "104857601"))
+
+      expect {
+        helper.send(:safe_json_parse, '{"test": "data"}')
+      }.to raise_error(ArgumentError, "Invalid JSON_MAX_SIZE value: must be between 1 and 104857600 bytes")
+    end
+
+    it "parses valid JSON with valid limits" do
+      stub_const("ENV", ENV.to_h.merge("JSON_MAX_NESTING" => "5", "JSON_MAX_SIZE" => "100"))
+
+      result = helper.send(:safe_json_parse, '{"test": "data"}')
+      expect(result).to eq({ "test" => "data" })
+    end
   end
 
   describe "#determine_error_code" do

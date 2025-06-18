@@ -79,6 +79,55 @@ describe Hooks::App::Auth do
             instance.validate_auth!(payload, headers, endpoint_config)
           end.to raise_error(StandardError, /authentication configuration missing or invalid/)
         end
+
+        it "rejects request with whitespace-only type" do
+          endpoint_config = { auth: { type: "   " } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication configuration missing or invalid/)
+        end
+      end
+
+      context "with invalid auth type characters" do
+        it "rejects request with auth type containing invalid characters" do
+          endpoint_config = { auth: { type: "hmac-test!" } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication configuration contains invalid characters/)
+        end
+
+        it "rejects request with auth type containing spaces" do
+          endpoint_config = { auth: { type: "hmac test" } }
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication configuration contains invalid characters/)
+        end
+
+        it "accepts valid auth type with uppercase (converts to lowercase)" do
+          endpoint_config = { auth: { type: "HMAC", secret_env_key: "TEST_SECRET" } }
+          ENV["TEST_SECRET"] = "test-secret"
+
+          # Should convert HMAC to hmac and then fail authentication (not configuration error)
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /authentication failed/)
+
+          ENV.delete("TEST_SECRET")
+        end
+
+        it "accepts valid auth type with underscores and numbers" do
+          endpoint_config = { auth: { type: "hmac_v2_test", secret_env_key: "TEST_SECRET" } }
+          ENV["TEST_SECRET"] = "test-secret"
+
+          expect do
+            instance.validate_auth!(payload, headers, endpoint_config)
+          end.to raise_error(StandardError, /unsupported auth type 'hmac_v2_test'/)
+
+          ENV.delete("TEST_SECRET")
+        end
       end
 
       context "with missing secret configuration" do

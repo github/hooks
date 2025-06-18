@@ -107,7 +107,8 @@ module Hooks
         when ".json"
           JSON.parse(content)
         when ".yml", ".yaml"
-          YAML.safe_load(content, permitted_classes: [Symbol])
+          # Security: Use safe_load without permitting classes for maximum security
+          YAML.safe_load(content, permitted_classes: [], permitted_symbols: [], aliases: false)
         else
           nil
         end

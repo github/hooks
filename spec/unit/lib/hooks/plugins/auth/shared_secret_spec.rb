@@ -250,6 +250,19 @@ describe Hooks::Plugins::Auth::SharedSecret do
         expect(valid_with(headers:)).to be true
       end
 
+      it "prevents timing attacks via whitespace manipulation" do
+        # Ensure that if somehow whitespace gets through validation,
+        # we still don't expose timing information by comparing directly
+        headers_with_raw_secret = { default_header => secret }
+
+        # Mock valid_header_value? to return true (simulating bypass)
+        allow(described_class).to receive(:valid_header_value?).and_return(true)
+
+        # Verify secure_compare is called with the raw secret, not stripped
+        expect(Rack::Utils).to receive(:secure_compare).with(secret, secret).and_return(true)
+        expect(valid_with(headers: headers_with_raw_secret)).to be true
+      end
+
       it "handles exceptions gracefully" do
         # Mock an exception during validation
         allow(Rack::Utils).to receive(:secure_compare).and_raise(StandardError.new("test error"))

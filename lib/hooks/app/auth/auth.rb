@@ -24,15 +24,36 @@ module Hooks
         auth_config = endpoint_config[:auth]
         request_id = request_context&.dig(:request_id)
 
-        # Ensure auth type is present and valid
-        auth_type = auth_config&.dig(:type)
-        unless auth_type&.is_a?(String) && !auth_type.strip.empty?
+        # Validate auth configuration structure
+        unless auth_config.is_a?(Hash) && !auth_config.empty?
           log.error("authentication configuration missing or invalid - request_id: #{request_id}")
           error!({
             error: "authentication_configuration_error",
             message: "authentication configuration missing or invalid",
             request_id:
           }, 500)
+        end
+
+        # Ensure auth type is present and valid
+        auth_type = auth_config[:type]
+        unless auth_type.is_a?(String) && !auth_type.strip.empty?
+          log.error("authentication type missing or invalid - request_id: #{request_id}")
+          error!({
+            error: "authentication_configuration_error",
+            message: "authentication configuration missing or invalid",
+            request_id:
+          }, 500)
+        end
+
+        # Sanitize auth type to prevent potential exploits
+        auth_type = auth_type.strip.downcase
+        unless auth_type.match?(/\A[a-z0-9_]+\z/)
+          log.error("authentication type contains invalid characters - request_id: #{request_id}")
+          error!({
+            error: "authentication_configuration_error",
+            message: "authentication configuration contains invalid characters",
+            request_id:
+          }, 400)
         end
 
         # Get auth plugin from loaded plugins registry (boot-time loaded only)
