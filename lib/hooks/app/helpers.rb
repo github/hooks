@@ -3,7 +3,7 @@
 require "securerandom"
 require_relative "../security"
 require_relative "../core/plugin_loader"
-require_relative "network/ip_filtering"
+require_relative "../core/network/ip_filtering"
 
 module Hooks
   module App
@@ -108,7 +108,7 @@ module Hooks
       # @return [void]
       # @note This method will halt execution with an error if IP filtering rules fail.
       def ip_filtering!(headers, endpoint_config, global_config, request_context, env)
-        Network::IpFiltering.ip_filtering!(headers, endpoint_config, global_config, request_context, env)
+        Hooks::Core::Network::IpFiltering.ip_filtering!(headers, endpoint_config, global_config, request_context, env)
       end
 
       private

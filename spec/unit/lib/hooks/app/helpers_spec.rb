@@ -354,7 +354,7 @@ describe Hooks::App::Helpers do
     let(:env) { {} }
 
     it "delegates to Network::IpFiltering.ip_filtering!" do
-      expect(Hooks::App::Network::IpFiltering).to receive(:ip_filtering!).with(
+      expect(Hooks::Core::Network::IpFiltering).to receive(:ip_filtering!).with(
         headers,
         endpoint_config,
         global_config,

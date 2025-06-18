@@ -4,7 +4,7 @@ require "ipaddr"
 require_relative "../../plugins/handlers/error"
 
 module Hooks
-  module App
+  module Core
     module Network
       # Application-level IP filtering functionality for HTTP requests.
       #

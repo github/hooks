@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "../../../unit/spec_helper"
-require_relative "../../../../lib/hooks/app/network/ip_filtering"
+require_relative "../../../../lib/hooks/core/network/ip_filtering"
 
-RSpec.describe Hooks::App::Network::IpFiltering do
+describe Hooks::Core::Network::IpFiltering do
   describe ".ip_filtering!" do
     let(:headers) { { "X-Forwarded-For" => "192.168.1.100" } }
     let(:endpoint_config) { {} }
