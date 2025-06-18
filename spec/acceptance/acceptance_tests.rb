@@ -587,5 +587,86 @@ describe "Hooks" do
         expect_response(response, Net::HTTPUnauthorized, "authentication failed")
       end
     end
+
+    describe "application-level IP filtering" do
+      it "allows requests from IPs in allowlist" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "127.0.0.1" }
+        response = make_request(:post, "/webhooks/ip_filtering_direct", payload, headers)
+
+        expect_response(response, Net::HTTPSuccess)
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("success")
+      end
+
+      it "allows requests from IPs in CIDR range" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "192.168.1.50" }
+        response = make_request(:post, "/webhooks/ip_filtering_direct", payload, headers)
+
+        expect_response(response, Net::HTTPSuccess)
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("success")
+      end
+
+      it "blocks requests from IPs in blocklist even if in allowlist" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "192.168.1.100" }
+        response = make_request(:post, "/webhooks/ip_filtering_direct", payload, headers)
+
+        expect_response(response, Net::HTTPForbidden)
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("ip_filtering_failed")
+        expect(body["message"]).to eq("IP address not allowed")
+      end
+
+      it "blocks requests from IPs not in allowlist" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "203.0.113.1" }
+        response = make_request(:post, "/webhooks/ip_filtering_direct", payload, headers)
+
+        expect_response(response, Net::HTTPForbidden)
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("ip_filtering_failed")
+      end
+
+      it "uses custom IP header when configured" do
+        payload = {}.to_json
+        headers = {
+          "Content-Type" => "application/json",
+          "X-Real-IP" => "10.0.0.1",
+          "X-Forwarded-For" => "203.0.113.1"
+        }
+        response = make_request(:post, "/webhooks/ip_filtering_custom_header", payload, headers)
+
+        expect_response(response, Net::HTTPSuccess)
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("success")
+      end
+
+      it "blocks requests when custom IP header has disallowed IP" do
+        payload = {}.to_json
+        headers = {
+          "Content-Type" => "application/json",
+          "X-Real-IP" => "203.0.113.1",
+          "X-Forwarded-For" => "10.0.0.1"
+        }
+        response = make_request(:post, "/webhooks/ip_filtering_custom_header", payload, headers)
+
+        expect_response(response, Net::HTTPForbidden)
+        body = parse_json_response(response)
+        expect(body["error"]).to eq("ip_filtering_failed")
+      end
+
+      it "allows requests when no IP filtering is configured" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json", "X-Forwarded-For" => "203.0.113.1" }
+        response = make_request(:post, "/webhooks/hello", payload, headers)
+
+        expect_response(response, Net::HTTPSuccess)
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("success")
+      end
+    end
   end
 end

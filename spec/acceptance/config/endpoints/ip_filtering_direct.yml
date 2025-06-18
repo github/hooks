@@ -1,0 +1,9 @@
+path: /ip_filtering_direct
+handler: hello
+
+ip_filtering:
+  allowlist:
+    - "127.0.0.1"
+    - "192.168.1.0/24"
+  blocklist:
+    - "192.168.1.100"
