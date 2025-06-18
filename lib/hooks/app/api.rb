@@ -39,7 +39,6 @@ module Hooks
           content_type :xml, "application/xml"
           content_type :any, "*/*"
 
-          format config[:format] || :json
           default_format config[:default_format] || :json
         end
 

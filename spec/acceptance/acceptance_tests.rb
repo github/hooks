@@ -532,13 +532,10 @@ describe "Hooks" do
         response = make_request(:post, "/webhooks/boomtown_with_error", payload, json_headers)
         expect_response(response, Net::HTTPInternalServerError)
 
-        # With JSON default format, even string errors are JSON-encoded
-        expect(response.content_type).to eq("application/json")
+        expect(response.content_type).to eq("text/plain")
         expect(response.code).to eq("500")
 
-        # The error body should be the JSON-encoded string
-        body = parse_json_response(response)
-        expect(body).to eq("boomtown_with_error: the payload triggered a simple text boomtown error")
+        expect(response.body).to match(/boomtown_with_error: the payload triggered a simple text boomtown error/)
       end
     end
 

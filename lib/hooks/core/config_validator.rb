@@ -27,6 +27,7 @@ module Hooks
         optional(:endpoints_dir).filled(:string)
         optional(:use_catchall_route).filled(:bool)
         optional(:normalize_headers).filled(:bool)
+        optional(:default_format).filled(:symbol, included_in?: %i[json txt xml any])
 
         optional(:ip_filtering).hash do
           optional(:ip_header).filled(:string)

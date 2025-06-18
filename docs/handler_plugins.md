@@ -73,7 +73,7 @@ Example response format:
 }
 ```
 
-> **Note**: The JSON format behavior can be configured using the `format` and `default_format` options in your global configuration. See the [Configuration documentation](./configuration.md) for more details.
+> **Note**: The JSON format behavior can be configured using the `default_format` option in your global configuration. See the [Configuration documentation](./configuration.md) for more details.
 
 ### `payload` Parameter
 

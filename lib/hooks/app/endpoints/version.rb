@@ -11,7 +11,6 @@ module Hooks
       content_type :txt, "text/plain"
       content_type :xml, "application/xml"
       content_type :any, "*/*"
-      format :json
       default_format :json
 
       get do

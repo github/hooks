@@ -22,7 +22,6 @@ module Hooks
       content_type :txt, "text/plain"
       content_type :xml, "application/xml"
       content_type :any, "*/*"
-      format :json
       default_format :json
 
       def self.mount_path(config)
