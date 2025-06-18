@@ -632,8 +632,8 @@ describe "Hooks" do
 
       it "uses custom IP header when configured" do
         payload = {}.to_json
-        headers = { 
-          "Content-Type" => "application/json", 
+        headers = {
+          "Content-Type" => "application/json",
           "X-Real-IP" => "10.0.0.1",
           "X-Forwarded-For" => "203.0.113.1"
         }
@@ -646,8 +646,8 @@ describe "Hooks" do
 
       it "blocks requests when custom IP header has disallowed IP" do
         payload = {}.to_json
-        headers = { 
-          "Content-Type" => "application/json", 
+        headers = {
+          "Content-Type" => "application/json",
           "X-Real-IP" => "203.0.113.1",
           "X-Forwarded-For" => "10.0.0.1"
         }

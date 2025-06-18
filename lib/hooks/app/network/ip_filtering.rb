@@ -59,7 +59,7 @@ module Hooks
         private_class_method def self.extract_client_ip(headers, ip_config)
           # Use configured header or default to X-Forwarded-For
           ip_header = ip_config[:ip_header] || DEFAULT_IP_HEADER
-          
+
           # Case-insensitive header lookup
           headers.each do |key, value|
             if key.to_s.downcase == ip_header.downcase
@@ -68,7 +68,7 @@ module Hooks
               return client_ip unless client_ip.nil? || client_ip.empty?
             end
           end
-          
+
           nil
         end
 
