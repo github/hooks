@@ -3,7 +3,7 @@ FROM ruby:3.4.4-slim@sha256:93664239ae7e485147c2fa83397fdc24bf7b7f1e15c3ad9d4859
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential libyaml-dev && \
+    apt-get install -y --no-install-recommends build-essential libyaml-dev curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
