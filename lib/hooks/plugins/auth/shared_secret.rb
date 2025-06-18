@@ -81,10 +81,8 @@ module Hooks
             return false
           end
 
-          stripped_secret = raw_secret.strip
-
           # Use secure comparison to prevent timing attacks
-          result = Rack::Utils.secure_compare(secret, stripped_secret)
+          result = Rack::Utils.secure_compare(secret, raw_secret)
           if result
             log.debug("Auth::SharedSecret validation successful for header '#{secret_header}'")
           else
