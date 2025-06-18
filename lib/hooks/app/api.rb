@@ -39,8 +39,7 @@ module Hooks
           content_type :xml, "application/xml"
           content_type :any, "*/*"
 
-          format :txt # TODO: make this configurable via config[:format] (defaults to :json in the future)
-          default_format :txt # TODO: make this configurable via config[:default_format] (defaults to :json in the future)
+          default_format config[:default_format] || :json
         end
 
         api_class.class_eval do
@@ -118,22 +117,21 @@ module Hooks
                   log.info("successfully processed webhook event with handler: #{handler_class_name}")
                   log.debug("processing duration: #{Time.now - start_time}s")
                   status 200
-                  content_type "application/json"
-                  response.to_json
+                  response
                 rescue Hooks::Plugins::Handlers::Error => e
                   # Handler called error! method - immediately return error response and exit the request
                   log.debug("handler #{handler_class_name} called `error!` method")
 
-                  error_response = nil
-
                   status e.status
                   case e.body
                   when String
+                    # if error! was called with a string, we assume it's a simple text error
+                    # example: error!("simple text error", 400) -> should return a plain text response
                     content_type "text/plain"
                     error_response = e.body
                   else
-                    content_type "application/json"
-                    error_response = e.body.to_json
+                    # Let Grape handle JSON conversion with the default format
+                    error_response = e.body
                   end
 
                   return error_response
@@ -164,8 +162,7 @@ module Hooks
                   error_response[:handler] = handler_class_name unless config[:production]
 
                   status determine_error_code(e)
-                  content_type "application/json"
-                  error_response.to_json
+                  error_response
                 end
               end
             end

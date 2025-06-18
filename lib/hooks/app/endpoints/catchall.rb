@@ -17,6 +17,13 @@ module Hooks
     class CatchallEndpoint < Grape::API
       include Hooks::App::Helpers
 
+      # Set up content types and default format to JSON to match main API
+      content_type :json, "application/json"
+      content_type :txt, "text/plain"
+      content_type :xml, "application/xml"
+      content_type :any, "*/*"
+      default_format :json
+
       def self.mount_path(config)
         # :nocov:
         "#{config[:root_path]}/*path"
@@ -81,8 +88,7 @@ module Hooks
               log.info("successfully processed webhook event with handler: #{handler_class_name}")
               log.debug("processing duration: #{Time.now - start_time}s")
               status 200
-              content_type "application/json"
-              response.to_json
+              response
             rescue StandardError => e
               err_msg = "Error processing webhook event with handler: #{handler_class_name} - #{e.message} " \
                 "- request_id: #{request_id} - path: #{full_path} - method: #{http_method} - " \
@@ -102,8 +108,7 @@ module Hooks
               error_response[:handler] = handler_class_name unless config[:production]
 
               status determine_error_code(e)
-              content_type "application/json"
-              error_response.to_json
+              error_response
             end
           end
         end

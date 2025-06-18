@@ -103,7 +103,15 @@ When set to `true`, enables a catch-all route that will handle requests to unkno
 
 When set to `true`, normalizes incoming HTTP headers by lowercasing and trimming them. This ensures consistency in header names and values.
 
-**Default:** `true`  
+**Default:** `true`
+
+### `default_format`
+
+Sets the default response format when no specific format is requested.
+
+**Default:** `json`  
+**Valid values:** `json`, `txt`, `xml`, `any`  
+**Example:** `json`
 
 ## Endpoint Options
 

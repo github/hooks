@@ -6,6 +6,8 @@ instruments_plugin_dir: ./spec/acceptance/plugins/instruments
 
 log_level: debug
 
+default_format: json # default response format for the server
+
 # Request handling
 request_limit: 1048576    # 1MB max body size
 request_timeout: 15       # 15 seconds timeout

@@ -19,7 +19,8 @@ describe Hooks::Core::ConfigLoader do
           production: true,
           endpoints_dir: "./config/endpoints",
           use_catchall_route: false,
-          normalize_headers: true
+          normalize_headers: true,
+          default_format: :json
         )
       end
     end
@@ -196,6 +197,14 @@ describe Hooks::Core::ConfigLoader do
         expect(config[:use_catchall_route]).to be true
         expect(config[:normalize_headers]).to be true
         expect(config[:some_string_var]).to eq("test_value") # Check the string var
+      end
+
+      it "converts format environment variables to symbols" do
+        ENV["HOOKS_DEFAULT_FORMAT"] = "xml"
+
+        config = described_class.load
+
+        expect(config[:default_format]).to eq(:xml)
       end
     end
 
