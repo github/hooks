@@ -465,3 +465,5 @@ opts:
     - "<ALLOWED_IP_2>"
     - "<ALLOWED_IP_3>"
 ```
+
+To use the built-in IP filtering feature (rather than trying to implement your own like this example above), check out the [IP Filtering documentation](ip_filtering.md).
