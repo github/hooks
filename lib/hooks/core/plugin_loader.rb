@@ -205,7 +205,11 @@ module Hooks
           require file_path
 
           # Get the class and validate it
-          auth_plugin_class = Object.const_get("Hooks::Plugins::Auth::#{class_name}")
+          auth_plugin_class = begin
+            Hooks::Plugins::Auth.const_get(class_name, false) # false = don't inherit from ancestors
+          rescue NameError
+            raise StandardError, "Auth plugin class not found in Hooks::Plugins::Auth namespace: #{class_name}"
+          end
           unless auth_plugin_class < Hooks::Plugins::Auth::Base
             raise StandardError, "Auth plugin class must inherit from Hooks::Plugins::Auth::Base: #{class_name}"
           end
@@ -239,8 +243,13 @@ module Hooks
           # Load the file
           require file_path
 
-          # Get the class and validate it
-          handler_class = Object.const_get(class_name)
+          # Get the class and validate it - use safe constant lookup
+          handler_class = begin
+            # Check if the constant exists in the global namespace for handlers
+            Object.const_get(class_name, false) # false = don't inherit from ancestors
+          rescue NameError
+            raise StandardError, "Handler class not found: #{class_name}"
+          end
           unless handler_class < Hooks::Plugins::Handlers::Base
             raise StandardError, "Handler class must inherit from Hooks::Plugins::Handlers::Base: #{class_name}"
           end
@@ -274,8 +283,12 @@ module Hooks
           # Load the file
           require file_path
 
-          # Get the class and validate it
-          lifecycle_class = Object.const_get(class_name)
+          # Get the class and validate it - use safe constant lookup
+          lifecycle_class = begin
+            Object.const_get(class_name, false) # false = don't inherit from ancestors
+          rescue NameError
+            raise StandardError, "Lifecycle plugin class not found: #{class_name}"
+          end
           unless lifecycle_class < Hooks::Plugins::Lifecycle
             raise StandardError, "Lifecycle plugin class must inherit from Hooks::Plugins::Lifecycle: #{class_name}"
           end
@@ -309,8 +322,12 @@ module Hooks
           # Load the file
           require file_path
 
-          # Get the class and validate it
-          instrument_class = Object.const_get(class_name)
+          # Get the class and validate it - use safe constant lookup
+          instrument_class = begin
+            Object.const_get(class_name, false) # false = don't inherit from ancestors
+          rescue NameError
+            raise StandardError, "Instrument plugin class not found: #{class_name}"
+          end
 
           # Determine instrument type based on inheritance
           if instrument_class < Hooks::Plugins::Instruments::StatsBase
