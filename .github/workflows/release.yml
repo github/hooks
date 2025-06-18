@@ -104,7 +104,7 @@ jobs:
         env:
           GEM_NAME: ${{ needs.build.outputs.gem_name }}
           GEM_VERSION: ${{ needs.build.outputs.gem_version }}
-        run: bundle exec rubygems-await "${GEM_NAME}:${GEM_VERSION}" --timeout 120
+        run: bundle exec rubygems-await "${GEM_NAME}:${GEM_VERSION}" --timeout 300
 
       - name: GitHub Release
         env:
