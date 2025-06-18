@@ -4,7 +4,7 @@ This document provides in-depth information about handler plugins and how you ca
 
 ## Writing a Handler Plugin
 
-Handler plugins are Ruby classes that extend the `Hooks::Plugins::Handlers::Base` class. They are used to process webhook payloads and can do anything you want. They follow a very simple interface that allows you to define a `call` method that takes four parameters: `payload`, `headers`, `env`, and `config`. 
+Handler plugins are Ruby classes that extend the `Hooks::Plugins::Handlers::Base` class. They are used to process webhook payloads and can do anything you want. They follow a very simple interface that allows you to define a `call` method that takes four parameters: `payload`, `headers`, `env`, and `config`.
 
 **Important:** The `call` method should return a hash by default. Since the server now defaults to JSON format, any hash returned by the handler will be automatically converted to JSON with the correct `Content-Type: application/json` headers set by Grape. This ensures consistent API responses and proper JSON serialization.
 
@@ -61,6 +61,7 @@ By default, the Hooks server uses JSON format for both input and output processi
 **Best Practice**: Always return a hash from your handler's `call` method. The hash will be automatically serialized to JSON and sent to the webhook sender with proper headers. This ensures consistent API responses and proper JSON formatting.
 
 Example response format:
+
 ```json
 {
   "status": "success",
@@ -242,6 +243,7 @@ end
 ```
 
 This will return a properly formatted JSON error response:
+
 ```json
 {
   "error": "payload_empty",
