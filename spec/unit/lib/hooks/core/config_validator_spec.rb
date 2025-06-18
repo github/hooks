@@ -5,7 +5,7 @@ describe Hooks::Core::ConfigValidator do
     context "with valid configuration" do
       it "returns validated configuration with all optional fields" do
         config = {
-          handler_dir: "./custom_handlers",
+          handler_plugin_dir: "./custom_handlers",
           log_level: "debug",
           request_limit: 2_048_000,
           request_timeout: 45,
@@ -101,7 +101,7 @@ describe Hooks::Core::ConfigValidator do
 
       it "raises ValidationError for empty string values" do
         config = {
-          handler_dir: "",
+          handler_plugin_dir: "",
           root_path: "",
           health_path: ""
         }
@@ -125,7 +125,7 @@ describe Hooks::Core::ConfigValidator do
 
       it "raises ValidationError for non-string paths" do
         config = {
-          handler_dir: 123,
+          handler_plugin_dir: 123,
           root_path: [],
           endpoints_dir: {}
         }

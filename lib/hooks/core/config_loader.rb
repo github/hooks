@@ -127,7 +127,6 @@ module Hooks
         env_config = {}
 
         env_mappings = {
-          "HOOKS_HANDLER_DIR" => :handler_dir,
           "HOOKS_HANDLER_PLUGIN_DIR" => :handler_plugin_dir,
           "HOOKS_AUTH_PLUGIN_DIR" => :auth_plugin_dir,
           "HOOKS_LIFECYCLE_PLUGIN_DIR" => :lifecycle_plugin_dir,
