@@ -38,8 +38,9 @@ module Hooks
           content_type :txt, "text/plain"
           content_type :xml, "application/xml"
           content_type :any, "*/*"
-          format :txt
-          default_format :txt
+
+          format :txt # TODO: make this configurable via config[:format] (defaults to :json in the future)
+          default_format :txt # TODO: make this configurable via config[:default_format] (defaults to :json in the future)
         end
 
         api_class.class_eval do
