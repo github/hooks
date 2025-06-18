@@ -240,6 +240,28 @@ describe Hooks::Core::PluginLoader do
       end
     end
 
+    it "raises error when auth plugin class is not found after loading" do
+      temp_auth_dir = File.join(temp_dir, "auth_missing_class")
+      FileUtils.mkdir_p(temp_auth_dir)
+
+      # Create plugin file that doesn't define the expected class
+      missing_file = File.join(temp_auth_dir, "missing_auth.rb")
+      File.write(missing_file, <<~RUBY)
+        # This file doesn't define MissingAuth class
+        module Hooks
+          module Plugins
+            module Auth
+              # Nothing here
+            end
+          end
+        end
+      RUBY
+
+      expect {
+        described_class.send(:load_custom_auth_plugin, missing_file, temp_auth_dir)
+      }.to raise_error(StandardError, /Auth plugin class not found in Hooks::Plugins::Auth namespace: MissingAuth/)
+    end
+
     describe "handler plugin loading failures" do
       it "raises error when handler plugin file fails to load" do
         temp_handler_dir = File.join(temp_dir, "handler_failures")
@@ -297,6 +319,23 @@ describe Hooks::Core::PluginLoader do
         expect {
           described_class.send(:load_custom_handler_plugin, wrong_file, temp_handler_dir)
         }.to raise_error(StandardError, /Handler class must inherit from Hooks::Plugins::Handlers::Base/)
+      end
+
+      it "raises error when handler plugin class is not found after loading" do
+        temp_handler_dir = File.join(temp_dir, "handler_missing_class")
+        FileUtils.mkdir_p(temp_handler_dir)
+
+        # Create plugin file that doesn't define the expected class
+        missing_file = File.join(temp_handler_dir, "missing_handler.rb")
+        File.write(missing_file, <<~RUBY)
+          # This file doesn't define MissingHandler class
+          class SomeOtherClass
+          end
+        RUBY
+
+        expect {
+          described_class.send(:load_custom_handler_plugin, missing_file, temp_handler_dir)
+        }.to raise_error(StandardError, /Handler class not found: MissingHandler/)
       end
     end
 
@@ -358,6 +397,23 @@ describe Hooks::Core::PluginLoader do
           described_class.send(:load_custom_lifecycle_plugin, wrong_file, temp_lifecycle_dir)
         }.to raise_error(StandardError, /Lifecycle plugin class must inherit from Hooks::Plugins::Lifecycle/)
       end
+
+      it "raises error when lifecycle plugin class is not found after loading" do
+        temp_lifecycle_dir = File.join(temp_dir, "lifecycle_missing_class")
+        FileUtils.mkdir_p(temp_lifecycle_dir)
+
+        # Create plugin file that doesn't define the expected class
+        missing_file = File.join(temp_lifecycle_dir, "missing_lifecycle.rb")
+        File.write(missing_file, <<~RUBY)
+          # This file doesn't define MissingLifecycle class
+          class SomeOtherClass
+          end
+        RUBY
+
+        expect {
+          described_class.send(:load_custom_lifecycle_plugin, missing_file, temp_lifecycle_dir)
+        }.to raise_error(StandardError, /Lifecycle plugin class not found: MissingLifecycle/)
+      end
     end
 
     describe "instrument plugin loading failures" do
@@ -417,6 +473,23 @@ describe Hooks::Core::PluginLoader do
         expect {
           described_class.send(:load_custom_instrument_plugin, wrong_file, temp_instrument_dir)
         }.to raise_error(StandardError, /Instrument plugin class must inherit from StatsBase or FailbotBase/)
+      end
+
+      it "raises error when instrument plugin class is not found after loading" do
+        temp_instrument_dir = File.join(temp_dir, "instrument_missing_class")
+        FileUtils.mkdir_p(temp_instrument_dir)
+
+        # Create plugin file that doesn't define the expected classAdd commentMore actions
+        missing_file = File.join(temp_instrument_dir, "missing_instrument.rb")
+        File.write(missing_file, <<~RUBY)
+          # This file doesn't define MissingInstrument class
+          class SomeOtherClass
+          end
+        RUBY
+
+        expect {
+          described_class.send(:load_custom_instrument_plugin, missing_file, temp_instrument_dir)
+        }.to raise_error(StandardError, /Instrument plugin class not found: MissingInstrument/)
       end
     end
   end
