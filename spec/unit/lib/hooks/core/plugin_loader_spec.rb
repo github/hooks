@@ -479,7 +479,7 @@ describe Hooks::Core::PluginLoader do
         temp_instrument_dir = File.join(temp_dir, "instrument_missing_class")
         FileUtils.mkdir_p(temp_instrument_dir)
 
-        # Create plugin file that doesn't define the expected classAdd commentMore actions
+        # Create plugin file that doesn't define the expected class
         missing_file = File.join(temp_instrument_dir, "missing_instrument.rb")
         File.write(missing_file, <<~RUBY)
           # This file doesn't define MissingInstrument class
