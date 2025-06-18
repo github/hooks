@@ -5,7 +5,7 @@ describe Hooks::Core::ConfigValidator do
     context "with valid configuration" do
       it "returns validated configuration with all optional fields" do
         config = {
-          handler_dir: "./custom_handlers",
+          handler_plugin_dir: "./custom_handlers",
           log_level: "debug",
           request_limit: 2_048_000,
           request_timeout: 45,
@@ -24,15 +24,25 @@ describe Hooks::Core::ConfigValidator do
       end
 
       it "returns validated configuration with minimal fields" do
-        config = {}
+        config = {
+          handler_plugin_dir: "/path/to/handlers",
+          log_level: "info",
+          root_path: "/app",
+          environment: "development"
+        }
 
         result = described_class.validate_global_config(config)
 
-        expect(result).to eq({})
+        expect(result).to eq(config)
       end
 
       it "accepts production environment" do
-        config = { environment: "production" }
+        config = {
+          environment: "production",
+          handler_plugin_dir: "/path/to/handlers",
+          log_level: "info",
+          root_path: "/app"
+        }
 
         result = described_class.validate_global_config(config)
 
@@ -41,7 +51,12 @@ describe Hooks::Core::ConfigValidator do
 
       it "accepts valid log levels" do
         %w[debug info warn error].each do |log_level|
-          config = { log_level: log_level }
+          config = {
+            log_level: log_level,
+            handler_plugin_dir: "/path/to/handlers",
+            root_path: "/app",
+            environment: "development"
+          }
 
           result = described_class.validate_global_config(config)
 
@@ -101,7 +116,7 @@ describe Hooks::Core::ConfigValidator do
 
       it "raises ValidationError for empty string values" do
         config = {
-          handler_dir: "",
+          handler_plugin_dir: "",
           root_path: "",
           health_path: ""
         }
@@ -114,7 +129,11 @@ describe Hooks::Core::ConfigValidator do
       it "coerces boolean-like string values" do
         config = {
           use_catchall_route: "true",
-          normalize_headers: "1"
+          normalize_headers: "1",
+          handler_plugin_dir: "/path/to/handlers",
+          log_level: "info",
+          root_path: "/app",
+          environment: "development"
         }
 
         result = described_class.validate_global_config(config)
@@ -125,7 +144,7 @@ describe Hooks::Core::ConfigValidator do
 
       it "raises ValidationError for non-string paths" do
         config = {
-          handler_dir: 123,
+          handler_plugin_dir: 123,
           root_path: [],
           endpoints_dir: {}
         }
@@ -138,7 +157,11 @@ describe Hooks::Core::ConfigValidator do
       it "coerces string numeric values" do
         config = {
           request_limit: "1024",
-          request_timeout: "30"
+          request_timeout: "30",
+          handler_plugin_dir: "/path/to/handlers",
+          log_level: "info",
+          root_path: "/app",
+          environment: "development"
         }
 
         result = described_class.validate_global_config(config)
@@ -164,7 +187,13 @@ describe Hooks::Core::ConfigValidator do
       end
 
       it "coerces float values to integers by truncating" do
-        config = { request_timeout: 30.5 }
+        config = {
+          request_timeout: 30.5,
+          handler_plugin_dir: "/path/to/handlers",
+          log_level: "info",
+          root_path: "/app",
+          environment: "development"
+        }
 
         result = described_class.validate_global_config(config)
 

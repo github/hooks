@@ -12,18 +12,17 @@ module Hooks
 
       # Global configuration schema
       GLOBAL_CONFIG_SCHEMA = Dry::Schema.Params do
-        optional(:handler_dir).filled(:string)  # For backward compatibility
-        optional(:handler_plugin_dir).filled(:string)
+        required(:handler_plugin_dir).filled(:string)
         optional(:auth_plugin_dir).maybe(:string)
         optional(:lifecycle_plugin_dir).maybe(:string)
         optional(:instruments_plugin_dir).maybe(:string)
-        optional(:log_level).filled(:string, included_in?: %w[debug info warn error])
+        required(:log_level).filled(:string, included_in?: %w[debug info warn error])
         optional(:request_limit).filled(:integer, gt?: 0)
         optional(:request_timeout).filled(:integer, gt?: 0)
-        optional(:root_path).filled(:string)
+        required(:root_path).filled(:string)
         optional(:health_path).filled(:string)
         optional(:version_path).filled(:string)
-        optional(:environment).filled(:string, included_in?: %w[development production])
+        required(:environment).filled(:string, included_in?: %w[development production])
         optional(:endpoints_dir).filled(:string)
         optional(:use_catchall_route).filled(:bool)
         optional(:normalize_headers).filled(:bool)

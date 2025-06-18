@@ -109,7 +109,7 @@ export HOOKS_ROOT_PATH="/webhooks"
 export HOOKS_LOG_LEVEL=info
 
 # Paths
-export HOOKS_HANDLER_DIR=./handlers
+export HOOKS_HANDLER_PLUGIN_DIR=./handlers
 export HOOKS_HEALTH_PATH=/health
 export HOOKS_VERSION_PATH=/version
 
@@ -163,7 +163,7 @@ lib/hooks/
 ```yaml
 # config/endpoints/team1.yaml
 path: /team1                  # Mounted at <root_path>/team1
-handler: Team1Handler         # Class in handler_dir
+handler: Team1Handler         # Class in handler_plugin_dir
 
 # Signature validation
 auth:
@@ -181,7 +181,7 @@ opts:                         # Freeform user-defined options
 
 ```yaml
 # config/config.yaml
-handler_dir:     ./handlers         # handler class directory
+handler_plugin_dir:     ./handlers         # handler class directory
 log_level:       info               # debug | info | warn | error
 
 # Request handling
@@ -345,7 +345,7 @@ app = Hooks.build(
 
 **Handler & Plugin Discovery:**
 
-* Handler classes are auto-discovered from `handler_dir` using file naming convention
+* Handler classes are auto-discovered from `handler_plugin_dir` using file naming convention
 * File `team1_handler.rb` → class `Team1Handler`
 * Plugin classes are loaded from `plugin_dir` and registered based on class inheritance
 * All classes must inherit from appropriate base classes to be recognized

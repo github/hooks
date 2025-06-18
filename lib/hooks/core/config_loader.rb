@@ -32,16 +32,24 @@ module Hooks
       #
       # @param config_path [String, Hash] Path to config file or config hash
       # @return [Hash] Merged configuration
+      # @raise [ArgumentError] if config file path is provided but file doesn't exist
+      # @raise [RuntimeError] if config file exists but fails to load
       def self.load(config_path: nil)
         config = DEFAULT_CONFIG.dup
         overrides = []
 
         # Load from file if path provided
-        if config_path.is_a?(String) && File.exist?(config_path)
+        if config_path.is_a?(String)
+          unless File.exist?(config_path)
+            raise ArgumentError, "Configuration file not found: #{config_path}"
+          end
+
           file_config = load_config_file(config_path)
           if file_config
             overrides << "file config"
             config.merge!(file_config)
+          else
+            raise RuntimeError, "Failed to load configuration from file: #{config_path}"
           end
         end
 
@@ -127,7 +135,6 @@ module Hooks
         env_config = {}
 
         env_mappings = {
-          "HOOKS_HANDLER_DIR" => :handler_dir,
           "HOOKS_HANDLER_PLUGIN_DIR" => :handler_plugin_dir,
           "HOOKS_AUTH_PLUGIN_DIR" => :auth_plugin_dir,
           "HOOKS_LIFECYCLE_PLUGIN_DIR" => :lifecycle_plugin_dir,
