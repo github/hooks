@@ -140,6 +140,8 @@ Congratulations! You have successfully set up a basic Hooks server which will li
 
 Keep reading to learn how to customize your Hooks server with different plugins for handlers, authentication, and more.
 
+For an in-depth flow diagram of how the Hooks server processes incoming requests, see the [Architecture Flow](docs/architecture_flow.md) documentation.
+
 ### Advanced
 
 This section will go into a more advanced and detailed example of how to setup a Hooks server with custom plugins, authentication, and more. This section also assumes you already have the `hooks-ruby` gem installed via a bundler Gemfile as shown in the [Installation](#installation-) section above.
