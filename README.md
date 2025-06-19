@@ -26,6 +26,84 @@ Hooks is a RESTful webhook server framework written in Ruby. It is designed to b
 
 Hooks is designed to be very easy to setup and use. It provides a simple DSL for defining webhook endpoints and then you can use plugins to handle the incoming requests and optionally authenticate them.
 
+### Architecture Flow
+
+The following Mermaid diagram shows the complete request processing flow, including server bootstrap, plugin loading, and webhook request handling:
+
+```mermaid
+flowchart TD
+    A[Server Start] --> B[Builder.new]
+    B --> C[Load & Validate Config]
+    C --> D[Create Logger]
+    D --> E[Load All Plugins]
+    E --> F[Load Endpoints]
+    F --> G[Create Grape API]
+    G --> H[Server Ready]
+    
+    H --> I[Incoming Request]
+    I --> J[Generate Request ID]
+    J --> K[Create Request Context]
+    K --> L[Build Rack Environment]
+    L --> M[Lifecycle: on_request]
+    
+    M --> N{IP Filtering Enabled?}
+    N -->|Yes| O[Check IP Allow/Block Lists]
+    N -->|No| P[Enforce Request Limits]
+    O --> Q{IP Allowed?}
+    Q -->|No| R[Return 403 Forbidden]
+    Q -->|Yes| P
+    
+    P --> S[Read Request Body]
+    S --> T{Auth Required?}
+    T -->|Yes| U[Load Auth Plugin]
+    T -->|No| V[Parse Payload]
+    
+    U --> W[Validate Auth]
+    W --> X{Auth Valid?}
+    X -->|No| Y[Return 401/403 Error]
+    X -->|Yes| V
+    
+    V --> Z[Load Handler Plugin]
+    Z --> AA[Normalize Headers]
+    AA --> BB[Call Handler.call]
+    BB --> CC[Lifecycle: on_response]
+    CC --> DD[Log Success]
+    DD --> EE[Return 200 + Response]
+    
+    BB --> FF{Handler Error?}
+    FF -->|Hooks::Plugins::Handlers::Error| GG[Return Handler Error Response]
+    FF -->|StandardError| HH[Log Error]
+    HH --> II[Lifecycle: on_error]
+    II --> JJ[Return 500 + Error Response]
+    
+    R --> KK[End]
+    Y --> KK
+    GG --> KK
+    EE --> KK
+    JJ --> KK
+    
+    subgraph "Plugin Types"
+        LL[Auth Plugins<br/>HMAC, Shared Secret, Custom]
+        MM[Handler Plugins<br/>Process Webhook Payload]
+        NN[Lifecycle Plugins<br/>on_request, on_response, on_error]
+        OO[Instrument Plugins<br/>Stats, Failbot]
+    end
+    
+    subgraph "Configuration"
+        PP[Global Config<br/>hooks.yml]
+        QQ[Endpoint Configs<br/>Individual .yml files]
+        RR[Plugin Directories<br/>Auth, Handlers, Lifecycle]
+    end
+    
+    style A fill:#e1f5fe
+    style H fill:#c8e6c9  
+    style R fill:#ffcdd2
+    style Y fill:#ffcdd2
+    style EE fill:#c8e6c9
+    style JJ fill:#ffcdd2
+    style GG fill:#fff3e0
+```
+
 Here is a very high-level overview of how Hooks works:
 
 1. You define a global configuration file (e.g. `hooks.yml`) where you can specify where your webhook endpoint configs are located, and the directory where your plugins are located. Here is an example of a minimal configuration file:
