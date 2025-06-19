@@ -82,26 +82,13 @@ flowchart TD
     EE --> KK
     JJ --> KK
     
-    subgraph "Plugin Types"
-        LL[Auth Plugins<br/>HMAC, Shared Secret, Custom]
-        MM[Handler Plugins<br/>Process Webhook Payload]
-        NN[Lifecycle Plugins<br/>on_request, on_response, on_error]
-        OO[Instrument Plugins<br/>Stats, Failbot]
-    end
-    
-    subgraph "Configuration"
-        PP[Global Config<br/>hooks.yml]
-        QQ[Endpoint Configs<br/>Individual .yml files]
-        RR[Plugin Directories<br/>Auth, Handlers, Lifecycle]
-    end
-    
-    style A fill:#e1f5fe
-    style H fill:#c8e6c9  
-    style R fill:#ffcdd2
-    style Y fill:#ffcdd2
-    style EE fill:#c8e6c9
-    style JJ fill:#ffcdd2
-    style GG fill:#fff3e0
+    style A fill:#035980
+    style H fill:#027306  
+    style R fill:#a10010
+    style Y fill:#a10010
+    style EE fill:#027306
+    style JJ fill:#a10010
+    style GG fill:#915a01
 ```
 
 Here is a very high-level overview of how Hooks works:
