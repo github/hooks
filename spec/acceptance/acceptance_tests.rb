@@ -680,5 +680,22 @@ describe "Hooks" do
         expect(body["status"]).to eq("success")
       end
     end
+
+    describe "hello" do
+      it "responds to the /webhooks/hello endpoint with a simple message" do
+        payload = {}.to_json
+        headers = { "Content-Type" => "application/json" }
+        response = make_request(:post, "/webhooks/hello", payload, headers)
+
+        expect_response(response, Net::HTTPSuccess)
+        body = parse_json_response(response)
+        expect(body["status"]).to eq("success")
+        expect(body["handler"]).to eq("Hello")
+        expect(body).to have_key("timestamp")
+        expect(body["timestamp"]).to be_a(String)
+        expect(body["messages"]).to be_a(Array)
+        expect(body["messages"]).to include("hello")
+      end
+    end
   end
 end

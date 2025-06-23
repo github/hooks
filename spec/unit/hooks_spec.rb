@@ -55,5 +55,47 @@ describe Hooks do
         expect(result).to eq("mock_app")
       end
     end
+
+    context "with user components" do
+      it "passes user components to builder" do
+        publisher = double("Publisher")
+        service = double("Service")
+        allow(Hooks::Core::Builder).to receive(:new).and_call_original
+        allow_any_instance_of(Hooks::Core::Builder).to receive(:build).and_return("mock_app")
+
+        result = Hooks.build(publisher: publisher, service: service)
+
+        expect(Hooks::Core::Builder).to have_received(:new).with(
+          config: nil,
+          log: nil,
+          publisher: publisher,
+          service: service
+        )
+        expect(result).to eq("mock_app")
+      end
+
+      it "passes user components along with config and log" do
+        config_hash = { environment: "test" }
+        custom_logger = double("Logger")
+        publisher = double("Publisher")
+        allow(Hooks::Core::Builder).to receive(:new).and_call_original
+        allow_any_instance_of(Hooks::Core::Builder).to receive(:build).and_return("mock_app")
+
+        result = Hooks.build(
+          config: config_hash,
+          log: custom_logger,
+          publisher: publisher,
+          custom_service: "service_instance"
+        )
+
+        expect(Hooks::Core::Builder).to have_received(:new).with(
+          config: config_hash,
+          log: custom_logger,
+          publisher: publisher,
+          custom_service: "service_instance"
+        )
+        expect(result).to eq("mock_app")
+      end
+    end
   end
 end

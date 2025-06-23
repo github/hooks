@@ -32,11 +32,13 @@ module Hooks
   #
   # @param config [String, Hash] Path to config file or config hash
   # @param log [Logger] Custom logger instance (optional)
+  # @param **extra_components [Hash] Arbitrary user-defined components to make available to handlers
   # @return [Object] Rack-compatible application
-  def self.build(config: nil, log: nil)
+  def self.build(config: nil, log: nil, **extra_components)
     Core::Builder.new(
       config:,
       log:,
+      **extra_components
     ).build
   end
 end
