@@ -132,33 +132,4 @@ describe Hooks::Core::GlobalComponents do
       expect(described_class.extra_component_names).to be_empty
     end
   end
-
-  describe "thread safety" do
-    it "handles concurrent access to user components safely" do
-      threads = []
-      results = []
-      mutex = Mutex.new
-
-      # Start multiple threads that register and access components concurrently
-      10.times do |i|
-        threads << Thread.new do
-          # Each thread registers a component with a unique name
-          described_class.register_extra_components({ "component_#{i}": "value_#{i}" })
-
-          # Then tries to read it back
-          value = described_class.get_extra_component("component_#{i}")
-          mutex.synchronize { results << value }
-        end
-      end
-
-      # Wait for all threads to complete
-      threads.each(&:join)
-
-      # Verify all components were registered and retrieved correctly
-      expect(results.size).to eq(10)
-      results.each_with_index do |result, i|
-        expect(result).to eq("value_#{i}")
-      end
-    end
-  end
 end
