@@ -15,9 +15,11 @@ module Hooks
       #
       # @param config [String, Hash] Path to config file or config hash
       # @param log [Logger] Custom logger instance
-      def initialize(config: nil, log: nil)
+      # @param **extra_components [Hash] Arbitrary user-defined components to make available to handlers
+      def initialize(config: nil, log: nil, **extra_components)
         @log = log
         @config_input = config
+        @extra_components = extra_components
       end
 
       # Build and return Rack-compatible application
@@ -36,6 +38,9 @@ module Hooks
         end
 
         Hooks::Log.instance = @log
+
+        # Register user-defined components globally
+        Hooks::Core::GlobalComponents.register_extra_components(@extra_components)
 
         # Hydrate our Retryable instance
         Retry.setup!(log: @log)

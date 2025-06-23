@@ -20,6 +20,7 @@ describe Hooks::Core::Builder do
 
       expect(builder.instance_variable_get(:@log)).to eq(log)
       expect(builder.instance_variable_get(:@config_input)).to be_nil
+      expect(builder.instance_variable_get(:@extra_components)).to eq({})
     end
 
     it "initializes with config parameter" do
@@ -40,6 +41,20 @@ describe Hooks::Core::Builder do
 
       expect(builder.instance_variable_get(:@config_input)).to eq(config)
       expect(builder.instance_variable_get(:@log)).to eq(log)
+    end
+
+    it "initializes with user components" do
+      publisher = double("Publisher")
+      service = double("Service")
+      builder = described_class.new(
+        log:,
+        publisher: publisher,
+        service: service
+      )
+
+      user_components = builder.instance_variable_get(:@extra_components)
+      expect(user_components[:publisher]).to eq(publisher)
+      expect(user_components[:service]).to eq(service)
     end
   end
 
@@ -245,6 +260,44 @@ describe Hooks::Core::Builder do
         expect(mock_logger).to receive(:info).with("available endpoints: /webhook/test1, /webhook/test2")
 
         builder.build
+      end
+    end
+
+    context "with user components" do
+      let(:publisher) { double("Publisher") }
+      let(:service) { double("Service") }
+      let(:builder) { described_class.new(log:, publisher: publisher, service: service) }
+
+      before do
+        allow(Hooks::Core::ConfigLoader).to receive(:load).and_return({
+          log_level: "info",
+          environment: "test",
+          endpoints_dir: "/nonexistent"
+        })
+        allow(Hooks::Core::ConfigValidator).to receive(:validate_global_config).and_return({
+          log_level: "info",
+          environment: "test",
+          endpoints_dir: "/nonexistent"
+        })
+        allow(Hooks::Core::ConfigLoader).to receive(:load_endpoints).and_return([])
+        allow(Hooks::Core::ConfigValidator).to receive(:validate_endpoints).and_return([])
+        allow(Hooks::App::API).to receive(:create).and_return("mock_api")
+      end
+
+      it "registers user components globally during build" do
+        expect(Hooks::Core::GlobalComponents).to receive(:register_extra_components).with({
+          publisher: publisher,
+          service: service
+        })
+
+        builder.build
+      end
+
+      it "makes user components accessible after build" do
+        builder.build
+
+        expect(Hooks::Core::GlobalComponents.get_extra_component(:publisher)).to eq(publisher)
+        expect(Hooks::Core::GlobalComponents.get_extra_component(:service)).to eq(service)
       end
     end
 
