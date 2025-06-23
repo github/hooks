@@ -292,3 +292,61 @@ See the source code at `lib/hooks/utils/retry.rb` for more details on how `Retry
 ### `#failbot` and `#stats`
 
 The `failbot` and `stats` methods are available in all handler plugins. They are used to report errors and send statistics, respectively. These are custom methods and you can learn more about them in the [Instrumentation Plugins](instrument_plugins.md) documentation.
+
+### Extra Components
+
+If you need even more flexibility, you can pass in extra components to your Hooks application when building it. These "extra components" are available globally and can be used in your handler plugins. Here is example that demonstrates using an extra component:
+
+```ruby
+# config.ru
+
+# Define some class that you might want all your handlers to be able to call
+class ExamplePublisher
+  def initialize
+    @published_messages = []
+  end
+
+  def call(data)
+    @published_messages << data
+    puts "Published: #{data.inspect}"
+    "Message published successfully"
+  end
+
+  def publish(data)
+    call(data)
+  end
+
+  def messages
+    @published_messages
+  end
+end
+
+# Create publisher instance
+publisher = ExamplePublisher.new
+
+# Create and run the hooks application with custom class
+app = Hooks.build(config: "./spec/acceptance/config/hooks.yaml", publisher:)
+run app
+```
+
+Now, in all handler plugins, you can access the `publisher` instance like so:
+
+```ruby
+# example file path: plugins/handlers/hello.rb
+
+class Hello < Hooks::Plugins::Handlers::Base
+  def call(payload:, headers:, env:, config:)
+    # call the custom publisher instance
+    publisher.publish("hello")
+
+    {
+      status: "success",
+      handler: self.class.name,
+      timestamp: Time.now.utc.iso8601,
+      messages: publisher.messages,
+    }
+  end
+end
+```
+
+It should be noted that any extra components you pass in like this should be thread-safe if you are running the Hooks server in a multi-threaded environment. This is because the Hooks server can handle multiple requests concurrently, and any shared state should be properly synchronized.
