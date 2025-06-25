@@ -127,7 +127,7 @@ module Hooks
           end
 
           # Validate signature format using shared validation but with HMAC-specific length limit
-          return false unless validate_signature_format(raw_signature)
+          return false unless validate_signature_format?(raw_signature)
 
           # Now we can safely normalize headers for the rest of the validation
           normalized_headers = normalize_headers(headers)
@@ -192,7 +192,7 @@ module Hooks
         # @param signature [String] Raw signature to validate
         # @return [Boolean] true if signature is valid
         # @api private
-        def self.validate_signature_format(signature)
+        def self.validate_signature_format?(signature)
           # Check signature length with HMAC-specific limit
           if signature.length > MAX_SIGNATURE_LENGTH
             log.warn("Auth::HMAC validation failed: Signature length exceeds maximum limit of #{MAX_SIGNATURE_LENGTH} characters")

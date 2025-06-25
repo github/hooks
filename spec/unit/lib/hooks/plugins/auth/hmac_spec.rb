@@ -27,7 +27,7 @@ describe Hooks::Plugins::Auth::HMAC do
     allow(ENV).to receive(:[]).with("HMAC_TEST_SECRET").and_return(secret)
   end
 
-  def valid_with(args = {})
+  def valid_with?(args = {})
     args = { config: default_config }.merge(args)
     described_class.valid?(payload:, **args)
   end
@@ -55,31 +55,31 @@ describe Hooks::Plugins::Auth::HMAC do
       let(:headers) { { default_header => signature } }
 
       it "returns true for a valid signature" do
-        expect(valid_with(headers:)).to be true
+        expect(valid_with?(headers:)).to be true
       end
 
       it "returns false for an invalid signature" do
         bad_headers = { default_header => "sha256=bad" }
-        expect(valid_with(headers: bad_headers)).to be false
+        expect(valid_with?(headers: bad_headers)).to be false
       end
 
       it "returns false if signature header is missing" do
-        expect(valid_with(headers: {})).to be false
+        expect(valid_with?(headers: {})).to be false
       end
 
       it "returns false if secret is nil or empty" do
         # Test nil secret via environment variable
         allow(ENV).to receive(:[]).with("HMAC_TEST_SECRET").and_return(nil)
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
 
         # Test empty secret via environment variable
         allow(ENV).to receive(:[]).with("HMAC_TEST_SECRET").and_return("")
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "normalizes header names to lowercase" do
         upcase_headers = { default_header.upcase => signature }
-        expect(valid_with(headers: upcase_headers)).to be true
+        expect(valid_with?(headers: upcase_headers)).to be true
       end
     end
 
@@ -99,12 +99,12 @@ describe Hooks::Plugins::Auth::HMAC do
       let(:headers) { { header => signature } }
 
       it "returns true for a valid hash-only signature" do
-        expect(valid_with(headers:, config:)).to be true
+        expect(valid_with?(headers:, config:)).to be true
       end
 
       it "returns false for an invalid hash-only signature" do
         bad_headers = { header => "bad" }
-        expect(valid_with(headers: bad_headers, config:)).to be false
+        expect(valid_with?(headers: bad_headers, config:)).to be false
       end
     end
 
@@ -130,24 +130,24 @@ describe Hooks::Plugins::Auth::HMAC do
       end
 
       it "returns true for a valid versioned signature with valid timestamp" do
-        expect(valid_with(headers:, config:)).to be true
+        expect(valid_with?(headers:, config:)).to be true
       end
 
       it "returns false for an expired timestamp" do
         old_timestamp = (Time.now.to_i - 1000).to_s
         old_signature = create_timestamped_signature(old_timestamp)
         bad_headers = { header => old_signature, timestamp_header => old_timestamp }
-        expect(valid_with(headers: bad_headers, config:)).to be false
+        expect(valid_with?(headers: bad_headers, config:)).to be false
       end
 
       it "returns false if timestamp header is missing" do
         bad_headers = { header => signature }
-        expect(valid_with(headers: bad_headers, config:)).to be false
+        expect(valid_with?(headers: bad_headers, config:)).to be false
       end
 
       it "returns false if timestamp is not an integer string" do
         bad_headers = { header => signature, timestamp_header => "notanumber" }
-        expect(valid_with(headers: bad_headers, config:)).to be false
+        expect(valid_with?(headers: bad_headers, config:)).to be false
       end
     end
 
@@ -166,7 +166,7 @@ describe Hooks::Plugins::Auth::HMAC do
       let(:headers) { { header => signature } }
 
       it "returns false for unsupported algorithm" do
-        expect(valid_with(headers:, config:)).to be false
+        expect(valid_with?(headers:, config:)).to be false
       end
     end
 
@@ -175,7 +175,7 @@ describe Hooks::Plugins::Auth::HMAC do
       let(:config) { { auth: { secret_env_key: "HMAC_TEST_SECRET" } } }
 
       it "uses defaults and validates correctly" do
-        expect(valid_with(headers:, config:)).to be true
+        expect(valid_with?(headers:, config:)).to be true
       end
     end
 
@@ -185,14 +185,14 @@ describe Hooks::Plugins::Auth::HMAC do
       let(:tampered_payload) { '{"foo":"evil"}' }
 
       it "returns false if payload does not match signature" do
-        expect(valid_with(payload: tampered_payload, headers:)).to be false
+        expect(valid_with?(payload: tampered_payload, headers:)).to be false
       end
     end
 
     context "with nil headers" do
       let(:headers) { nil }
       it "returns false" do
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
     end
 
@@ -200,7 +200,7 @@ describe Hooks::Plugins::Auth::HMAC do
       let(:headers) { { default_header => "sha256=bad" } }
       let(:config) { { not_validator: true } }
       it "returns false" do
-        expect(valid_with(headers:, config:)).to be false
+        expect(valid_with?(headers:, config:)).to be false
       end
     end
 
@@ -210,72 +210,72 @@ describe Hooks::Plugins::Auth::HMAC do
 
       it "returns false for empty signature header value" do
         empty_headers = { default_header => "" }
-        expect(valid_with(headers: empty_headers)).to be false
+        expect(valid_with?(headers: empty_headers)).to be false
       end
 
       it "returns false for whitespace-only signature" do
         whitespace_headers = { default_header => "   " }
-        expect(valid_with(headers: whitespace_headers)).to be false
+        expect(valid_with?(headers: whitespace_headers)).to be false
       end
 
       it "returns false for signature with only algorithm prefix" do
         incomplete_headers = { default_header => "sha256=" }
-        expect(valid_with(headers: incomplete_headers)).to be false
+        expect(valid_with?(headers: incomplete_headers)).to be false
       end
 
       it "returns false for malformed signature format" do
         malformed_headers = { default_header => "sha256" }
-        expect(valid_with(headers: malformed_headers)).to be false
+        expect(valid_with?(headers: malformed_headers)).to be false
       end
 
       it "returns false for signature with wrong algorithm prefix" do
         wrong_algo_headers = { default_header => create_algorithm_prefixed_signature(payload, "sha1") }
-        expect(valid_with(headers: wrong_algo_headers)).to be false
+        expect(valid_with?(headers: wrong_algo_headers)).to be false
       end
 
       it "returns false for signature with extra characters" do
         tampered_headers = { default_header => signature + "extra" }
-        expect(valid_with(headers: tampered_headers)).to be false
+        expect(valid_with?(headers: tampered_headers)).to be false
       end
 
       it "returns false for signature with leading/trailing whitespace" do
         whitespace_headers = { default_header => " #{signature} " }
-        expect(valid_with(headers: whitespace_headers)).to be false
+        expect(valid_with?(headers: whitespace_headers)).to be false
       end
 
       it "returns false for case-sensitive signature tampering" do
         case_tampered = signature.upcase
         case_headers = { default_header => case_tampered }
-        expect(valid_with(headers: case_headers)).to be false
+        expect(valid_with?(headers: case_headers)).to be false
       end
 
       it "returns false for null byte injection in signature" do
         null_byte_headers = { default_header => signature + "\x00" }
-        expect(valid_with(headers: null_byte_headers)).to be false
+        expect(valid_with?(headers: null_byte_headers)).to be false
       end
 
       it "returns false for unicode normalization attacks" do
         # Using similar-looking unicode characters
         unicode_headers = { default_header => signature.gsub("a", "а") } # Cyrillic 'a'
-        expect(valid_with(headers: unicode_headers)).to be false
+        expect(valid_with?(headers: unicode_headers)).to be false
       end
 
       it "returns false when secret contains null bytes" do
         null_secret = "secret\x00injection"
         allow(ENV).to receive(:[]).with("HMAC_TEST_SECRET").and_return(null_secret)
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "returns false when payload is modified with invisible characters" do
         invisible_payload = payload + "\u200b" # Zero-width space
-        expect(valid_with(payload: invisible_payload, headers:)).to be false
+        expect(valid_with?(payload: invisible_payload, headers:)).to be false
       end
 
       it "handles very long signatures gracefully" do
         long_signature = "sha256=" + ("a" * 10000)
         long_headers = { default_header => long_signature }
         expect(log).to receive(:warn).with(/Signature length exceeds maximum limit/)
-        expect(valid_with(headers: long_headers)).to be false
+        expect(valid_with?(headers: long_headers)).to be false
       end
 
       it "returns false for signatures exceeding maximum length limit" do
@@ -283,14 +283,14 @@ describe Hooks::Plugins::Auth::HMAC do
         oversized_signature = "sha256=" + ("a" * (1024 - 7 + 1)) # -7 for "sha256=" prefix
         oversized_headers = { default_header => oversized_signature }
         expect(log).to receive(:warn).with(/Signature length exceeds maximum limit/)
-        expect(valid_with(headers: oversized_headers)).to be false
+        expect(valid_with?(headers: oversized_headers)).to be false
       end
 
       it "handles very long payloads" do
         long_payload = "a" * 100000
         long_signature = create_algorithm_prefixed_signature(long_payload)
         long_headers = { default_header => long_signature }
-        expect(valid_with(payload: long_payload, headers: long_headers)).to be true
+        expect(valid_with?(payload: long_payload, headers: long_headers)).to be true
       end
 
       it "returns false for payloads exceeding maximum size limit" do
@@ -299,14 +299,14 @@ describe Hooks::Plugins::Auth::HMAC do
         signature = create_algorithm_prefixed_signature(payload) # Use regular payload for signature
         headers_with_signature = { default_header => signature }
         expect(log).to receive(:warn).with(/Payload size exceeds maximum limit/)
-        expect(valid_with(payload: oversized_payload, headers: headers_with_signature)).to be false
+        expect(valid_with?(payload: oversized_payload, headers: headers_with_signature)).to be false
       end
 
       it "returns false and logs for signature containing non-null control characters" do
         control_char = "\x01"
         headers_with_control = { default_header => signature + control_char }
         expect(log).to receive(:warn).with(/control characters/)
-        expect(valid_with(headers: headers_with_control)).to be false
+        expect(valid_with?(headers: headers_with_control)).to be false
       end
     end
 
@@ -327,7 +327,7 @@ describe Hooks::Plugins::Auth::HMAC do
         hash_only_sig = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, base_payload)
         attacker_headers = { "X-Signature" => hash_only_sig }
 
-        expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
+        expect(valid_with?(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
       end
 
       it "fails when server expects hash-only but receives algorithm-prefixed" do
@@ -344,7 +344,7 @@ describe Hooks::Plugins::Auth::HMAC do
         algo_prefixed_sig = "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, base_payload)
         attacker_headers = { "X-Signature" => algo_prefixed_sig }
 
-        expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
+        expect(valid_with?(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
       end
 
       it "fails when server expects version-prefixed but receives algorithm-prefixed" do
@@ -369,7 +369,7 @@ describe Hooks::Plugins::Auth::HMAC do
           "X-Timestamp" => timestamp
         }
 
-        expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
+        expect(valid_with?(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
       end
 
       it "fails when server expects algorithm-prefixed but receives version-prefixed" do
@@ -388,7 +388,7 @@ describe Hooks::Plugins::Auth::HMAC do
           "X-Signature" => versioned_sig,
           "X-Timestamp" => timestamp
         }
-        expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
+        expect(valid_with?(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
       end
 
       it "fails when algorithm in config differs from signature prefix" do
@@ -405,7 +405,7 @@ describe Hooks::Plugins::Auth::HMAC do
         sha256_sig = "sha256=" + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, base_payload)
         attacker_headers = { "X-Signature" => sha256_sig }
 
-        expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
+        expect(valid_with?(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
       end
 
       it "fails when version prefix in config differs from signature" do
@@ -432,7 +432,7 @@ describe Hooks::Plugins::Auth::HMAC do
           "X-Timestamp" => timestamp
         }
 
-        expect(valid_with(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
+        expect(valid_with?(payload: base_payload, headers: attacker_headers, config: server_config)).to be false
       end
     end
 
@@ -458,7 +458,7 @@ describe Hooks::Plugins::Auth::HMAC do
         def test_invalid_timestamp(invalid_timestamp, description)
           signature = create_timestamped_signature(invalid_timestamp)
           headers = { header => signature, timestamp_header => invalid_timestamp }
-          expect(valid_with(headers:, config: base_config)).to be false
+          expect(valid_with?(headers:, config: base_config)).to be false
         end
 
         it "returns false for negative timestamp" do
@@ -490,7 +490,7 @@ describe Hooks::Plugins::Auth::HMAC do
         def test_iso_timestamp(iso_timestamp, should_be_valid)
           signature = create_timestamped_signature(iso_timestamp)
           headers = { header => signature, timestamp_header => iso_timestamp }
-          expect(valid_with(headers:, config: base_config)).to be should_be_valid
+          expect(valid_with?(headers:, config: base_config)).to be should_be_valid
         end
 
         it "returns true for valid ISO 8601 UTC timestamp with Z suffix" do
@@ -532,7 +532,7 @@ describe Hooks::Plugins::Auth::HMAC do
         # Use uppercase timestamp header name in the request headers
         headers = { header => signature, timestamp_header.upcase => timestamp }
 
-        expect(valid_with(headers:, config: base_config)).to be true
+        expect(valid_with?(headers:, config: base_config)).to be true
       end
     end
 
@@ -543,7 +543,7 @@ describe Hooks::Plugins::Auth::HMAC do
         signature = "sha256=fakesignature"
         headers = { default_header => signature }
 
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "returns false when Rack::Utils.secure_compare raises an error" do
@@ -552,7 +552,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
         allow(Rack::Utils).to receive(:secure_compare).and_raise(StandardError, "Comparison error")
 
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "returns false when Time.now raises an error" do
@@ -575,7 +575,7 @@ describe Hooks::Plugins::Auth::HMAC do
 
         allow(Time).to receive(:now).and_raise(StandardError, "Time error")
 
-        expect(valid_with(headers:, config:)).to be false
+        expect(valid_with?(headers:, config:)).to be false
       end
     end
   end
@@ -836,25 +836,25 @@ describe Hooks::Plugins::Auth::HMAC do
         signature_header_value = create_tailscale_signature(payload, timestamp, secret)
         headers = { "Tailscale-Webhook-Signature" => signature_header_value }
 
-        expect(valid_with(payload:, headers:, config:)).to be true
+        expect(valid_with?(payload:, headers:, config:)).to be true
       end
 
       it "fails with invalid structured signature" do
         headers = { "Tailscale-Webhook-Signature" => "t=#{timestamp},v1=invalid_signature" }
 
-        expect(valid_with(payload:, headers:, config:)).to be false
+        expect(valid_with?(payload:, headers:, config:)).to be false
       end
 
       it "fails with malformed structured header" do
         headers = { "Tailscale-Webhook-Signature" => "malformed_header" }
 
-        expect(valid_with(payload:, headers:, config:)).to be false
+        expect(valid_with?(payload:, headers:, config:)).to be false
       end
 
       it "fails when signature key is missing from structured header" do
         headers = { "Tailscale-Webhook-Signature" => "t=#{timestamp},other=value" }
 
-        expect(valid_with(payload:, headers:, config:)).to be false
+        expect(valid_with?(payload:, headers:, config:)).to be false
       end
 
       it "validates with timestamp tolerance" do
@@ -862,7 +862,7 @@ describe Hooks::Plugins::Auth::HMAC do
         signature_header_value = create_tailscale_signature(payload, old_timestamp, secret)
         headers = { "Tailscale-Webhook-Signature" => signature_header_value }
 
-        expect(valid_with(payload:, headers:, config:)).to be true
+        expect(valid_with?(payload:, headers:, config:)).to be true
       end
 
       it "fails when timestamp is too old" do
@@ -870,7 +870,7 @@ describe Hooks::Plugins::Auth::HMAC do
         signature_header_value = create_tailscale_signature(payload, old_timestamp, secret)
         headers = { "Tailscale-Webhook-Signature" => signature_header_value }
 
-        expect(valid_with(payload:, headers:, config:)).to be false
+        expect(valid_with?(payload:, headers:, config:)).to be false
       end
 
       it "works without timestamp when not required" do
@@ -881,7 +881,7 @@ describe Hooks::Plugins::Auth::HMAC do
         signature = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new("sha256"), secret, payload)
         headers = { "Tailscale-Webhook-Signature" => "v1=#{signature}" }
 
-        expect(valid_with(payload:, headers:, config: config_with_no_timestamp)).to be true
+        expect(valid_with?(payload:, headers:, config: config_with_no_timestamp)).to be true
       end
     end
   end
