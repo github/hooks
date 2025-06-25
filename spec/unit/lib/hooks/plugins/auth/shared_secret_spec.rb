@@ -16,7 +16,7 @@ describe Hooks::Plugins::Auth::SharedSecret do
   end
   let(:log) { instance_double(Logger).as_null_object }
 
-  def valid_with(args = {})
+  def valid_with?(args = {})
     args = { config: default_config }.merge(args)
     described_class.valid?(payload:, **args)
   end
@@ -35,37 +35,37 @@ describe Hooks::Plugins::Auth::SharedSecret do
       let(:headers) { { default_header => secret } }
 
       it "returns true for a valid shared secret" do
-        expect(valid_with(headers:)).to be true
+        expect(valid_with?(headers:)).to be true
       end
 
       it "returns false for an invalid shared secret" do
         bad_headers = { default_header => "wrong-secret" }
-        expect(valid_with(headers: bad_headers)).to be false
+        expect(valid_with?(headers: bad_headers)).to be false
       end
 
       it "returns false if secret header is missing" do
-        expect(valid_with(headers: {})).to be false
+        expect(valid_with?(headers: {})).to be false
       end
 
       it "returns false if secret is nil or empty" do
         # Test nil secret via environment variable
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return(nil)
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
 
         # Test empty secret via environment variable
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return("")
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "normalizes header names to lowercase" do
         upcase_headers = { default_header.upcase => secret }
-        expect(valid_with(headers: upcase_headers)).to be true
+        expect(valid_with?(headers: upcase_headers)).to be true
 
         downcase_headers = { default_header.downcase => secret }
-        expect(valid_with(headers: downcase_headers)).to be true
+        expect(valid_with?(headers: downcase_headers)).to be true
 
         mixed_case_headers = { "aUtHoRiZaTiOn" => secret }
-        expect(valid_with(headers: mixed_case_headers)).to be true
+        expect(valid_with?(headers: mixed_case_headers)).to be true
       end
 
       it "rejects secrets with leading/trailing whitespace for security" do
@@ -74,31 +74,31 @@ describe Hooks::Plugins::Auth::SharedSecret do
         padded_headers = { default_header => padded_secret }
 
         # The validator should reject this because the raw value has whitespace
-        expect(valid_with(headers: padded_headers)).to be false
+        expect(valid_with?(headers: padded_headers)).to be false
 
         # Also test various whitespace patterns
-        expect(valid_with(headers: { default_header => " #{secret}" })).to be false
-        expect(valid_with(headers: { default_header => "#{secret} " })).to be false
-        expect(valid_with(headers: { default_header => "\t#{secret}\t" })).to be false
+        expect(valid_with?(headers: { default_header => " #{secret}" })).to be false
+        expect(valid_with?(headers: { default_header => "#{secret} " })).to be false
+        expect(valid_with?(headers: { default_header => "\t#{secret}\t" })).to be false
       end
 
       it "rejects secrets with control characters" do
         bad_headers = { default_header => "secret\x00with\x01null" }
-        expect(valid_with(headers: bad_headers)).to be false
+        expect(valid_with?(headers: bad_headers)).to be false
 
         bad_headers = { default_header => "secret\nwith\nnewline" }
-        expect(valid_with(headers: bad_headers)).to be false
+        expect(valid_with?(headers: bad_headers)).to be false
 
         bad_headers = { default_header => "secret\twith\ttab" }
-        expect(valid_with(headers: bad_headers)).to be false
+        expect(valid_with?(headers: bad_headers)).to be false
       end
 
       it "handles empty header values" do
         empty_headers = { default_header => "" }
-        expect(valid_with(headers: empty_headers)).to be false
+        expect(valid_with?(headers: empty_headers)).to be false
 
         nil_headers = { default_header => nil }
-        expect(valid_with(headers: nil_headers)).to be false
+        expect(valid_with?(headers: nil_headers)).to be false
       end
 
       it "returns false for secrets exceeding maximum length limit" do
@@ -106,7 +106,7 @@ describe Hooks::Plugins::Auth::SharedSecret do
         oversized_secret = "a" * (1024 + 1)
         oversized_headers = { default_header => oversized_secret }
         expect(log).to receive(:warn).with(/exceeds maximum length/)
-        expect(valid_with(headers: oversized_headers)).to be false
+        expect(valid_with?(headers: oversized_headers)).to be false
       end
 
       it "returns false for payloads exceeding maximum size limit" do
@@ -114,7 +114,7 @@ describe Hooks::Plugins::Auth::SharedSecret do
         oversized_payload = "a" * (10 * 1024 * 1024 + 1)
         headers = { default_header => secret }
         expect(log).to receive(:warn).with(/Payload size exceeds maximum limit/)
-        expect(valid_with(payload: oversized_payload, headers: headers)).to be false
+        expect(valid_with?(payload: oversized_payload, headers: headers)).to be false
       end
     end
 
@@ -135,7 +135,7 @@ describe Hooks::Plugins::Auth::SharedSecret do
 
       it "returns false when secret is in wrong header" do
         wrong_headers = { "Authorization" => secret }
-        expect(valid_with(headers: wrong_headers, config: custom_config)).to be false
+        expect(valid_with?(headers: wrong_headers, config: custom_config)).to be false
       end
 
       it "supports case-insensitive custom header matching" do
@@ -153,14 +153,14 @@ describe Hooks::Plugins::Auth::SharedSecret do
 
       it "returns false when secret is in non-default header and no config" do
         custom_headers = { "X-API-Key" => secret }
-        expect(valid_with(headers: custom_headers, config: no_config)).to be false
+        expect(valid_with?(headers: custom_headers, config: no_config)).to be false
       end
     end
 
     context "with invalid configurations" do
       it "handles nil config gracefully" do
         headers = { "Authorization" => secret }
-        expect(valid_with(headers:, config: nil)).to be false
+        expect(valid_with?(headers:, config: nil)).to be false
       end
 
       it "handles config without auth section" do
@@ -174,22 +174,22 @@ describe Hooks::Plugins::Auth::SharedSecret do
       it "handles different header types" do
         # String keys (most common)
         string_headers = { "Authorization" => secret }
-        expect(valid_with(headers: string_headers)).to be true
+        expect(valid_with?(headers: string_headers)).to be true
 
         # Symbol keys
         symbol_headers = { Authorization: secret }
-        expect(valid_with(headers: symbol_headers)).to be true
+        expect(valid_with?(headers: symbol_headers)).to be true
 
         # Mixed keys
         mixed_headers = { "authorization" => secret }
-        expect(valid_with(headers: mixed_headers)).to be true
+        expect(valid_with?(headers: mixed_headers)).to be true
       end
 
       it "handles non-hash headers" do
-        expect(valid_with(headers: nil)).to be false
-        expect(valid_with(headers: "not a hash")).to be false
-        expect(valid_with(headers: [])).to be false
-        expect(valid_with(headers: 123)).to be false
+        expect(valid_with?(headers: nil)).to be false
+        expect(valid_with?(headers: "not a hash")).to be false
+        expect(valid_with?(headers: [])).to be false
+        expect(valid_with?(headers: 123)).to be false
       end
 
       it "handles different secret types" do
@@ -197,24 +197,24 @@ describe Hooks::Plugins::Auth::SharedSecret do
 
         # String secret
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return("123")
-        expect(valid_with(headers:)).to be true
+        expect(valid_with?(headers:)).to be true
 
         # Test that secrets are treated as strings from environment
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return("different")
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "is case-sensitive for secret values" do
         headers = { default_header => "MySecret" }
 
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return("MySecret")
-        expect(valid_with(headers:)).to be true
+        expect(valid_with?(headers:)).to be true
 
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return("mysecret")
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
 
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return("MYSECRET")
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "handles very long secrets" do
@@ -222,10 +222,10 @@ describe Hooks::Plugins::Auth::SharedSecret do
         headers = { default_header => long_secret }
 
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return(long_secret)
-        expect(valid_with(headers:)).to be true
+        expect(valid_with?(headers:)).to be true
 
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return(long_secret + "x")
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "handles special characters in secrets" do
@@ -233,7 +233,7 @@ describe Hooks::Plugins::Auth::SharedSecret do
         headers = { default_header => special_secret }
 
         allow(ENV).to receive(:[]).with("SUPER_WEBHOOK_SECRET").and_return(special_secret)
-        expect(valid_with(headers:)).to be true
+        expect(valid_with?(headers:)).to be true
       end
 
       it "handles unicode characters in secrets" do
@@ -247,13 +247,13 @@ describe Hooks::Plugins::Auth::SharedSecret do
       it "uses secure comparison to prevent timing attacks" do
         # Test that we're using Rack::Utils.secure_compare
         expect(Rack::Utils).to receive(:secure_compare).with(secret, secret).and_return(true)
-        expect(valid_with(headers:)).to be true
+        expect(valid_with?(headers:)).to be true
       end
 
       it "handles exceptions gracefully" do
         # Mock an exception during validation
         allow(Rack::Utils).to receive(:secure_compare).and_raise(StandardError.new("test error"))
-        expect(valid_with(headers:)).to be false
+        expect(valid_with?(headers:)).to be false
       end
 
       it "rejects headers with suspicious patterns" do
@@ -266,7 +266,7 @@ describe Hooks::Plugins::Auth::SharedSecret do
 
         suspicious_values.each do |suspicious_value|
           bad_headers = { default_header => suspicious_value }
-          expect(valid_with(headers: bad_headers)).to be false
+          expect(valid_with?(headers: bad_headers)).to be false
         end
       end
     end
