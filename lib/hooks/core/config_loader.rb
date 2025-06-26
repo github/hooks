@@ -69,7 +69,7 @@ module Hooks
         # Convert string keys to symbols for consistency
         config = symbolize_keys(config)
 
-        if config[:environment] == "production"
+        if config[:environment].downcase == "production"
           config[:production] = true
         else
           config[:production] = false
