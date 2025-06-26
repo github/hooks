@@ -16,7 +16,6 @@ describe Hooks::Core::ConfigLoader do
           health_path: "/health",
           version_path: "/version",
           environment: "production",
-          production: true,
           endpoints_dir: "./config/endpoints",
           use_catchall_route: false,
           normalize_headers: true,
