@@ -69,12 +69,6 @@ module Hooks
         # Convert string keys to symbols for consistency
         config = symbolize_keys(config)
 
-        if config[:environment].downcase == "production"
-          config[:production] = true
-        else
-          config[:production] = false
-        end
-
         # Log overrides if any were made
         if overrides.any?
           puts "INFO: Configuration overrides applied from: #{overrides.join(', ')}" unless SILENCE_CONFIG_LOADER_MESSAGES

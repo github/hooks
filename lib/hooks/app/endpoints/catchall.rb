@@ -103,9 +103,9 @@ module Hooks
               }
 
               # enrich the error response with details if not in production
-              error_response[:backtrace] = e.backtrace.join("\n") unless config[:production]
-              error_response[:message] = e.message unless config[:production]
-              error_response[:handler] = handler_class_name unless config[:production]
+              error_response[:backtrace] = e.backtrace.join("\n") unless @production
+              error_response[:message] = e.message unless @production
+              error_response[:handler] = handler_class_name unless @production
 
               status determine_error_code(e)
               error_response
