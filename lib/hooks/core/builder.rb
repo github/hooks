@@ -55,6 +55,7 @@ module Hooks
         @log.info "starting hooks server v#{Hooks::VERSION}"
         @log.info "config: #{endpoints.size} endpoints loaded"
         @log.info "environment: #{config[:environment]}"
+        @log.info "production mode: #{config[:production]}"
         @log.info "available endpoints: #{endpoints.map { |e| e[:path] }.join(', ')}"
 
         # Build and return Grape API class
