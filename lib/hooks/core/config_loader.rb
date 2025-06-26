@@ -17,7 +17,6 @@ module Hooks
         health_path: "/health",
         version_path: "/version",
         environment: ENV.fetch("RACK_ENV", "production"),
-        production: true,
         endpoints_dir: "./config/endpoints",
         use_catchall_route: false,
         normalize_headers: true,
