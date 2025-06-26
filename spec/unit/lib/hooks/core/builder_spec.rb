@@ -141,7 +141,7 @@ describe Hooks::Core::Builder do
     end
 
     context "with custom logger" do
-      let(:custom_logger) { double("Logger", info: nil) }
+      let(:custom_logger) { double("Logger", info: nil, debug: nil) }
       let(:builder) { described_class.new(log: custom_logger) }
 
       before do
@@ -216,6 +216,7 @@ describe Hooks::Core::Builder do
       let(:mock_logger) { double("Logger", info: nil) }
 
       before do
+        allow(mock_logger).to receive(:debug)
         allow(Hooks::Core::ConfigLoader).to receive(:load).and_return({
           log_level: "debug",
           environment: "test"
@@ -244,6 +245,7 @@ describe Hooks::Core::Builder do
         expect(mock_logger).to receive(:info).with("config: 0 endpoints loaded")
         expect(mock_logger).to receive(:info).with("environment: test")
         expect(mock_logger).to receive(:info).with("available endpoints: ")
+        expect(mock_logger).to receive(:debug).with(/global config loaded: /)
 
         builder.build
       end
@@ -258,6 +260,7 @@ describe Hooks::Core::Builder do
 
         expect(mock_logger).to receive(:info).with("config: 2 endpoints loaded")
         expect(mock_logger).to receive(:info).with("available endpoints: /webhook/test1, /webhook/test2")
+        expect(mock_logger).to receive(:debug).with(/global config loaded: /)
 
         builder.build
       end

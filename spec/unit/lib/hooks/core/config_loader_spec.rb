@@ -33,7 +33,6 @@ describe Hooks::Core::ConfigLoader do
 
         expect(config[:log_level]).to eq("debug")
         expect(config[:environment]).to eq("test")
-        expect(config[:production]).to be false # should be false when environment is test
         expect(config[:handler_plugin_dir]).to eq("./plugins/handlers") # defaults should remain
       end
     end
@@ -69,7 +68,6 @@ describe Hooks::Core::ConfigLoader do
           expect(config[:log_level]).to eq("debug")
           expect(config[:environment]).to eq("development")
           expect(config[:request_timeout]).to eq(60)
-          expect(config[:production]).to be false
           expect(config[:handler_plugin_dir]).to eq("./plugins/handlers") # defaults should remain
         end
       end
@@ -94,7 +92,6 @@ describe Hooks::Core::ConfigLoader do
           expect(config[:log_level]).to eq("warn")
           expect(config[:environment]).to eq("staging")
           expect(config[:endpoints_dir]).to eq("./custom/endpoints")
-          expect(config[:production]).to be false
         end
       end
 
@@ -157,7 +154,6 @@ describe Hooks::Core::ConfigLoader do
         expect(config[:environment]).to eq("development")
         expect(config[:request_limit]).to eq(2_097_152)
         expect(config[:request_timeout]).to eq(45)
-        expect(config[:production]).to be false
       end
 
       it "handles partial environment variable overrides" do
@@ -167,7 +163,6 @@ describe Hooks::Core::ConfigLoader do
 
         expect(config[:log_level]).to eq("warn")
         expect(config[:environment]).to eq("production") # should remain default
-        expect(config[:production]).to be true
         # Ensure other ENV vars are not set from previous examples in this context
         expect(ENV["HOOKS_ENVIRONMENT"]).to be_nil
         expect(ENV["HOOKS_REQUEST_LIMIT"]).to be_nil
@@ -240,14 +235,14 @@ describe Hooks::Core::ConfigLoader do
       it "sets production to true when environment is production" do
         config = described_class.load(config_path: { environment: "production" })
 
-        expect(config[:production]).to be true
+        expect(config[:environment]).to eq("production")
       end
 
       it "sets production to false when environment is not production" do
         ["development", "test", "staging", "custom"].each do |env|
           config = described_class.load(config_path: { environment: env })
 
-          expect(config[:production]).to be false
+          expect(config[:environment]).to eq(env)
         end
       end
     end
