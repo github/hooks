@@ -34,7 +34,7 @@ module Hooks
         # :nocov:
         proc do
           request_id = uuid
-          start_time = Time.now
+          start_time = Time.now.utc
 
           # Use captured values
           config = captured_config
@@ -86,7 +86,7 @@ module Hooks
               )
 
               log.info("successfully processed webhook event with handler: #{handler_class_name}")
-              log.debug("processing duration: #{Time.now - start_time}s")
+              log.debug("processing duration: #{Time.now.utc - start_time}s")
               status 200
               response
             rescue StandardError => e

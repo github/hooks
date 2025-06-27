@@ -32,7 +32,7 @@ module Hooks
       def self.create(config:, endpoints:, log:)
         # :nocov:
         @production = config[:environment].downcase.strip == "production"
-        @server_start_time = Time.now
+        @server_start_time = Time.now.utc
 
         api_class = Class.new(Grape::API) do
           content_type :json, "application/json"
@@ -56,7 +56,7 @@ module Hooks
 
             send(http_method, full_path) do
               request_id = uuid
-              start_time = Time.now
+              start_time = Time.now.utc
 
               request_context = {
                 request_id:,
@@ -116,7 +116,7 @@ module Hooks
                   end
 
                   log.info("successfully processed webhook event with handler: #{handler_class_name}")
-                  log.debug("processing duration: #{Time.now - start_time}s")
+                  log.debug("processing duration: #{Time.now.utc - start_time}s")
                   status 200
                   response
                 rescue Hooks::Plugins::Handlers::Error => e
