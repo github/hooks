@@ -18,7 +18,7 @@ module Hooks
           status: "healthy",
           timestamp: Time.now.utc.iso8601,
           version: Hooks::VERSION,
-          uptime_seconds: (Time.now - Hooks::App::API.server_start_time).to_i
+          uptime_seconds: (Time.now.utc - Hooks::App::API.server_start_time).to_i
         }
       end
     end

@@ -43,9 +43,9 @@ module Hooks
       # @param tags [Hash] Optional tags/labels for the metric
       # @return [Object] Return value of the block
       def measure(metric_name, tags = {})
-        start_time = Time.now
+        start_time = Time.now.utc
         result = yield
-        duration = Time.now - start_time
+        duration = Time.now.utc - start_time
         timing(metric_name, duration, tags)
         result
       end
