@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "retryable", "~> 3.0", ">= 3.0.5"
   spec.add_dependency "dry-schema", "~> 1.14", ">= 1.14.1"
   spec.add_dependency "grape", "~> 2.3"
-  spec.add_dependency "puma", "~> 6.6"
+  spec.add_dependency "puma", ">= 6.6", "< 8.0"
 
   spec.required_ruby_version = Gem::Requirement.new(">= 3.2.2")
 
