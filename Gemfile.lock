@@ -1,3 +1,12 @@
+GIT
+  remote: https://github.com/sigstore/sigstore-ruby
+  revision: ce93acf7fa7e26ba81ff21820848d7df2273a557
+  ref: ce93acf7fa7e26ba81ff21820848d7df2273a557
+  specs:
+    sigstore-cli (0.2.1)
+      sigstore (= 0.2.1)
+      thor
+
 PATH
   remote: .
   specs:
@@ -189,9 +198,6 @@ GEM
       net-http
       protobug_sigstore_protos (~> 0.1.0)
       uri
-    sigstore-cli (0.2.1)
-      sigstore (= 0.2.1)
-      thor
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
@@ -232,7 +238,7 @@ DEPENDENCIES
   rubocop-performance (~> 1)
   rubocop-rspec (~> 3)
   rubygems-await (~> 0.5.4)
-  sigstore-cli (~> 0.2.1)
+  sigstore-cli!
   simplecov (~> 0.22)
   simplecov-erb (~> 1)
   vcr (~> 6.3, >= 6.3.1)
