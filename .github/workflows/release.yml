@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ruby/setup-ruby@ab177d40ee5483edb974554986f56b33477e21d0 # pin@v1.265.0
+      - uses: ruby/setup-ruby@d5126b9b3579e429dd52e51e68624dda2e05be25 # pin@v1.267.0
         with:
           bundler-cache: false
 
@@ -46,7 +46,7 @@ jobs:
         run: script/build
 
       - name: upload artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # pin@v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # pin@v5.0.0
         id: upload-artifact
         with:
           name: ${{ steps.build.outputs.artifact_dir }}
@@ -66,7 +66,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # pin@v5.0.0
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # pin@v6.0.0
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
           path: ${{ needs.build.outputs.artifact_dir }}
@@ -86,7 +86,7 @@ jobs:
         run: |
           GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --key github --host https://rubygems.pkg.github.com/${OWNER} $ARTIFACT_PATH/${GEM_NAME}-${GEM_VERSION}.gem
 
-      - uses: ruby/setup-ruby@ab177d40ee5483edb974554986f56b33477e21d0 # pin@v1.265.0
+      - uses: ruby/setup-ruby@d5126b9b3579e429dd52e51e68624dda2e05be25 # pin@v1.267.0
         with:
           bundler-cache: false
 
@@ -94,7 +94,7 @@ jobs:
         run: script/bootstrap
 
       - name: Configure RubyGems Credentials
-        uses: rubygems/configure-rubygems-credentials@23d6a54ecc9cbcdfeab01a03a15a7deabe34efc0 # pin@main
+        uses: rubygems/configure-rubygems-credentials@89fa1f8ddec96dc9a57f448b9eaadbdf531f50e2 # pin@main
 
       - name: sign ruby gem
         env:
@@ -138,7 +138,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # pin@v5.0.0
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # pin@v6.0.0
         with:
           path: ${{ needs.build.outputs.artifact_dir }}
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
@@ -154,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # pin@v5.0.0
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # pin@v6.0.0
         with:
           path: ${{ needs.build.outputs.artifact_dir }}
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
