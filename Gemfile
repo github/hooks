@@ -14,7 +14,7 @@ group :development do
   gem "rubocop-performance", "~> 1"
   gem "rubocop-rspec", "~> 3"
   gem "rubygems-await", "~> 0.5.4"
-  gem "sigstore-cli", "~> 0.2.1"
+  gem "sigstore-cli", "~> 0.2.2"
   gem "simplecov", "~> 0.22"
   gem "simplecov-erb", "~> 1"
   gem "vcr", "~> 6.3", ">= 6.3.1"
