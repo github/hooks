@@ -94,7 +94,7 @@ jobs:
         run: script/bootstrap
 
       - name: Configure RubyGems Credentials
-        uses: rubygems/configure-rubygems-credentials@89fa1f8ddec96dc9a57f448b9eaadbdf531f50e2 # pin@main
+        uses: rubygems/configure-rubygems-credentials@66bb13f9f0a80f897676042f1dc707953f9b5f63 # pin@main
 
       - name: sign ruby gem
         env:
