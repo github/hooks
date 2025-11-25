@@ -25,11 +25,11 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # pin@v5.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # pin@v5.0.1
         with:
           persist-credentials: false
 
-      - uses: ruby/setup-ruby@d5126b9b3579e429dd52e51e68624dda2e05be25 # pin@v1.267.0
+      - uses: ruby/setup-ruby@8aeb6ff8030dd539317f8e1769a044873b56ea71 # pin@v1.268.0
         with:
           bundler-cache: false
 
@@ -62,7 +62,7 @@ jobs:
       packages: write
       id-token: write
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # pin@v5.0.0
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # pin@v5.0.1
         with:
           persist-credentials: false
 
@@ -86,7 +86,7 @@ jobs:
         run: |
           GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --key github --host https://rubygems.pkg.github.com/${OWNER} $ARTIFACT_PATH/${GEM_NAME}-${GEM_VERSION}.gem
 
-      - uses: ruby/setup-ruby@d5126b9b3579e429dd52e51e68624dda2e05be25 # pin@v1.267.0
+      - uses: ruby/setup-ruby@8aeb6ff8030dd539317f8e1769a044873b56ea71 # pin@v1.268.0
         with:
           bundler-cache: false
 
@@ -94,7 +94,7 @@ jobs:
         run: script/bootstrap
 
       - name: Configure RubyGems Credentials
-        uses: rubygems/configure-rubygems-credentials@89fa1f8ddec96dc9a57f448b9eaadbdf531f50e2 # pin@main
+        uses: rubygems/configure-rubygems-credentials@079b868399574998fd0fe9df2e03528f38cc6fa0 # pin@main
 
       - name: sign ruby gem
         env:
