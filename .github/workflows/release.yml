@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@c2d88d3ecc89a9ef08eebf45d9637801dcee7eb5 # pin@v5.0.1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # pin@v5.0.1
         with:
           persist-credentials: false
 
@@ -62,7 +62,7 @@ jobs:
       packages: write
       id-token: write
     steps:
-      - uses: actions/checkout@c2d88d3ecc89a9ef08eebf45d9637801dcee7eb5 # pin@v5.0.1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # pin@v5.0.1
         with:
           persist-credentials: false
 
@@ -94,7 +94,7 @@ jobs:
         run: script/bootstrap
 
       - name: Configure RubyGems Credentials
-        uses: rubygems/configure-rubygems-credentials@079b868399574998fd0fe9df2e03528f38cc6fa0 # pin@main
+        uses: rubygems/configure-rubygems-credentials@9b0e87d012c1f27ad7b823389e5d826a0aff2c42 # pin@main
 
       - name: sign ruby gem
         env:
