@@ -368,6 +368,7 @@ curl -X POST "https://your-hooks-server.com/webhooks/example" \
   -d '{"event":"test","data":"example"}'
 ```
 
+> **Note:** The shared secret is sent as plain text directly in the header value. No `Bearer` prefix or encoding is required. Always use HTTPS to protect the secret in transit.
 
 ## Custom Auth Plugins
 
