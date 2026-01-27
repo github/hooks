@@ -345,6 +345,13 @@ auth:
   header: Authorization
 ```
 
+```bash
+curl -X POST "https://your-hooks-server.com/webhooks/example" \
+  -H "Authorization: your-shared-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"event":"test","data":"example"}'
+```
+
 **Custom header shared secret:**
 
 ```yaml
@@ -353,6 +360,15 @@ auth:
   secret_env_key: API_KEY_SECRET
   header: X-API-Key
 ```
+
+```bash
+curl -X POST "https://your-hooks-server.com/webhooks/example" \
+  -H "X-API-Key: your-shared-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"event":"test","data":"example"}'
+```
+
+> **Note:** The shared secret is sent as plain text directly in the header value. No `Bearer` prefix or encoding is required. Always use HTTPS to protect the secret in transit.
 
 ## Custom Auth Plugins
 
